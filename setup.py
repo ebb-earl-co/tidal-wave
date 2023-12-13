@@ -16,7 +16,7 @@ requirements = [
 
 setup(
   name="tidal-wave",
-  version="2023.12",
+  version="2023.12.1",
   author="colinho",
   author_email="pypi@colin.technology",
   description="A tool to wave at the TIDAL music service.",
