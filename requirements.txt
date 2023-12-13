@@ -1,0 +1,6 @@
+dataclass-wizard
+ffmpeg-python
+mutagen
+platformdirs
+requests
+typer
