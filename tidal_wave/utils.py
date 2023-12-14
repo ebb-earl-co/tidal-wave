@@ -3,9 +3,9 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from requests import Session
+from .models import Artist
 
-from models import Artist
+from requests import Session
 
 TIDAL_API_URL: str = "https://api.tidal.com/v1"
 IMAGE_URL: str = "https://resources.tidal.com/images/%s.jpg"

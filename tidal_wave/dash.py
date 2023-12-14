@@ -10,7 +10,7 @@ from xml.etree import ElementTree as ET
 import dataclass_wizard
 from requests import Session
 
-from models import TracksEndpointStreamResponseJSON
+from .models import TracksEndpointStreamResponseJSON
 
 
 class TidalManifestException(Exception):

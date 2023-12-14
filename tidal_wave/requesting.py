@@ -2,7 +2,7 @@ from functools import partial
 import logging
 from typing import Callable, Dict, Optional, Union
 
-from models import (
+from .models import (
     AlbumsEndpointResponseJSON,
     AlbumsItemsResponseJSON,
     AlbumsReviewResponseJSON,
@@ -15,7 +15,7 @@ from models import (
     VideosContributorsResponseJSON,
     VideosEndpointResponseJSON,
 )
-from utils import TIDAL_API_URL
+from .utils import TIDAL_API_URL
 
 from requests import HTTPError, PreparedRequest, Request, Session
 

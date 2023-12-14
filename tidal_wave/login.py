@@ -7,8 +7,8 @@ import platform
 import sys
 from typing import Dict, Optional, Tuple
 
-from models import BearerAuth, SessionsEndpointResponseJSON
-from oauth import (
+from .models import BearerAuth, SessionsEndpointResponseJSON
+from .oauth import (
     PROJECT_AUTHOR,
     PROJECT_NAME,
     TOKEN_DIR_PATH,
@@ -16,7 +16,7 @@ from oauth import (
     TidalOauth,
     TokenException,
 )
-from utils import TIDAL_API_URL
+from .utils import TIDAL_API_URL
 
 from platformdirs import user_config_path
 import requests

@@ -7,30 +7,30 @@ from pathlib import Path
 import sys
 from typing import Optional
 
-from login import login, AudioFormat, LogLevel
-from media import Album, Track
-from models import match_tidal_url, TidalAlbum, TidalTrack
-from requesting import get_album_id
+from .login import login, AudioFormat, LogLevel
+from .media import Album, Track
+from .models import match_tidal_url, TidalAlbum, TidalTrack
+from .requesting import get_album_id
 
 from platformdirs import user_music_path
 import typer
 from typing_extensions import Annotated
 
-
-od_help: str = (
-    "The parent directory under which files will be written; i.e. "
-    "output_directory/<artist name>/<album name>/"
-)
+app = typer.Typer()
 
 
-def app(
+@app.command()
+def main(
     tidal_url: Annotated[
         str, typer.Argument(help="The Tidal track or album to download")
     ],
     audio_format: Annotated[
         AudioFormat, typer.Option(case_sensitive=False)
     ] = AudioFormat.lossless.value,
-    output_directory: Annotated[Path, typer.Argument(help=od_help)] = user_music_path(),
+    output_directory: Annotated[
+        Path,
+        typer.Argument(help="The parent directory under which files will be written; i.e. output_directory/<artist name>/<album name>/")
+    ] = user_music_path(),
     loglevel: Annotated[
         LogLevel, typer.Option(case_sensitive=False)
     ] = LogLevel.info.value,
@@ -69,5 +69,5 @@ def app(
         else:
             raise NotImplementedError
 
-
-typer.run(app)
+if __name__ == "__main__":
+    app()

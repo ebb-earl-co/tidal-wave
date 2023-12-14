@@ -10,14 +10,14 @@ import time
 from tempfile import NamedTemporaryFile
 from typing import Dict, List, Optional, Tuple
 
-from dash import (
+from .dash import (
     manifester,
     JSONDASHManifest,
     Manifest,
     TidalManifestException,
     XMLDASHManifest,
 )
-from models import (
+from .models import (
     AlbumsEndpointResponseJSON,
     AlbumsItemsResponseJSON,
     AlbumsReviewResponseJSON,
@@ -26,7 +26,7 @@ from models import (
     TracksEndpointStreamResponseJSON,
     TracksLyricsResponseJSON,
 )
-from requesting import (
+from .requesting import (
     request_album_items,
     request_album_review,
     request_albums,
@@ -36,7 +36,7 @@ from requesting import (
     request_tracks,
     ResponseJSON,
 )
-from utils import download_artist_image, download_cover_image
+from .utils import download_artist_image, download_cover_image
 
 import ffmpeg
 import mutagen
