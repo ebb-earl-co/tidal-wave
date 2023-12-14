@@ -367,13 +367,16 @@ class Track:
         else:
             self.outfile: Path = self.album_dir / self.filename
 
-        if self.outfile.exists():
-            if self.outfile.stat().st_size > 0:
-                logger.info(
-                    f"Track {str(self.outfile.absolute())} already exists "
-                    "and therefore will not be overwritten"
-                )
-                return
+        if (self.outfile.exists()) and (self.outfile.stat().st_size > 0):
+            logger.info(
+                f"Track {str(self.outfile.absolute())} already exists "
+                "and therefore will not be overwritten"
+            )
+            return
+        else:
+            logger.info(
+                f"Writing track {self.track_id} to {str(self.outfile.absolute())}"
+            )
 
         with NamedTemporaryFile() as ntf:
             for u in urls:
@@ -403,7 +406,11 @@ class Track:
                 self.outfile.write_bytes(ntf.read())
             elif self.codec == "mka":
                 self.outfile.write_bytes(ntf.read())
-            return self.outfile
+
+        logger.info(
+            f"Track {self.track_id} written to {str(self.outfile.absolute())}"
+        )
+        return self.outfile
 
     def craft_tags(self):
         """Using the TAG_MAPPING dictionary,
