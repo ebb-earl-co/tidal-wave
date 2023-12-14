@@ -407,9 +407,7 @@ class Track:
             elif self.codec == "mka":
                 self.outfile.write_bytes(ntf.read())
 
-        logger.info(
-            f"Track {self.track_id} written to {str(self.outfile.absolute())}"
-        )
+        logger.info(f"Track {self.track_id} written to {str(self.outfile.absolute())}")
         return self.outfile
 
     def craft_tags(self):
