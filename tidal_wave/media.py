@@ -171,6 +171,28 @@ class Album:
     ) -> List[str]:
         track_files: List[str] = [None] * self.metadata.number_of_tracks
         for i, t in enumerate(self.tracks):  # type(t) is TracksEndpointResponseJSON
+            if audio_format == AudioFormat.dolby_atmos:
+                if "DOLBY_ATMOS" not in t.media_metadata.tags:
+                    logger.warning(
+                        "Dolby Atmos audio format was requested, but track "
+                        f"{self.track_id} is not available in Dolby Atmos "
+                        "format. Downloading of track will not continue."
+                    )
+                    track_files[i] = json.dumps({track.metadata.track_number: None})
+                    sleep_to_mimic_human_activity()
+                    continue
+            elif audio_format == AudioFormat.sony_360_reality_audio:
+                if "SONY_360RA" not in t.media_metadata.tags:
+                    logger.warning(
+                        "Sony 360 Reality Audio audio format was requested, "
+                        f"but track {self.track_id} is not available in "
+                        "Sony 360 Reality Audio format. Downloading of track "
+                        "will not continue."
+                    )
+                    track_files[i] = json.dumps({track.metadata.track_number: None})
+                    sleep_to_mimic_human_activity()
+                    continue
+
             track: Track = Track(track_id=t.id)
             track.metadata = t
             track.album = self.metadata
@@ -315,8 +337,6 @@ class Track:
         else:
             track_substring: str = _track_part
 
-        self.filename: str = f"{track_substring}.{self.codec}"
-
         # Check for MQA masquerading as HiRes here
         if audio_format == AudioFormat.hi_res:
             if self.manifest.codecs == "mqa":
@@ -326,7 +346,7 @@ class Track:
                     "it is probably only lossless; i.e. 16-bit 44.1 kHz quality. "
                     "Downloading of track will continue, but it will be marked as MQA."
                 )
-                self.filename = self.filename.replace("[HiRes]", "[Q]")
+                self.filename: Optional[str] = f"{_track_part} [Q].{self.codec}"
             elif (self.stream.bit_depth == 16) and (self.stream.sample_rate == 44100):
                 logger.warning(
                     "Even though HiRes audio format was requested, and TIDAL responded to "
@@ -334,7 +354,12 @@ class Track:
                     "format; i.e. 16-bit 44.1 kHz quality. Downloading of track will "
                     "continue, but it will be marked as Lossless ([CD])."
                 )
-                self.filename = self.filename.replace("[HiRes]", "[CD]")
+                self.filename: Optional[str] = f"{_track_part} [CD].{self.codec}"
+            else:
+                self.filename: Optional[str] = f"{track_substring}.{self.codec}"
+        else:
+            self.filename: Optional[str] = f"{track_substring}.{self.codec}"
+
 
     def save_artist_image(self, session: Session):
         for a in self.metadata.artists:
@@ -492,6 +517,23 @@ class Track:
 
     def get(self, session: Session, audio_format: AudioFormat, out_dir: Path):
         self.get_metadata(session)
+        if audio_format == AudioFormat.dolby_atmos:
+            if "DOLBY_ATMOS" not in t.media_metadata.tags:
+                logger.warning(
+                    "Dolby Atmos audio format was requested, but track "
+                    f"{self.track_id} is not available in Dolby Atmos "
+                    "format. Downloading of track will not continue."
+                )
+                return
+        elif audio_format == AudioFormat.sony_360_reality_audio:
+            if "SONY_360RA" not in t.media_metadata.tags:
+                logger.warning(
+                    "Sony 360 Reality Audio audio format was requested, but track "
+                    f"{self.track_id} is not available in Sony 360 Reality Audio "
+                    "format. Downloading of track will not continue."
+                )
+                return
+
         self.get_album(session)
         self.get_credits(session)
         self.get_lyrics(session)
@@ -499,6 +541,8 @@ class Track:
         self.set_manifest()
         self.set_album_dir(out_dir)
         self.set_filename(audio_format, out_dir)
+        if self.filename is None:
+            return
         self.save_album_cover(session)
         try:
             self.save_artist_image(session)
