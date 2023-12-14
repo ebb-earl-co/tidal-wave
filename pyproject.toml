@@ -1,5 +1,7 @@
 [build-system]
 requires = ["setuptools", "wheel"]
+[bdist_wheel]
+universal = 0  # Make the generated wheels have "py3" tag
 [project]
 name = "tidal-wave"
 version = "2023.12.1"

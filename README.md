@@ -12,8 +12,8 @@ This project is inspired by [`qobuz-dl`](https://github.com/vitiko98/qobuz-dl), 
 * If available, lyrics are added as metadata to tracks
 * If available, album reviews are downloaded as JSON 
 
-* Video download support _coming soon_
-* Playlist download support (video and audio) _coming soon_
+* _Coming soon_: Video download support
+* _Coming soon_: Playlist download support (video and audio)
 
 ## Getting Started
 A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to retrieve HiRes FLAC, Dolby Atmos, and Sony 360 Reality Audio tracks. Simply a [HiFi](https://tidal.com/pricing) plan is sufficient to download in 16-bit, 44.1 kHz (i.e. lossless) or lower quality.
@@ -21,7 +21,8 @@ A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to ret
 ### Requirements
  - This is a Python tool, so you will need [Python 3](https://www.python.org/downloads/) on your system: this tool supports Python 3.8 or newer. 
  - As resources will be fetched from the World Wide Web, an Internet connection is required
- - The excellent tool [FFmpeg](http://ffmpeg.org/download.html) is necessary for audio file manipulation. It is available from almost every package manager; or static builds are available from [John Van Sickle](https://www.johnvansickle.com/ffmpeg/)
+ - The excellent tool [FFmpeg](http://ffmpeg.org/download.html) is necessary for audio file manipulation. It is available from almost every package manager; or static builds are available from [John Van Sickle](https://www.johnvansickle.com/ffmpeg/).
+   - For Windows, it's available in the [Microsoft App Store](https://apps.microsoft.com/detail/9NB2FLX7X7WG) or from [`chocolatey`](https://community.chocolatey.org/packages/ffmpeg)
  - Only a handful of Python libraries are dependencies:
    - [`dataclass-wizard`](https://pypi.org/project/dataclass-wizard/)
    - [`ffmpeg-python`](https://pypi.org/project/ffmpeg-python/)
@@ -33,18 +34,25 @@ A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to ret
 ## Installation
 Install this project with [`pip`](https://pip.pypa.io/en/stable/): either with a virtual environment (preferred) or any other way you desire:
 ```bash
-python3 -m pip install tidal-wave
+$ python3 -m pip install tidal-wave
 ```
 
-Alternatively, if you have a virtual environment in which the dependencies are installed, you can clone this repository and `cd` into it:
+Alternatively, you can clone this repository; `cd` into it; and install from there:
 ```bash
+$ git clone https://github.com/ebb-earl-co/tidal-wave.git
+$ cd tidal-wave
 $ python3 -m venv .venv
 $ source .venv/bin/activate
-$ (.venv) python3 -m pip install -r requirements.txt
+$ (.venv) pip install .
+```
+
+Optionally, to get the full `typer` experience when using this utility, add `[all]` to the end of the `pip install command`:
+```bash
+$ python3 -m pip install tidal-wave[all]
 ```
 
 ## Quickstart
-Run `python3 tidal-wave --help` to see the options available. Or, if you followed the repository cloning steps above, run `python3 tidal_wave/ --help` from the repository root directory, `tidal-wave`. In either case, you should see the following:
+Run `python3 tidal-wave --help` to see the options available. Or, if you followed the repository cloning steps above, run `python3 -m tidal_wave --help` from the repository root directory, `tidal-wave`. In either case, you should see something like the following:
 ```bash
 Usage: tidal-wave [OPTIONS] TIDAL_URL [OUTPUT_DIRECTORY]                                                                                                                                  
                                                                                                                                                                                             
@@ -74,16 +82,16 @@ Similarly, all media retrieved is placed in subdirectories of the user's default
 ### Example
  - First, find the URL of the track or album ID desired. Then, simmply pass it as the first argument to `tidal-wave` with no other arguments to: *download the track/album in Lossless quality to a subdirectory of user's music directory and INFO-level logging.*
 ```bash
-$ python3 tidal-wave https://listen.tidal.com/...
+$ python3 tidal-wave https://tidal.com/browse/track/226092704
 ```
 
  - To (attempt to) get a Dolby Atmos track, and you desire to see *all* of the log output, the following will do that
  ```bash
- $ python3 tidal-wave https://listen.tidal.com/... --audio-format atmos --loglevl debug
+ $ python3 tidal-wave https://tidal.com/browse/track/... --audio-format atmos --loglevel debug
  ```
 
  - To (attempt to) get a HiRes FLAC version of an album, and you desire to see only warnings and errors, the following will do that:
  ```bash
- $ python3 tidal-wave https://listen.tidal.com/... --audio-format hires --loglevel warning
+ $ python3 tidal-wave https://tidal.com/browse/album/... --audio-format hires --loglevel warning
  ```
  **Keep in mind that authentication from an Android (preferred), iOS, Windows, or macOS device will need to be extracted and passed to this tool in order to access HiRes FLAC and Sony 360 Reality Audio versions of tracks**
