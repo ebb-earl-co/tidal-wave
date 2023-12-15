@@ -37,6 +37,7 @@ def main(
         LogLevel, typer.Option(case_sensitive=False)
     ] = LogLevel.info.value,
 ):
+
     logging.basicConfig(
         format="%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s",
         datefmt="%Y-%m-%d:%H:%M:%S",
@@ -61,12 +62,16 @@ def main(
             track.get(
                 session=session, audio_format=audio_format, out_dir=output_directory
             )
+            if loglevel == LogLevel.debug:
+                track.dump()
             raise typer.Exit(code=0)
         elif isinstance(tidal_resource, TidalAlbum):
             album = Album(album_id=tidal_resource.tidal_id)
             album.get(
                 session=session, audio_format=audio_format, out_dir=output_directory
             )
+            if loglevel == LogLevel.debug:
+                album.dump()
             raise typer.Exit(code=0)
         else:
             raise NotImplementedError
