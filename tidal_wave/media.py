@@ -488,10 +488,10 @@ class Track:
             tags[tag_map["lyrics"]] = _lyrics
         # track and disk
         if self.codec == "flac":
-            tags["disc_number"] = f"{self.metadata.volume_number}"
-            tags["discs"] = f"{self.album.number_of_volumes}"
-            tags["total_tracks"] = f"{self.album.number_of_tracks}"
-            tags["track_number"] = f"{self.metadata.track_number}"
+            tags["DISCTOTAL"] = f"{self.metadata.volume_number}"
+            tags["DISC"] = f"{self.album.number_of_volumes}"
+            tags["TRACKTOTAL"] = f"{self.album.number_of_tracks}"
+            tags["TRACKNUMBER"] = f"{self.metadata.track_number}"
         elif self.codec == "m4a":
             # Have to convert to bytes the values of the tags starting with '----'
             for k, v in tags.copy().items():
