@@ -175,21 +175,21 @@ class Album:
                 if "DOLBY_ATMOS" not in t.media_metadata.tags:
                     logger.warning(
                         "Dolby Atmos audio format was requested, but track "
-                        f"{self.track_id} is not available in Dolby Atmos "
+                        f"{t.id} is not available in Dolby Atmos "
                         "format. Downloading of track will not continue."
                     )
-                    track_files[i] = json.dumps({track.metadata.track_number: None})
+                    track_files[i] = {track.metadata.track_number: None}
                     sleep_to_mimic_human_activity()
                     continue
             elif audio_format == AudioFormat.sony_360_reality_audio:
                 if "SONY_360RA" not in t.media_metadata.tags:
                     logger.warning(
                         "Sony 360 Reality Audio audio format was requested, "
-                        f"but track {self.track_id} is not available in "
+                        f"but track {t.id} is not available in "
                         "Sony 360 Reality Audio format. Downloading of track "
                         "will not continue."
                     )
-                    track_files[i] = json.dumps({track.metadata.track_number: None})
+                    track_files[i] = {track.metadata.track_number: None}
                     sleep_to_mimic_human_activity()
                     continue
 
@@ -202,11 +202,16 @@ class Album:
             track.set_manifest()
             track.set_album_dir(out_dir)
             track.set_filename(audio_format, out_dir)
+            outfile: Optional[Path] = track.set_outfile()
+            if outfile is None:
+                track_files[i] = {track.metadata.track_number: None}
+                sleep_to_mimic_human_activity()
+                continue
             track.save_album_cover(session)
             track.save_artist_image(session)
             path_to_track: Optional[Path] = track.download(session, out_dir)
             if path_to_track is None:  # already exists
-                track_files[i] = json.dumps({track.metadata.track_number: None})
+                track_files[i] = {track.metadata.track_number: None}
                 sleep_to_mimic_human_activity()
                 continue
             track_files[i] = json.loads(track.dumps())
@@ -360,6 +365,25 @@ class Track:
         else:
             self.filename: Optional[str] = f"{track_substring}.{self.codec}"
 
+    def set_outfile(self):
+        """Uses self.album_dir and self.metadata and self.filename
+        to craft the pathlib.Path object, self.outfile, that is a
+        reference to where the track will be written on disk."""
+        if self.album.number_of_volumes > 1:
+            self.outfile: Path = (
+                self.album_dir / f"Volume {self.metadata.volume_number}" / self.filename
+            )
+        else:
+            self.outfile: Path = self.album_dir / self.filename
+
+        if (self.outfile.exists()) and (self.outfile.stat().st_size > 0):
+            logger.info(
+                f"Track {str(self.outfile.absolute())} already exists "
+                "and therefore will not be overwritten"
+            )
+            return
+        else:
+            return self.outfile
 
     def save_artist_image(self, session: Session):
         for a in self.metadata.artists:
@@ -385,23 +409,10 @@ class Track:
         if session.session_id is not None:
             self.download_headers["sessionId"] = session.session_id
         self.download_params = {"deviceType": None, "locale": None, "countryCode": None}
-        if self.album.number_of_volumes > 1:
-            self.outfile: Path = (
-                self.album_dir / f"Volume {self.metadata.volume_number}" / self.filename
-            )
-        else:
-            self.outfile: Path = self.album_dir / self.filename
-
-        if (self.outfile.exists()) and (self.outfile.stat().st_size > 0):
-            logger.info(
-                f"Track {str(self.outfile.absolute())} already exists "
-                "and therefore will not be overwritten"
-            )
-            return
-        else:
-            logger.info(
-                f"Writing track {self.track_id} to {str(self.outfile.absolute())}"
-            )
+        # self.outfile should already have been setted by set_outfile()
+        logger.info(
+            f"Writing track {self.track_id} to {str(self.outfile.absolute())}"
+        )
 
         with NamedTemporaryFile() as ntf:
             for u in urls:
@@ -541,8 +552,10 @@ class Track:
         self.set_manifest()
         self.set_album_dir(out_dir)
         self.set_filename(audio_format, out_dir)
-        if self.filename is None:
+        outfile: Optional[Path] = self.set_outfile()
+        if outfile is None:
             return
+
         self.save_album_cover(session)
         try:
             self.save_artist_image(session)
