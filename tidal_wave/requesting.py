@@ -167,7 +167,7 @@ request_lyrics: Callable[[Session, int], Optional[TracksLyricsResponseJSON]] = p
 # One more layer of currying here, as the parameters argument
 # is dependent on a runtime variable.
 request_stream: Callable[
-    [Session, int, str], Optional[TracksLyricsResponseJSON]
+    [Session, int, str], Optional[TracksEndpointStreamResponseJSON]
 ] = lambda session, track_id, audio_quality: partial(
     requester_maker,
     session=session,
@@ -184,13 +184,32 @@ request_stream: Callable[
 )()
 
 request_videos: Callable[
-    [Session, int], Optional[TracksEndpointResponseJSON]
+    [Session, int], Optional[VideosEndpointResponseJSON]
 ] = partial(
     requester_maker,
     endpoint="videos",
     headers={"Accept": "application/json"},
     subclass=VideosEndpointResponseJSON,
 )
+
+# One more layer of currying here, as the parameters argument
+# is dependent on a runtime variable.
+request_video_stream: Callable[
+    [Session, int, str], Optional[VideosEndpointStreamResponseJSON]
+] = lambda session, video_id, video_quality: partial(
+    requester_maker,
+    session=session,
+    identifier=video_id,
+    endpoint="videos",
+    headers={"Accept": "application/json"},
+    parameters={
+        "videoquality": video_quality,
+        "playbackmode": "STREAM",
+        "assetpresentation": "FULL",
+    },
+    url_end="/playbackinfopostpaywall",
+    subclass=VideosEndpointStreamResponseJSON,
+)()
 
 
 def get_album_id(session: Session, track_id: int) -> Optional[int]:

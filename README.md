@@ -11,8 +11,7 @@ This project is inspired by [`qobuz-dl`](https://github.com/vitiko98/qobuz-dl), 
 * Support for albums with multiple discs
 * If available, lyrics are added as metadata to tracks
 * If available, album reviews are downloaded as JSON 
-
-* _Coming soon_: Video download support
+* Video download support
 * _Coming soon_: Playlist download support (video and audio)
 
 ## Getting Started
@@ -27,6 +26,7 @@ A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to ret
    - [`dataclass-wizard`](https://pypi.org/project/dataclass-wizard/)
    - [`ffmpeg-python`](https://pypi.org/project/ffmpeg-python/)
    - [`mutagen`](https://pypi.org/project/mutagen/)
+   - [`m3u8`](https://pypi.org/project/m3u8/)
    - [`platformdirs`](https://pypi.org/project/platformdirs/)
    - [`requests`](https://pypi.org/project/requests/)
    - [`typer`](https://pypi.org/project/typer/)

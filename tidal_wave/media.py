@@ -17,6 +17,7 @@ from .dash import (
     TidalManifestException,
     XMLDASHManifest,
 )
+from .hls import playlister, variant_streams, TidalM3U8Exception
 from .models import (
     AlbumsEndpointResponseJSON,
     AlbumsItemsResponseJSON,
@@ -55,6 +56,13 @@ class AudioFormat(str, Enum):
     lossless = "Lossless"
     high = "High"
     low = "Low"
+    
+    
+class VideoFormat(str, Enum):
+    high = "HIGH"
+    medium = "MEDIUM"
+    low = "LOW"
+    audio_only = "AUDIO_ONLY"
 
 
 af_aq: Dict[AudioFormat, str] = {
@@ -570,6 +578,171 @@ class Track:
 
     def dumps(self) -> str:
         return json.dumps({self.metadata.track_number: str(self.outfile.absolute())})
+
+
+@dataclass
+class Video:
+    video_id: int
+
+    def __post_init__(self):
+        self._has_lyrics: Optional[bool] = None
+        self.tags: dict = {}
+
+    def get_metadata(self, session: Session):
+        self.metadata: Optional[VideosEndpointResponseJSON] = request_videos(
+            session=session, identifier=self.video_id
+        )
+
+    # TODO: request_video_contributors
+    def get_contributors(self, session: Session):
+        self.contributors: Optional[VideosContributorsResponseJSON] = request_video_contributors(
+            session=session, identifier=self.video_id
+        )
+
+    # TODO: request_video_lyrics
+    def get_lyrics(self, session: Session):
+        if self._has_lyrics is None:
+            self.lyrics: Optional[VideosLyricsResponseJSON] = request_video_lyrics(
+                session=session, identifier=self.video.id
+            )
+            if self.lyrics is None:
+                self._has_lyrics = False
+            else:
+                self._has_lyrics = True
+        else:
+            return self.lyrics
+
+    def get_stream(self, session: Session, video_format: VideoFormat):
+        """Populates self.stream"""
+        self.stream: Optional[VideosEndpointStreamResponseJSON] = request_video_stream(
+            session=session, track_id=self.video_id, video_quality=video_format.value
+        )
+
+    def get_m3u8(self, session: Session):
+        """This method sets self.m3u8, an m3u8.M3U8 object
+        following the HTTP Live Streaming specification; parsed from
+        self.stream. I.e., self.get_stream() needs to have been executed
+        before calling this method. N.b. self.m3u8 almost certainly will
+        be a multivariant playlist, meaning further processing of its 
+        contents will be necessary."""
+        self.m3u8: m3u8.Playlist = playlister(session=session, vesrj=self.stream)
+        # {'mimeType': 'application/vnd.apple.mpegurl','urls': ['http://im-cf.manifest.tidal.com/1/manifests/CAESCTMxNjQ3MjIwMiIWZkdkeTBhWXJCMFZOYXFtaEV2WmxjdyIWcjdaQ0YwYTN5UnNrd2ZyR1lIUlNpZyIWSENfeVRHTU00WlA2UXoyZ2hJVUNFQSIWZWFEcHVlbTRueE5QZUZmdjRlTVBtZyIWbkVfRXJwSkdQczJBMWJWZjJORDlTQSIWdFRHY20ycFNpVTktaHBtVDlzUlNvdyIWdVJDMlNqMFJQYWVMSnN6NWRhRXZtdyIWZnNYUWZpNk01LUdpeUV3dE9JNTZ2d1AB.m3u8?Expires=1702683931&Signature=G52MyAHA11QubVPrvIytV~wxVCdmSQdESLf~vChcAZeGYD9rHqMRVkU0LJv66kZ9gvc4UfDK1hvOlAEUGh0GvH3mg2Am2v7xPl9LG87~Xe1CNkYcyhkhqDBtUFiJytnBzwvoYBXSOtm2ZvfjTD9mkgPhQmr5-SivxEcm0cFMqpGPFvwjd2Ii7csVdK-cpTLeoHDbfYfg9ABj3r5TG4hj7pzajEfKrhspm0S16affqrCgkTM1e31FQlZoxnxCSgazgK-KOBNRVVfvy7WLnWdPg2DNfJptc~TLloR8F05X8b5-5id5inmZKNvIw5sKmx4Fd8~3oba5QFRfh06ei~nfrg__&Key-Pair-Id=K2Y1HUH0IQYYB2']}
+
+    def set_urls(self):
+        """This method uses self.m3u8, an m3u8.M3U8 object that is variant:
+        (https://developer.apple.com/documentation/http-live-streaming/creating-a-multivariant-playlist)
+        It retrieves the highest-quality .m3u8 in its .playlists attribute,
+        and sets self.urls as the list of strings from that m3u8.Playlist"""
+        # TODO: for now, just get the highest-bandwidth playlist
+        self.playlist: m3u8.Playlist = variant_streams(self.m3u8)
+        if self.playlist is None:
+            raise TidalM3U8Exception(
+                f"HLS media segments are not available for video {self.video_id}"
+            )
+        self.urls: List[str] = self.playlist.files
+
+    # TODO: set self.artist_dir
+    def save_artist_image(self, session: Session):
+        for a in self.metadata.artists:
+            video_artist_image: path = self.artist_dir / f"{a.name}.jpg"
+            if not video_artist_image.exists():
+                download_artist_image(session, a, self.artist_dir)
+
+    def download(self, session: Session, out_dir: Path) -> Optional[Path]:
+        if session.session_id is not None:
+            self.download_headers["sessionId"] = session.session_id
+        self.download_params = {"deviceType": None, "locale": None, "countryCode": None}
+        # self.outfile should already have been setted by set_outfile()
+        logger.info(
+            f"Writing track {self.track_id} to {str(self.outfile.absolute())}"
+        )
+
+        with NamedTemporaryFile() as ntf:
+            for u in self.urls:
+                download_request = session.prepare_request(
+                    Request(
+                        "GET",
+                        url=u,
+                        headers=self.download_headers,
+                        params=self.download_params,
+                    )
+                )
+                with session.send(download_request) as download_response:
+                    if not download_response.ok:
+                        logger.warning(f"Could not download {self}")
+                    else:
+                        ntf.write(download_response.content)
+            else:
+                ntf.seek(0)
+
+            # will always be .mp4 because HLS
+            ffmpeg.input(ntf.name, hide_banner=None, y=None).output(
+                str(self.outfile.absolute()),
+                vcodec="copy",
+                acodec="copy",
+                loglevel="quiet"
+            ).run()
+
+        logger.info(f"Track {self.track_id} written to {str(self.outfile.absolute())}")
+        return self.outfile
+
+    def craft_tags(self):
+        """Using the TAG_MAPPING dictionary,
+        write the correct values of various metadata tags to the file.
+        E.g. for .flac files, the album's artist is 'ALBUMARTIST',
+        but for .m4a files, the album's artist is 'aART'."""
+        tags = dict()
+        tag_map = {k: v["m4a"] for k, v in TAG_MAPPING.items()}
+
+        tags[tag_map["album"]] = self.album.title
+        tags[tag_map["artist"]] = ";".join((a.name for a in self.metadata.artists))
+        tags[tag_map["artists"]] = [a.name for a in self.metadata.artists]
+        tags[tag_map["comment"]] = self.metadata.url
+        tags[tag_map["copyright"]] = self.metadata.copyright
+        tags[tag_map["date"]] = str(self.metadata.release_date)
+        tags[tag_map["title"]] = self.metadata.title
+
+        # TODO: contributors
+        for tag in {"composer", "lyricist", "mixer", "producer"}:
+            try:
+                _credits_tag = ";".join(getattr(self.credits, tag))
+            except (TypeError, AttributeError):  # NoneType problems
+                continue
+            else:
+                tags[tag_map[tag]] = _credits_tag
+        # lyrics
+        try:
+            _lyrics = self.lyrics.subtitles
+        except (TypeError, AttributeError):  # NoneType problems
+            pass
+        else:
+            tags[tag_map["lyrics"]] = _lyrics
+            
+        # Have to convert to bytes the values of the tags starting with '----'
+        for k, v in tags.copy().items():
+            if k.startswith("----"):
+                if isinstance(v, str):
+                    tags[k]: bytes = v.encode("UTF-8")
+                elif isinstance(v, list):
+                    tags[k]: List[bytes] = [s.encode("UTF-8") for s in v]
+
+        self.tags: dict = {k: v for k, v in tags.items() if v is not None}
+
+    def set_tags(self):
+        """Instantiate a mutagen.File instance, add self.tags to it, and
+        save it to disk"""
+        self.mutagen = mutagen.File(self.outfile)
+        self.mutagen.clear()
+        self.mutagen.update(**self.tags)
+        self.mutagen["covr"] = [
+            MP4Cover(self.cover_path.read_bytes(), imageformat=MP4Cover.FORMAT_JPEG)
+        ]
+        self.mutagen.save()
+
+
+
+
+
 
 
 def sleep_to_mimic_human_activity():

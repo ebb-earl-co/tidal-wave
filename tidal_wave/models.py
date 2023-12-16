@@ -15,6 +15,7 @@ AudioModeType = Literal["DOLBY_ATMOS", "SONY_360RA", "STEREO"]
 AudioQualityType = Literal[
     "HI_RES", "HI_RES_LOSSLESS", "LOSSLESS", "DOLBY_ATMOS", "HIGH", "LOW"
 ]
+VideoQualityType = Literal["HIGH", "MEDIUM", "LOW", "AUDIO_ONLY"]
 
 
 @dataclass
@@ -305,6 +306,25 @@ class TracksLyricsResponseJSON(dataclass_wizard.JSONWizard):
     lyrics: str
     subtitles: str
     is_right_to_left: bool
+
+
+@dataclass
+class VideosEndpointStreamResponseJSON(dataclass_wizard.JSONWizard):
+    """Response from the TIDAL API's videos/<VIDEO_ID> stream
+    endpoint. The params and headers, if correctly specified, return the
+    manifest of the video to be streamed. The manifest is a base64-encoded
+    JSON object containing a .m3u8 URL"""
+
+    video_id: int
+    stream_type: str  # ON_DEMAND
+    # asset_presentation: str
+    video_quality: VideoQualityType
+    manifest: str = field(repr=False)
+    manifest_mime_type: str = field(repr=False)
+    # manifest_hash: str
+
+    def __post_init__(self):
+        self.manifest_bytes: bytes = base64.b64decode(self.manifest)
 
 
 @dataclass
