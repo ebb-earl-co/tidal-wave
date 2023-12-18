@@ -391,7 +391,7 @@ class Track:
                     range_headers: Iterable[str] = http_request_range_headers(
                         content_length=content_length,
                         range_size=range_size,
-                        return_tuple=False
+                        return_tuple=False,
                     )
                     for rh in range_headers:
                         with session.get(
