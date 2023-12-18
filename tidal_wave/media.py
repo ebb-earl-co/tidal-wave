@@ -183,6 +183,7 @@ class Album:
                 album=self.metadata,
             )
             track_files[i] = {track.metadata.track_number: track_files_value}
+            sleep_to_mimic_human_activity()
         else:
             self.track_files = track_files
 
@@ -396,11 +397,11 @@ class Track:
                     for rh in range_headers:
                         with session.get(
                             urls[0],
-                            params={k: None for k in s.params},
+                            params={k: None for k in session.params},
                             headers={"Range": rh},
                             stream=True,
                         ) as rr:
-                            if not rr.okay:
+                            if not rr.ok:
                                 logger.warning(f"Could not download {self}")
                                 return
                             else:
@@ -552,9 +553,9 @@ class Track:
         album: Optional[AlbumsEndpointResponseJSON] = None,
     ) -> Optional[str]:
         if metadata is None:
-            self.metadata = metadata
-        else:
             self.get_metadata(session)
+        else:
+            self.metadata = metadata
 
         if audio_format == AudioFormat.dolby_atmos:
             if "DOLBY_ATMOS" not in self.metadata.media_metadata.tags:
@@ -574,9 +575,9 @@ class Track:
                 return
 
         if album is None:
-            self.album = album
-        else:
             self.get_album(session)
+        else:
+            self.album = album
 
         self.get_credits(session)
         self.get_lyrics(session)
