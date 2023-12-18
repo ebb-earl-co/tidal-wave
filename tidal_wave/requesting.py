@@ -1,6 +1,6 @@
 from functools import partial
 import logging
-from typing import Callable, Dict, Optional, Union
+from typing import Callable, Dict, Iterable, Iterator, Optional, Tuple, Union
 
 from .models import (
     AlbumsEndpointResponseJSON,
@@ -207,3 +207,64 @@ def get_album_id(session: Session, track_id: int) -> Optional[int]:
         pass
     finally:
         return album_id
+
+
+def contiguous_ranges(value: int, range_size: int) -> Iterator[Tuple[int]]:
+    """This function is a generator: it yields two-tuples of int, with the
+    tuples representing the (inclusive) boundaries of ranges of size
+    range_size. The final tuple will represent a range <= range_size if
+    range_size does not evenly divide value. E.g.
+    ```>>> list(ranges(16, 3))
+    [(0, 2), (3, 5), (6, 8), (9, 11), (12, 14), (15, 16)]
+    ```
+    N.b. the first tuple will always have first element 0 and the final tuple
+    will always have second element `value`."""
+    i: int = 0
+    rs: int = range_size - 1
+    while i + rs < value:
+        t: Tuple[int] = (i, i + rs)
+        i = t[-1] + 1
+        yield t
+    else:
+        yield (i, value)
+
+
+def http_request_range_headers(
+    content_length: int, range_size: int, return_tuple: bool = True
+) -> Iterable[str]:
+    """This function creates HTTP request Range headers. Its iterable
+    returned is of tuples; each tuple describes the (inclusive) boundaries
+    of a bytes range with size range_size. If return_tuple is False, it returns
+    a generator of tuples. E.g.
+    ```>>> http_request_range_headers(16, 3)
+    ('bytes=0-2',
+     'bytes=3-5',
+     'bytes=6-8',
+     'bytes=9-11',
+     'bytes=12-14',
+     'bytes=15-16')
+    ```
+    """
+    ranges: Iterator[Tuple[int]] = contiguous_ranges(content_length, range_size)
+    iterable: Iterable = (f"bytes={t[0]}-{t[1]}" for t in ranges)
+    if return_tuple:
+        return tuple(iterable)
+    else:
+        return iterable
+
+
+def fetch_content_length(session: Session, url: str) -> dict:
+    """Attempt to get the amount of bytes pointed to by `url`. If
+    the HEAD request from the requests.Session object, `session`,
+    encounters an HTTP request; or if the server does not support
+    HTTP range requests; or if the server does not response with a
+    Content-Length header, return 0"""
+    session_params: dict = session.params
+    # Unset params to avoid 403 response
+    _params: dict = {k: None for k in session_params}
+    with session.head(url=url, params=_params) as resp:
+        if not resp.ok:
+            cl: str = "0"
+        else:
+            cl: str = resp.headers.get("Content-Length", "0")
+    return int(cl)
