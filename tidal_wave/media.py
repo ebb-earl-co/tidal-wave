@@ -552,9 +552,9 @@ class Track:
         album: Optional[AlbumsEndpointResponseJSON] = None,
     ) -> Optional[str]:
         if metadata is None:
-            self.metadata = metadata
-        else:
             self.get_metadata(session)
+        else:
+            self.metadata = metadata
 
         if audio_format == AudioFormat.dolby_atmos:
             if "DOLBY_ATMOS" not in self.metadata.media_metadata.tags:
@@ -574,9 +574,9 @@ class Track:
                 return
 
         if album is None:
-            self.album = album
-        else:
             self.get_album(session)
+        else:
+            self.album = album
 
         self.get_credits(session)
         self.get_lyrics(session)
