@@ -37,7 +37,6 @@ def main(
         LogLevel, typer.Option(case_sensitive=False)
     ] = LogLevel.info.value,
 ):
-
     logging.basicConfig(
         format="%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s",
         datefmt="%Y-%m-%d:%H:%M:%S",
