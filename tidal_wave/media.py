@@ -383,13 +383,15 @@ class Track:
             if len(urls) == 1:
                 # Implement HTTP range requests here to mimic official clients
                 range_size: int = 1024 * 1024  # 1 MiB
-                content_length: int = fetch_content_length(session, urls[0])
+                content_length: int = fetch_content_length(session=session, url=urls[0])
                 if content_length == 0:
                     # move on to the all-at-once flow
                     pass
                 else:
                     range_headers: Iterable[str] = http_request_range_headers(
-                        url_content_length, range_size, False
+                        content_length=content_length,
+                        range_size=range_size,
+                        return_tuple=False
                     )
                     for rh in range_headers:
                         with session.get(
