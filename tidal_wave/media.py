@@ -410,9 +410,7 @@ class Track:
             self.download_headers["sessionId"] = session.session_id
         self.download_params = {"deviceType": None, "locale": None, "countryCode": None}
         # self.outfile should already have been setted by set_outfile()
-        logger.info(
-            f"Writing track {self.track_id} to {str(self.outfile.absolute())}"
-        )
+        logger.info(f"Writing track {self.track_id} to {str(self.outfile.absolute())}")
 
         with NamedTemporaryFile() as ntf:
             for u in urls:

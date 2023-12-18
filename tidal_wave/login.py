@@ -5,11 +5,10 @@ import logging
 from pathlib import Path
 import platform
 import sys
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Set, Tuple
 
 from .models import BearerAuth, SessionsEndpointResponseJSON
 from .oauth import (
-    PROJECT_AUTHOR,
     PROJECT_NAME,
     TOKEN_DIR_PATH,
     BearerToken,
@@ -20,11 +19,7 @@ from .utils import TIDAL_API_URL
 
 from platformdirs import user_config_path
 import requests
-
-# https://stackoverflow.com/a/66169954
-PROJECT_NAME: str = "tidal-wave"
-PROJECT_AUTHOR: str = "colinho"
-TOKEN_DIR_PATH = user_config_path(appname=PROJECT_NAME, appauthor=PROJECT_AUTHOR)
+import typer
 
 COMMON_HEADERS: Dict[str, str] = {"Accept-Encoding": "gzip, deflate, br"}
 
@@ -113,26 +108,26 @@ def validate_token(
 def login_fire_tv(
     token_path: Path = TOKEN_DIR_PATH / "fire_tv-tidal.token",
 ) -> Optional[requests.Session]:
-    try:
-        bearer_token = BearerToken.load(p=token_path)
-    except TokenException as te:
-        logger.exception(te)
+    # new approach so that FileNotFoundError, which is handled,
+    # does not explode on the STDERR output:
+    bearer_token = BearerToken.load(p=token_path)
+    if bearer_token is not None:
+        bearer_token.save(p=token_path)
+    else:
         to = TidalOauth()
         bearer_token = to.authorization_code_flow()
-    else:
         logger.info("Successfully loaded token from disk.")
-    finally:
         bearer_token.save(p=token_path)
 
     # check if access needs refreshed
     if bearer_token.is_expired:
-        logger.warning("Tidal API token needs refreshing: Attempting now.")
+        logger.warning("TIDAL access token needs refreshing: Attempting now.")
         try:
             bearer_token.refresh()
         except TokenException as te:
             sys.exit(te.args[0])
         else:
-            logger.info("Successfully refreshed Tidal API token")
+            logger.info("Successfully refreshed TIDAL access token")
 
     s: Optional[requests.Session] = validate_token(bearer_token.access_token)
     if s is None:
@@ -147,14 +142,18 @@ def login_fire_tv(
 def login_android(
     token_path: Path = TOKEN_DIR_PATH / "android-tidal.token",
 ) -> Optional[requests.Session]:
-    logger.info(f"Loading TIDAL API token from {str(token_path.absolute())}")
+    logger.info(f"Loading TIDAL access token from '{str(token_path.absolute())}'")
     _token: Optional[str] = load_token_from_disk(token_path=token_path)
     device_type: Optional[str] = None
 
     if _token is None:
-        logger.warning("Could not load bearer token from disk")
-        _token: str = input("Enter Tidal API Bearer token from an Android device: ")
-        dt_input: str = input("Is this from device type: phone, tablet, or other? ")
+        logger.warning("Could not load access token from disk")
+        _token: str = typer.prompt(
+            "Enter TIDAL access token from an Android (the part after 'Bearer '): "
+        )
+        dt_input: str = typer.prompt(
+            "Is this from device type: phone, tablet, or other? "
+        )
         if dt_input.lower() == "phone":
             device_type = "PHONE"
         elif dt_input.lower() == "tablet":
@@ -162,11 +161,11 @@ def login_android(
 
     s: Optional[requests.Session] = validate_token(_token)
     if s is None:
-        logger.critical("Bearer token is not valid: exiting now.")
+        logger.critical("Access token is not valid: exiting now.")
         if token_path.exists():
             token_path.unlink()
     else:
-        logger.info(f"Bearer token is valid: saving to {str(token_path.absolute())}")
+        logger.info(f"Access token is valid: saving to {str(token_path.absolute())}")
         if device_type is not None:
             s.params["deviceType"] = device_type
 
@@ -188,13 +187,15 @@ def login_windows(
 ) -> Optional[requests.Session]:
     _token: Optional[str] = load_token_from_disk(token_path=token_path)
     if _token is None:
-        _token: str = input("Enter Tidal API Bearer token: ")
+        _token: str = typer.prompt(
+            "Enter Tidal API access token (the part after 'Bearer '): "
+        )
 
     s: Optional[requests.Session] = validate_token(_token)
     if s is None:
-        logger.critical("Bearer token is not valid: exiting now.")
+        logger.critical("Access token is not valid: exiting now.")
     else:
-        logger.debug(f"Writing this bearer token to '{str(token_path.absolute())}'")
+        logger.debug(f"Writing this access token to '{str(token_path.absolute())}'")
         # s.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) TIDAL/2.35.0 Chrome/108.0.5359.215 Electron/22.3.27 Safari/537.36"
         s.headers["User-Agent"] = "TIDAL_NATIVE_PLAYER/WIN/3.1.2.195"
         s.params["deviceType"] = "DESKTOP"
@@ -224,32 +225,31 @@ def login(
     Returns a tuple of a requests.Session object, if no error, and the
     AudioFormat instance passed in; or (None, "") in the event of error.
     """
-    if audio_format == AudioFormat.sony_360_reality_audio:
-        return (login_android(), audio_format)
-    elif audio_format == AudioFormat.dolby_atmos:
+    android_formats: Set[AudioFormat] = {
+        AudioFormat.sony_360_reality_audio,
+        AudioFormat.hi_res,
+    }
+    fire_tv_formats: Set[AudioFormat] = {
+        AudioFormat.dolby_atmos,
+        AudioFormat.mqa,
+        AudioFormat.lossless,
+        AudioFormat.high,
+        AudioFormat.low,
+    }
+    if audio_format in fire_tv_formats:
         return (login_fire_tv(), audio_format)
-    elif audio_format == AudioFormat.hi_res:
-        options: set = {"android", "a", "windows", "w", "macos", "mac", "m"}
+    elif audio_format in android_formats:
+        options: set = {"android", "a", "windows", "w"}
         _input: str = ""
         while _input not in options:
-            _input = input(
-                "For which of Android [a], Windows [w], or MacOS [m] would you like to provide an API token? "
+            _input = typer.prompt(
+                "For which of Android [a] or Windows [w] would you like to provide an API token? "
             ).lower()
         else:
             if _input in {"android", "a"}:
                 return (login_android(), audio_format)
             elif _input in {"windows", "w"}:
                 return (login_windows(), audio_format)
-            elif _input in {"macos", "mac", "m"}:
-                raise NotImplementedError
-    elif audio_format == AudioFormat.mqa:
-        return (login_fire_tv(), audio_format)
-    elif audio_format == AudioFormat.lossless:
-        return (login_fire_tv(), audio_format)
-    elif audio_format == AudioFormat.high:
-        return (login_fire_tv(), audio_format)
-    elif audio_format == AudioFormat.low:
-        return (login_fire_tv(), audio_format)
     else:
         logger.critical(
             "Please provide one of the following: "
