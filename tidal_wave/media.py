@@ -21,6 +21,7 @@ from .models import (
     AlbumsEndpointResponseJSON,
     AlbumsItemsResponseJSON,
     AlbumsReviewResponseJSON,
+    ArtistsBioResponseJSON,
     TracksCreditsResponseJSON,
     TracksEndpointResponseJSON,
     TracksEndpointStreamResponseJSON,
@@ -32,6 +33,7 @@ from .requesting import (
     request_album_items,
     request_album_review,
     request_albums,
+    request_artist_bio,
     request_credits,
     request_lyrics,
     request_stream,
@@ -353,9 +355,22 @@ class Track:
 
     def save_artist_image(self, session: Session):
         for a in self.metadata.artists:
-            track_artist_image: path = self.album_dir / f"{a.name}.jpg"
+            track_artist_image: Path = self.album_dir / f"{a.name}.jpg"
             if not track_artist_image.exists():
                 download_artist_image(session, a, self.album_dir)
+
+    def save_artist_bio(self, session: Session):
+        for a in self.metadata.artists:
+            track_artist_bio_json: Path = self.album_dir / f"{a.name}-bio.json"
+            if not track_artist_bio_json.exists():
+                artist_bio: Optional[ArtistsBioResponseJSON] = \
+                    request_artist_bio(session=session, identifier=a.id)
+                if artist_bio is not None:
+                    logger.info(
+                        f"Writing artist bio for artist {a.id} to "
+                        f"'{str(track_artist_bio_json.absolute())}"
+                    )
+                    track_artist_bio_json.write_text(artist_bio.to_json())
 
     def save_album_cover(self, session: Session):
         self.cover_path: Path = self.album_dir / "cover.jpg"
@@ -592,6 +607,11 @@ class Track:
         self.save_album_cover(session)
         try:
             self.save_artist_image(session)
+        except:
+            pass
+
+        try:
+            self.save_artist_bio(session)
         except:
             pass
 

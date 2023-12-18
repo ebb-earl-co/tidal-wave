@@ -81,3 +81,34 @@ def download_artist_image(
             f"'{str(output_file.absolute())}'"
         )
         return output_file
+
+
+def download_artist_bio(
+    session: Session, artist: Artist, output_dir: Path 
+) -> Optional[Path]:
+    """Given a UUID that corresponds to a (JPEG) image on Tidal's servers,
+    download the image file and write it as '{artist name}.jpeg'
+    in the directory `output_dir`. Returns path to downloaded file"""
+    artist_bio: Optional[ArtistsBioResponseJSON] = request_
+    with session.get(url=_url, headers={"Accept": "image/jpeg"}) as r:
+        if not r.ok:
+            logger.warning(
+                "Could not retrieve data from Tidal resources/images URL "
+                f"for artist {artist} due to error code: {r.status_code}"
+            )
+            logger.debug(r.reason)
+            return
+        else:
+            bytes_to_write = BytesIO(r.content)
+
+    file_name: str = f"{artist.name}.jpg"
+    if bytes_to_write is not None:
+        output_file: Path = output_dir / file_name
+        bytes_to_write.seek(0)
+        output_file.write_bytes(bytes_to_write.read())
+        bytes_to_write.close()
+        logger.info(
+            f"Wrote artist image JPEG for {artist} to "
+            f"'{str(output_file.absolute())}'"
+        )
+        return output_file
