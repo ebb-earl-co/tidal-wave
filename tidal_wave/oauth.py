@@ -17,8 +17,8 @@ from platformdirs import user_config_path
 import requests
 
 PROJECT_NAME: str = "tidal-wave"
-PROJECT_AUTHOR: str = "colinho"
-TOKEN_DIR_PATH = user_config_path(appname=PROJECT_NAME, appauthor=PROJECT_AUTHOR)
+TOKEN_DIR_PATH: Path = user_config_path() / PROJECT_NAME
+TOKEN_DIR_PATH.mkdir(exist_ok=True, parents=True)
 OAUTH2_URL: str = "https://auth.tidal.com/v1/oauth2"
 OAUTH2_HEADERS: Dict[str, str] = {
     "User-Agent": "TIDAL_ANDROID/2.38.0",
@@ -82,8 +82,8 @@ class TokenEndpointResponseJSON(dataclass_wizard.JSONSerializable):
     """This class models the JSON response from the Tidal API
     authorization /token endpoint."""
 
-    # scope: str
-    # user: "User"
+    scope: str
+    user: "User"
     client_name: str
     token_type: str
     access_token: str
@@ -145,21 +145,31 @@ class BearerToken:
         p.write_bytes(outdata)
 
     @classmethod
-    def load(cls, p: Path = TOKEN_DIR_PATH / "fire_tv-tidal.token") -> "BearerToken":
-        """Read base64-encoded JSON object from disk"""
+    def load(
+        cls, p: Path = TOKEN_DIR_PATH / "fire_tv-tidal.token"
+    ) -> Optional["BearerToken"]:
+        """Read base64-encoded JSON object from disk. If no error arises,
+        return a BearerToken instance; else, return None"""
 
         try:
             data = json.loads(base64.b64decode(p.read_bytes()))
         except FileNotFoundError:
-            raise TokenException(f"File '{str(p.absolute())}' does not exist")
+            logger.exception(
+                TokenException(f"File '{str(p.absolute())}' does not exist")
+            )
+            return
         except json.JSONDecodeError:
-            raise TokenException(
-                f"Could not parse JSON data from '{str(p.absolute())}'"
+            logger.exception(
+                TokenException(f"Could not parse JSON data from '{str(p.absolute())}'")
             )
+            return
         except UnicodeDecodeError:
-            raise TokenException(
-                f"File '{str(p.absolute())}' does not appear to be base64-encoded"
+            logger.exception(
+                TokenException(
+                    f"File '{str(p.absolute())}' does not appear to be base64-encoded"
+                )
             )
+            return
 
         data_args = (
             data.get(a)
@@ -208,9 +218,7 @@ class BearerToken:
             if token_json.get("userId", token_json.get("user_id")) is not None:
                 self.user_id = token_json.get("userId", token_json.get("user_id"))
             if token_json.get("userName", token_json.get("user_name")) is not None:
-                self.user_name = token_json.get(
-                    "userName", token_json.get("user_nname")
-                )
+                self.user_name = token_json.get("userName", token_json.get("user_name"))
 
             _timedelta = timedelta(seconds=token_json.get("expires_in") - 300)
             self.expiration = datetime.now(tz=timezone.utc) + _timedelta
