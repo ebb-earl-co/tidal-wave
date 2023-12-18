@@ -218,9 +218,7 @@ class BearerToken:
             if token_json.get("userId", token_json.get("user_id")) is not None:
                 self.user_id = token_json.get("userId", token_json.get("user_id"))
             if token_json.get("userName", token_json.get("user_name")) is not None:
-                self.user_name = token_json.get(
-                    "userName", token_json.get("user_name")
-                )
+                self.user_name = token_json.get("userName", token_json.get("user_name"))
 
             _timedelta = timedelta(seconds=token_json.get("expires_in") - 300)
             self.expiration = datetime.now(tz=timezone.utc) + _timedelta

@@ -187,7 +187,9 @@ def login_windows(
 ) -> Optional[requests.Session]:
     _token: Optional[str] = load_token_from_disk(token_path=token_path)
     if _token is None:
-        _token: str = typer.prompt("Enter Tidal API access token (the part after 'Bearer '): ")
+        _token: str = typer.prompt(
+            "Enter Tidal API access token (the part after 'Bearer '): "
+        )
 
     s: Optional[requests.Session] = validate_token(_token)
     if s is None:
@@ -224,11 +226,15 @@ def login(
     AudioFormat instance passed in; or (None, "") in the event of error.
     """
     android_formats: Set[AudioFormat] = {
-        AudioFormat.sony_360_reality_audio, AudioFormat.hi_res
+        AudioFormat.sony_360_reality_audio,
+        AudioFormat.hi_res,
     }
     fire_tv_formats: Set[AudioFormat] = {
-        AudioFormat.dolby_atmos, AudioFormat.mqa, AudioFormat.lossless,
-        AudioFormat.high,  AudioFormat.low
+        AudioFormat.dolby_atmos,
+        AudioFormat.mqa,
+        AudioFormat.lossless,
+        AudioFormat.high,
+        AudioFormat.low,
     }
     if audio_format in fire_tv_formats:
         return (login_fire_tv(), audio_format)
