@@ -9,7 +9,6 @@ from typing import Dict, Optional, Set, Tuple
 
 from .models import BearerAuth, SessionsEndpointResponseJSON
 from .oauth import (
-    PROJECT_AUTHOR,
     PROJECT_NAME,
     TOKEN_DIR_PATH,
     BearerToken,
@@ -21,10 +20,6 @@ from .utils import TIDAL_API_URL
 from platformdirs import user_config_path
 import requests
 import typer
-
-PROJECT_NAME: str = "tidal-wave"
-TOKEN_DIR_PATH = user_config_path() / PROJECT_NAME
-TOKEN_DIR_PATH.mkdir(exist_ok=True, parents=True)
 
 COMMON_HEADERS: Dict[str, str] = {"Accept-Encoding": "gzip, deflate, br"}
 
