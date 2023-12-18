@@ -27,6 +27,8 @@ from .models import (
     TracksLyricsResponseJSON,
 )
 from .requesting import (
+    fetch_content_length,
+    http_request_range_headers,
     request_album_items,
     request_album_review,
     request_albums,
@@ -168,56 +170,19 @@ class Album:
 
     def get_tracks(
         self, session: Session, audio_format: AudioFormat, out_dir: Path
-    ) -> List[str]:
+    ) -> List[Optional[str]]:
         track_files: List[str] = [None] * self.metadata.number_of_tracks
         for i, t in enumerate(self.tracks):  # type(t) is TracksEndpointResponseJSON
-            if audio_format == AudioFormat.dolby_atmos:
-                if "DOLBY_ATMOS" not in t.media_metadata.tags:
-                    logger.warning(
-                        "Dolby Atmos audio format was requested, but track "
-                        f"{t.id} is not available in Dolby Atmos "
-                        "format. Downloading of track will not continue."
-                    )
-                    track_files[i] = {track.metadata.track_number: None}
-                    sleep_to_mimic_human_activity()
-                    continue
-            elif audio_format == AudioFormat.sony_360_reality_audio:
-                if "SONY_360RA" not in t.media_metadata.tags:
-                    logger.warning(
-                        "Sony 360 Reality Audio audio format was requested, "
-                        f"but track {t.id} is not available in "
-                        "Sony 360 Reality Audio format. Downloading of track "
-                        "will not continue."
-                    )
-                    track_files[i] = {track.metadata.track_number: None}
-                    sleep_to_mimic_human_activity()
-                    continue
-
             track: Track = Track(track_id=t.id)
-            track.metadata = t
-            track.album = self.metadata
-            track.get_credits(session)
-            track.get_lyrics(session)
-            track.get_stream(session, audio_format)
-            track.set_manifest()
-            track.set_album_dir(out_dir)
-            track.set_filename(audio_format, out_dir)
-            outfile: Optional[Path] = track.set_outfile()
-            if outfile is None:
-                track_files[i] = {track.metadata.track_number: None}
-                sleep_to_mimic_human_activity()
-                continue
-            track.save_album_cover(session)
-            track.save_artist_image(session)
-            path_to_track: Optional[Path] = track.download(session, out_dir)
-            if path_to_track is None:  # already exists
-                track_files[i] = {track.metadata.track_number: None}
-                sleep_to_mimic_human_activity()
-                continue
-            track_files[i] = json.loads(track.dumps())
-            track.craft_tags()
-            track.set_tags()
-            sleep_to_mimic_human_activity()
+
+            track_files_value: Optional[str] = track.get(
+                session=session,
+                audio_format=audio_format,
+                out_dir=out_dir,
+                metadata=t,
+                album=self.metadata,
+            )
+            track_files[i] = {track.metadata.track_number: track_files_value}
         else:
             self.track_files = track_files
 
@@ -410,9 +375,58 @@ class Track:
             self.download_headers["sessionId"] = session.session_id
         self.download_params = {"deviceType": None, "locale": None, "countryCode": None}
         # self.outfile should already have been setted by set_outfile()
-        logger.info(f"Writing track {self.track_id} to {str(self.outfile.absolute())}")
+        logger.info(
+            f"Writing track {self.track_id} to '{str(self.outfile.absolute())}'"
+        )
 
         with NamedTemporaryFile() as ntf:
+            if len(urls) == 1:
+                # Implement HTTP range requests here to mimic official clients
+                range_size: int = 1024 * 1024  # 1 MiB
+                content_length: int = fetch_content_length(session, urls[0])
+                if content_length == 0:
+                    # move on to the all-at-once flow
+                    pass
+                else:
+                    range_headers: Iterable[str] = http_request_range_headers(
+                        url_content_length, range_size, False
+                    )
+                    for rh in range_headers:
+                        with session.get(
+                            urls[0],
+                            params={k: None for k in s.params},
+                            headers={"Range": rh},
+                            stream=True,
+                        ) as rr:
+                            if not rr.okay:
+                                logger.warning(f"Could not download {self}")
+                                return
+                            else:
+                                for chunk in rr.iter_content(chunk_size=1024):
+                                    if chunk:
+                                        ntf.write(chunk)
+                    else:
+                        ntf.seek(0)
+
+                    if self.codec == "flac":
+                        # Have to use FFMPEG to re-mux the audio bytes, otherwise
+                        # mutagen chokes on NoFlacHeaderError
+                        ffmpeg.input(ntf.name, hide_banner=None, y=None).output(
+                            str(self.outfile.absolute()),
+                            acodec="copy",
+                            loglevel="quiet",
+                        ).run()
+                    elif self.codec == "m4a":
+                        self.outfile.write_bytes(ntf.read())
+                    elif self.codec == "mka":
+                        self.outfile.write_bytes(ntf.read())
+
+                    logger.info(
+                        f"Track {self.track_id} written to '{str(self.outfile.absolute())}'"
+                    )
+                    return self.outfile
+            # As DASH is inherently many small parts of the overall file,
+            # download all of them without range headers or streaming chunks
             for u in urls:
                 download_request = session.prepare_request(
                     Request(
@@ -425,6 +439,7 @@ class Track:
                 with session.send(download_request) as download_response:
                     if not download_response.ok:
                         logger.warning(f"Could not download {self}")
+                        return
                     else:
                         ntf.write(download_response.content)
             else:
@@ -441,7 +456,9 @@ class Track:
             elif self.codec == "mka":
                 self.outfile.write_bytes(ntf.read())
 
-        logger.info(f"Track {self.track_id} written to {str(self.outfile.absolute())}")
+        logger.info(
+            f"Track {self.track_id} written to '{str(self.outfile.absolute())}'"
+        )
         return self.outfile
 
     def craft_tags(self):
@@ -524,10 +541,21 @@ class Track:
             ]
         self.mutagen.save()
 
-    def get(self, session: Session, audio_format: AudioFormat, out_dir: Path):
-        self.get_metadata(session)
+    def get(
+        self,
+        session: Session,
+        audio_format: AudioFormat,
+        out_dir: Path,
+        metadata: Optional[TracksEndpointResponseJSON] = None,
+        album: Optional[AlbumsEndpointResponseJSON] = None,
+    ) -> Optional[str]:
+        if metadata is None:
+            self.metadata = metadata
+        else:
+            self.get_metadata(session)
+
         if audio_format == AudioFormat.dolby_atmos:
-            if "DOLBY_ATMOS" not in t.media_metadata.tags:
+            if "DOLBY_ATMOS" not in self.metadata.media_metadata.tags:
                 logger.warning(
                     "Dolby Atmos audio format was requested, but track "
                     f"{self.track_id} is not available in Dolby Atmos "
@@ -535,7 +563,7 @@ class Track:
                 )
                 return
         elif audio_format == AudioFormat.sony_360_reality_audio:
-            if "SONY_360RA" not in t.media_metadata.tags:
+            if "SONY_360RA" not in self.metadata.media_metadata.tags:
                 logger.warning(
                     "Sony 360 Reality Audio audio format was requested, but track "
                     f"{self.track_id} is not available in Sony 360 Reality Audio "
@@ -543,7 +571,11 @@ class Track:
                 )
                 return
 
-        self.get_album(session)
+        if album is None:
+            self.album = album
+        else:
+            self.get_album(session)
+
         self.get_credits(session)
         self.get_lyrics(session)
         self.get_stream(session, audio_format)
@@ -559,9 +591,14 @@ class Track:
             self.save_artist_image(session)
         except:
             pass
-        self.download(session, out_dir)
+
+        if self.download(session, out_dir) is None:
+            return
+
         self.craft_tags()
         self.set_tags()
+
+        return str(self.outfile.absolute())
 
     def dump(self, fp=sys.stdout):
         json.dump({self.metadata.track_number: str(self.outfile.absolute())}, fp)
