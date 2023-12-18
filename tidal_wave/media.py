@@ -183,6 +183,7 @@ class Album:
                 album=self.metadata,
             )
             track_files[i] = {track.metadata.track_number: track_files_value}
+            sleep_to_mimic_human_activity()
         else:
             self.track_files = track_files
 
@@ -396,11 +397,11 @@ class Track:
                     for rh in range_headers:
                         with session.get(
                             urls[0],
-                            params={k: None for k in s.params},
+                            params={k: None for k in session.params},
                             headers={"Range": rh},
                             stream=True,
                         ) as rr:
-                            if not rr.okay:
+                            if not rr.ok:
                                 logger.warning(f"Could not download {self}")
                                 return
                             else:
