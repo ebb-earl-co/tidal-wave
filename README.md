@@ -5,7 +5,7 @@ Waving at the [TIDAL](https://tidal.com) music service. Runs on (at least) Windo
 This project is inspired by [`qobuz-dl`](https://github.com/vitiko98/qobuz-dl), and, particularly, is a continuation of [`Tidal-Media-Downloader`](https://github.com/yaronzz/Tidal-Media-Downloader). **This project is intended for private use only: it is not intended for distribution of copyrighted content**
 
 ## Features
-* Download [FLAC](https://xiph.org/flac/), [Dolby Atmos](https://www.dolby.com/technologies/dolby-atmos/), [Sony 360 Reality Audio](https://electronics.sony.com/360-reality-audio), or [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) tracks
+* Download [FLAC](https://xiph.org/flac/), [Dolby Atmos](https://www.dolby.com/technologies/dolby-atmos/), [Sony 360 Reality Audio](https://electronics.sony.com/360-reality-audio), or [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) tracks; [AVC/H.264](https://en.wikipedia.org/wiki/Advanced_Video_Coding) (up to 1920x1080) + [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) videos
 * Either a single track or an entire album can be downloaded
 * Album covers and artist images are downloaded by default
 * Support for albums with multiple discs
@@ -15,7 +15,7 @@ This project is inspired by [`qobuz-dl`](https://github.com/vitiko98/qobuz-dl), 
 * _Coming soon_: Playlist download support (video and audio)
 
 ## Getting Started
-A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to retrieve HiRes FLAC, Dolby Atmos, and Sony 360 Reality Audio tracks. Simply a [HiFi](https://tidal.com/pricing) plan is sufficient to download in 16-bit, 44.1 kHz (i.e. lossless) or lower quality.
+A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to retrieve HiRes FLAC, Dolby Atmos, and Sony 360 Reality Audio tracks. Simply a [HiFi](https://tidal.com/pricing) plan is sufficient to download in 16-bit, 44.1 kHz (i.e. lossless) or lower quality as well as videos.
 
 ### Requirements
  - This is a Python tool, so you will need [Python 3](https://www.python.org/downloads/) on your system: this tool supports Python 3.8 or newer. 
@@ -78,6 +78,7 @@ Invocation of this tool will store credentials in a particular directory in the 
 
 Similarly, all media retrieved is placed in subdirectories of the user's default Music directory: for Unix-like systems, this probably is `/home/${USER}/Music`; for Windows it is probably `C:\Users\<USER>\Music`. This directory is determined by `platformdirs.user_music_path()`. 
  - If a different path is passed to the second CLI argument, `output_directory`, then all media is written to subdirectories of that directory.
+ - Even videos are downloaded here (for now) for simplicity
 
 ### Example
  - First, find the URL of the track or album ID desired. Then, simmply pass it as the first argument to `tidal-wave` with no other arguments to: *download the track/album in Lossless quality to a subdirectory of user's music directory and INFO-level logging.*
@@ -93,5 +94,10 @@ $ python3 tidal-wave https://tidal.com/browse/track/226092704
  - To (attempt to) get a HiRes FLAC version of an album, and you desire to see only warnings and errors, the following will do that:
  ```bash
  $ python3 tidal-wave https://tidal.com/browse/album/... --audio-format hires --loglevel warning
+ ```
+
+ - To (attempt to) get a video, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos!
+ ```bash
+ $ python3 tidal-wave https://tidal.com/browse/video/...
  ```
  **Keep in mind that authentication from an Android (preferred), iOS, Windows, or macOS device will need to be extracted and passed to this tool in order to access HiRes FLAC and Sony 360 Reality Audio versions of tracks**

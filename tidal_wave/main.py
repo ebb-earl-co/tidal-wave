@@ -22,7 +22,7 @@ app = typer.Typer()
 @app.command()
 def main(
     tidal_url: Annotated[
-        str, typer.Argument(help="The Tidal track or album to download")
+        str, typer.Argument(help="The Tidal track or album or video to download")
     ],
     audio_format: Annotated[
         AudioFormat, typer.Option(case_sensitive=False)
