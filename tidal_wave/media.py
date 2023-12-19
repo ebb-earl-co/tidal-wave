@@ -7,7 +7,6 @@ from pathlib import Path
 import random
 import sys
 import time
-from tempfile import NamedTemporaryFile
 from typing import Dict, List, Optional, Tuple
 
 from .dash import (
@@ -40,7 +39,7 @@ from .requesting import (
     request_tracks,
     ResponseJSON,
 )
-from .utils import download_artist_image, download_cover_image
+from .utils import download_artist_image, download_cover_image, temporary_file
 
 import ffmpeg
 import mutagen
@@ -395,7 +394,8 @@ class Track:
             f"Writing track {self.track_id} to '{str(self.outfile.absolute())}'"
         )
 
-        with NamedTemporaryFile() as ntf:
+        # NamedTemporaryFile experiences permission error on Windows
+        with temporary_file() as ntf:
             if len(urls) == 1:
                 # Implement HTTP range requests here to mimic official clients
                 range_size: int = 1024 * 1024  # 1 MiB
