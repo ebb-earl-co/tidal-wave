@@ -15,6 +15,7 @@ AudioModeType = Literal["DOLBY_ATMOS", "SONY_360RA", "STEREO"]
 AudioQualityType = Literal[
     "HI_RES", "HI_RES_LOSSLESS", "LOSSLESS", "DOLBY_ATMOS", "HIGH", "LOW"
 ]
+VideoQualityType = Literal["HIGH", "MEDIUM", "LOW", "AUDIO_ONLY"]
 
 
 @dataclass
@@ -320,6 +321,25 @@ class ArtistsBioResponseJSON(dataclass_wizard.JSONWizard):
 
 
 @dataclass
+class VideosEndpointStreamResponseJSON(dataclass_wizard.JSONWizard):
+    """Response from the TIDAL API's videos/<VIDEO_ID> stream
+    endpoint. The params and headers, if correctly specified, return the
+    manifest of the video to be streamed. The manifest is a base64-encoded
+    JSON object containing a .m3u8 URL"""
+
+    video_id: int
+    stream_type: str  # ON_DEMAND
+    # asset_presentation: str
+    video_quality: VideoQualityType
+    manifest: str = field(repr=False)
+    manifest_mime_type: str = field(repr=False)
+    # manifest_hash: str
+
+    def __post_init__(self):
+        self.manifest_bytes: bytes = base64.b64decode(self.manifest)
+
+
+@dataclass
 class VideosEndpointResponseJSON(dataclass_wizard.JSONWizard):
     """Response from the TIDAL API, videos/<VIDEOID> endpoint.If the params and
     headers are correctly specified, the API returns metadata of the available
@@ -354,6 +374,9 @@ class VideosEndpointResponseJSON(dataclass_wizard.JSONWizard):
     artist: "Artist"
     artists: List["Artist"]
     # album: Optional["TrackAlbum"]  # Any?
+    
+    def __post_init__(self):
+        self.name: str = self.title.replace("/", "_").replace("|", "_")
 
 
 @dataclass(frozen=True)
@@ -485,7 +508,22 @@ class TidalPlaylist(TidalResource):
 
 @dataclass
 class TidalVideo(TidalResource):
-    NotImplemented
+    """Class representing a TIDAL video. Its main purpose is the
+    __post_init__ checking process"""
+    
+    url: str
+    
+    def __post_init__(self):
+        self.pattern: str = (
+            r"http(?:s)?://(?:listen\.)?tidal\.com/(?:browse/)?video/(\d{7,9})(?:.*?)?"
+        )
+        _id = self.match_url()
+
+        if _id is None:
+            raise ValueError(f"'{self.url}' is not a valid TIDAL track URL")
+        else:
+            self.tidal_id = _id
+            logger.info(f"TIDAL video ID parsed from input: {self.tidal_id}")
 
 
 def match_tidal_url(input_str: str) -> Optional[TidalResource]:
@@ -503,5 +541,9 @@ def match_tidal_url(input_str: str) -> Optional[TidalResource]:
             tidal_resource: TidalTrack = TidalTrack(input_str)
         except ValueError as ve:
             logger.debug(ve)
+            try:
+                tidal_resource: TidalVideo = TidalVideo(input_str)
+            except ValueError as ver:
+                logger.debug(ver)
     finally:
         return tidal_resource

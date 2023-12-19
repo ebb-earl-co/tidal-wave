@@ -8,8 +8,8 @@ import sys
 from typing import Optional
 
 from .login import login, AudioFormat, LogLevel
-from .media import Album, Track
-from .models import match_tidal_url, TidalAlbum, TidalTrack
+from .media import Album, Track, Video
+from .models import match_tidal_url, TidalAlbum, TidalTrack, TidalVideo
 from .requesting import get_album_id
 
 from platformdirs import user_music_path
@@ -44,11 +44,13 @@ def main(
     )
     logger = logging.getLogger(__name__)
 
-    tidal_resource: Optional[Union[TidalResource, TidalTrack]] = match_tidal_url(
-        tidal_url
-    )
+    tidal_resource: Optional[Union[TidalResource, TidalTrack, TidalVideo]] = \
+        match_tidal_url(tidal_url)
+
     if tidal_resource is None:
-        logger.critical(f"Cannot parse '{tidal_url}' as a Tidal track or Album URL")
+        logger.critical(
+            f"Cannot parse '{tidal_url}' as a Tidal track, album, or video URL"
+        )
         raise typer.Exit(code=1)
 
     s, audio_format = login(audio_format=audio_format)
@@ -71,6 +73,12 @@ def main(
             )
             if loglevel == LogLevel.debug:
                 album.dump()
+            raise typer.Exit(code=0)
+        elif isinstance(tidal_resource, TidalVideo):
+            video = Video(video_id=tidal_resource.tidal_id)
+            video.get(session=session, out_dir=output_directory)
+            if loglevel == LogLevel.debug:
+                video.dump()
             raise typer.Exit(code=0)
         else:
             raise NotImplementedError
