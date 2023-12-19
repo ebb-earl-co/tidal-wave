@@ -1,6 +1,7 @@
 dataclass-wizard
 ffmpeg-python
 mutagen
+m3u8
 platformdirs
 requests
 typer
