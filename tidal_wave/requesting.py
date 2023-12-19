@@ -6,6 +6,7 @@ from .models import (
     AlbumsEndpointResponseJSON,
     AlbumsItemsResponseJSON,
     AlbumsReviewResponseJSON,
+    ArtistsBioResponseJSON,
     SessionsEndpointResponseJSON,
     SubscriptionEndpointResponseJSON,
     TracksCreditsResponseJSON,
@@ -26,6 +27,7 @@ ResponseJSON = Union[
     AlbumsEndpointResponseJSON,
     AlbumsItemsResponseJSON,
     AlbumsReviewResponseJSON,
+    ArtistsBioResponseJSON,
     SessionsEndpointResponseJSON,
     SubscriptionEndpointResponseJSON,
     TracksCreditsResponseJSON,
@@ -132,6 +134,16 @@ request_album_review: Callable[
     headers={"Accept": "application/json"},
     url_end="/review",
     subclass=AlbumsReviewResponseJSON,
+)
+
+request_artist_bio: Callable[
+    [Session, int], Optional[ArtistsBioResponseJSON]
+] = partial(
+    requester_maker,
+    endpoint="artists",
+    headers={"Accept": "application/json"},
+    url_end="/bio",
+    subclass=ArtistsBioResponseJSON,
 )
 
 request_tracks: Callable[

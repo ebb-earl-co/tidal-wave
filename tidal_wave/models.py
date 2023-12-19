@@ -308,6 +308,18 @@ class TracksLyricsResponseJSON(dataclass_wizard.JSONWizard):
     is_right_to_left: bool
 
 
+@dataclass(frozen=True)
+class ArtistsBioResponseJSON(dataclass_wizard.JSONWizard):
+    """The response from the TIDAL API endpoint /artists/<ID>/bio
+    is modeled by this class."""
+    source: str
+    last_updated: Annotated[
+        datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")
+    ]
+    text: str = field(repr=None)
+    summary: str = field(repr=None)
+
+
 @dataclass
 class VideosEndpointStreamResponseJSON(dataclass_wizard.JSONWizard):
     """Response from the TIDAL API's videos/<VIDEO_ID> stream
