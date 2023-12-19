@@ -312,6 +312,7 @@ class TracksLyricsResponseJSON(dataclass_wizard.JSONWizard):
 class ArtistsBioResponseJSON(dataclass_wizard.JSONWizard):
     """The response from the TIDAL API endpoint /artists/<ID>/bio
     is modeled by this class."""
+
     source: str
     last_updated: Annotated[
         datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")
@@ -374,7 +375,7 @@ class VideosEndpointResponseJSON(dataclass_wizard.JSONWizard):
     artist: "Artist"
     artists: List["Artist"]
     # album: Optional["TrackAlbum"]  # Any?
-    
+
     def __post_init__(self):
         self.name: str = self.title.replace("/", "_").replace("|", "_")
 
@@ -400,25 +401,26 @@ class VideosContributorsResponseJSON(dataclass_wizard.JSONWizard):
     total_number_of_items: int
     items: List["VideoContributor"]
 
-    def get_role(self, role: str) -> Optional["Credit"]:
+    def get_role(self, role: str) -> Optional[Tuple["VideoContributor"]]:
         """Given a contributor role (e.g. Composer, Film Director), go through
-        `self.items` object, returning the `VideoContributor` object
-        for the given contributor type if it exists"""
-        _role = None
+        `self.items` object, returning the `VideoContributor` object(s)
+        for the given contributor type if there are any"""
+        role_contributors = tuple(vc for vc in self.items if vc.role == role)
         try:
-            _role = next(vc for vc in self.items if vc.role == role)
-        except StopIteration:
+            role_contributors[0]
+        except IndexError:
             logger.debug(f"There are no credits of type '{role}' for this video")
-        finally:
-            return _role
+            return
+        else:
+            return role_contributors
 
     def get_contributors(self, role: str) -> Optional[Tuple[str]]:
         """Given a contributor role (e.g. Lyricist, Composer),
         return a tuple of all the names of the contributors
         """
-        vc: Optional["VideoContributor"] = self.get_role(role)
-        if vc is not None:
-            return tuple(c.name for c in vc)
+        vcs: Optional[Tuple["VideoContributor"]] = self.get_role(role)
+        if vcs is not None:
+            return tuple(vc.name for vc in vcs)
         else:
             return
 
@@ -510,9 +512,9 @@ class TidalPlaylist(TidalResource):
 class TidalVideo(TidalResource):
     """Class representing a TIDAL video. Its main purpose is the
     __post_init__ checking process"""
-    
+
     url: str
-    
+
     def __post_init__(self):
         self.pattern: str = (
             r"http(?:s)?://(?:listen\.)?tidal\.com/(?:browse/)?video/(\d{7,9})(?:.*?)?"

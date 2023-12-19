@@ -17,19 +17,19 @@ class TidalM3U8Exception(Exception):
 # https://github.com/globocom/m3u8#using-different-http-clients
 class RequestsClient:
     """A custom class to pass to the m3u8.load() function"""
+
     def __init__(self, session: Session):
         self.session = session
-        
-    def download(self, url: str, timeout: Optional[int] = None, headers={}, verify_ssl=True):
+
+    def download(
+        self, url: str, timeout: Optional[int] = None, headers={}, verify_ssl=True
+    ):
         p: Dict[str, None] = {k: None for k in self.session.params}
         with self.session.get(url=url, timeout=timeout, params=p) as response:
             return response.text, response.url
 
 
-def playlister(
-    session: Session,
-    vesrj: VideosEndpointStreamResponseJSON
-) -> m3u8.M3U8:
+def playlister(session: Session, vesrj: VideosEndpointStreamResponseJSON) -> m3u8.M3U8:
     """Attempts to parse a VideosEndpointStreamResponseJSON object into an
     m3u8.M3U8 object. Requires fetching HTTP(s) resources, so takes a
     requests.Session object as an argument. If error occurs, raises
@@ -45,11 +45,13 @@ def playlister(
         else:
             mt: Optional[str] = manifest.get("mimeType")
             url: Optional[str] = manifest.get("urls", [None])[0]
-            
-        if (mt is None) or \
-            (mt != "application/vnd.apple.mpegurl") or \
-            (url is None) or \
-            (".m3u8" not in url):
+
+        if (
+            (mt is None)
+            or (mt != "application/vnd.apple.mpegurl")
+            or (url is None)
+            or (".m3u8" not in url)
+        ):
             raise TidalM3U8Exception(
                 f"Manifest for video {vesrj.video_id}, video mode "
                 f"{vesrj.video_quality} does not make available an "
@@ -63,8 +65,7 @@ def playlister(
 
 
 def variant_streams(
-    m3u8: m3u8.M3U8,
-    return_urls: bool = False
+    m3u8: m3u8.M3U8, return_urls: bool = False
 ) -> Optional[Union[m3u8.Playlist, List[str]]]:
     """By default, return the highest-bandwidth option of m3u8.playlists
     as an m3u8.Playlist object. If return_urls, then returns the object's
@@ -72,7 +73,9 @@ def variant_streams(
     is False, then return None as there are no variant streams."""
     if not m3u8.is_variant:
         return
-    playlist: m3u8.Playlist = max(
-        m3u8.playlists, key=lambda p: p.stream_info.bandwidth
-    )
-    return playlist.files if return_urls else playlist
+    playlist: m3u8.Playlist = max(m3u8.playlists, key=lambda p: p.stream_info.bandwidth)
+    if return_urls:
+        _m3u8: m3u8.M3U8 = m3u8.load(playlist)
+        return _m3u8.files
+    else:
+        return playlist

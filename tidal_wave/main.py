@@ -44,8 +44,9 @@ def main(
     )
     logger = logging.getLogger(__name__)
 
-    tidal_resource: Optional[Union[TidalResource, TidalTrack, TidalVideo]] = \
-        match_tidal_url(tidal_url)
+    tidal_resource: Optional[
+        Union[TidalResource, TidalTrack, TidalVideo]
+    ] = match_tidal_url(tidal_url)
 
     if tidal_resource is None:
         logger.critical(

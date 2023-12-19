@@ -62,8 +62,8 @@ class AudioFormat(str, Enum):
     lossless = "Lossless"
     high = "High"
     low = "Low"
-    
-    
+
+
 class VideoFormat(str, Enum):
     high = "HIGH"
     medium = "MEDIUM"
@@ -373,8 +373,9 @@ class Track:
         for a in self.metadata.artists:
             track_artist_bio_json: Path = self.album_dir / f"{a.name}-bio.json"
             if not track_artist_bio_json.exists():
-                artist_bio: Optional[ArtistsBioResponseJSON] = \
-                    request_artist_bio(session=session, identifier=a.id)
+                artist_bio: Optional[ArtistsBioResponseJSON] = request_artist_bio(
+                    session=session, identifier=a.id
+                )
                 if artist_bio is not None:
                     logger.info(
                         f"Writing artist bio for artist {a.id} to "
@@ -646,7 +647,6 @@ class Video:
     video_id: int
 
     def __post_init__(self):
-        self._has_lyrics: Optional[bool] = None
         self.tags: dict = {}
         self.codec: str = "mp4"
 
@@ -656,11 +656,11 @@ class Video:
         )
 
     def get_contributors(self, session: Session):
-        self.contributors: Optional[VideosContributorsResponseJSON] = request_video_contributors(
-            session=session, identifier=self.video_id
-        )
+        self.contributors: Optional[
+            VideosContributorsResponseJSON
+        ] = request_video_contributors(session=session, identifier=self.video_id)
 
-    def get_stream(self, session: Session, video_format = VideoFormat.high):
+    def get_stream(self, session: Session, video_format=VideoFormat.high):
         """Populates self.stream"""
         self.stream: Optional[VideosEndpointStreamResponseJSON] = request_video_stream(
             session=session, video_id=self.video_id, video_quality=video_format.value
@@ -671,7 +671,7 @@ class Video:
         following the HTTP Live Streaming specification; parsed from
         self.stream. I.e., self.get_stream() needs to have been executed
         before calling this method. N.b. self.m3u8 almost certainly will
-        be a multivariant playlist, meaning further processing of its 
+        be a multivariant playlist, meaning further processing of its
         contents will be necessary."""
         self.m3u8: m3u8.Playlist = playlister(session=session, vesrj=self.stream)
 
@@ -680,7 +680,7 @@ class Video:
         (https://developer.apple.com/documentation/http-live-streaming/creating-a-multivariant-playlist)
         It retrieves the highest-quality .m3u8 in its .playlists attribute,
         and sets self.urls as the list of strings from that m3u8.Playlist"""
-        # TODO: for now, just get the highest-bandwidth playlist
+        # for now, just get the highest-bandwidth playlist
         playlist: m3u8.Playlist = variant_streams(self.m3u8)
         self.M3U8 = m3u8.load(playlist.uri)
         if self.M3U8 is None or len(self.M3U8.files) == 0:
@@ -720,7 +720,7 @@ class Video:
         download_params: Dict[str, None] = {k: None for k in session.params}
         # self.outfile should already have been setted by self.set_outfile()
         logger.info(
-            f"Writing video {self.video_id} to {str(self.outfile.absolute())}"
+            f"Writing video {self.video_id} to '{str(self.outfile.absolute())}'"
         )
 
         with temporary_file() as ntf:
@@ -746,10 +746,12 @@ class Video:
                 str(self.outfile.absolute()),
                 vcodec="copy",
                 acodec="copy",
-                loglevel="quiet"
+                loglevel="quiet",
             ).run()
 
-        logger.info(f"Video {self.video_id} written to {str(self.outfile.absolute())}")
+        logger.info(
+            f"Video {self.video_id} written to '{str(self.outfile.absolute())}'"
+        )
         return self.outfile
 
     def craft_tags(self):
@@ -761,18 +763,17 @@ class Video:
         tags[tag_map["artist"]] = ";".join((a.name for a in self.metadata.artists))
         tags[tag_map["artists"]] = [a.name for a in self.metadata.artists]
         tags[tag_map["comment"]] = f"https://tidal.com/browse/video/{self.video_id}"
-        tags[tag_map["date"]] = str(self.metadata.release_date)
+        tags[tag_map["date"]] = str(self.metadata.release_date.date())
         tags[tag_map["title"]] = self.metadata.title
 
-        # TODO: contributors
         for tag in {"composer", "director", "lyricist", "producer"}:
             try:
-                _credits_tag = ";".join(getattr(self.credits, tag))
+                _credits_tag = ";".join(getattr(self.contributors, tag))
             except (TypeError, AttributeError):  # NoneType problems
                 continue
             else:
                 tags[tag_map[tag]] = _credits_tag
-            
+
         # Have to convert to bytes the values of the tags starting with '----'
         for k, v in tags.copy().items():
             if k.startswith("----"):
@@ -790,7 +791,6 @@ class Video:
         self.mutagen.clear()
         self.mutagen.update(**self.tags)
         self.mutagen.save()
-
 
     def get(
         self,
@@ -821,8 +821,6 @@ class Video:
 
     def dumps(self) -> str:
         return json.dumps({self.metadata.title: str(self.outfile.absolute())})
-
-
 
 
 def sleep_to_mimic_human_activity():

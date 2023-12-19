@@ -87,7 +87,7 @@ def download_artist_image(
 
 
 def download_artist_bio(
-    session: Session, artist: Artist, output_dir: Path 
+    session: Session, artist: Artist, output_dir: Path
 ) -> Optional[Path]:
     """Given a UUID that corresponds to a (JPEG) image on Tidal's servers,
     download the image file and write it as '{artist name}.jpeg'
