@@ -57,7 +57,7 @@ Run `python3 tidal-wave --help` to see the options available. Or, if you followe
 Usage: tidal-wave [OPTIONS] TIDAL_URL [OUTPUT_DIRECTORY]                                                                                                                                  
                                                                                                                                                                                             
 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ *    tidal_url             TEXT                The Tidal track or album to download [default: None] [required]                                                                           │
+│ *    tidal_url             TEXT                The Tidal track or album or video to download [default: None] [required]                                                                  │
 │      output_directory      [OUTPUT_DIRECTORY]  The parent directory under which files will be written; i.e. output_directory/<artist name>/<album name>/ [default: ]                     │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
