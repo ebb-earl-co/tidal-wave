@@ -14,6 +14,7 @@ from .models import (
     TracksLyricsResponseJSON,
     VideosContributorsResponseJSON,
     VideosEndpointResponseJSON,
+    VideosEndpointStreamResponseJSON,
 )
 from .utils import TIDAL_API_URL
 
@@ -33,6 +34,7 @@ ResponseJSON = Union[
     TracksLyricsResponseJSON,
     VideosContributorsResponseJSON,
     VideosEndpointResponseJSON,
+    VideosEndpointStreamResponseJSON,
 ]
 
 
@@ -190,6 +192,17 @@ request_videos: Callable[
     endpoint="videos",
     headers={"Accept": "application/json"},
     subclass=VideosEndpointResponseJSON,
+)
+
+request_video_contributors: Callable[
+    [Session, int], Optional[VideosContributorsResponseJSON]
+] = partial(
+    requester_maker,
+    endpoint="videos",
+    headers={"Accept": "application/json"},
+    parameters={"limit": 100},
+    url_end="/contributors",
+    subclass=VideosContributorsResponseJSON,
 )
 
 # One more layer of currying here, as the parameters argument

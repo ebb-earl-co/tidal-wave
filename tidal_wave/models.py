@@ -362,6 +362,9 @@ class VideosEndpointResponseJSON(dataclass_wizard.JSONWizard):
     artist: "Artist"
     artists: List["Artist"]
     # album: Optional["TrackAlbum"]  # Any?
+    
+    def __post_init__(self):
+        self.name: str = self.title.replace("/", "_").replace("|", "_")
 
 
 @dataclass(frozen=True)
@@ -493,7 +496,22 @@ class TidalPlaylist(TidalResource):
 
 @dataclass
 class TidalVideo(TidalResource):
-    NotImplemented
+    """Class representing a TIDAL video. Its main purpose is the
+    __post_init__ checking process"""
+    
+    url: str
+    
+    def __post_init__(self):
+        self.pattern: str = (
+            r"http(?:s)?://(?:listen\.)?tidal\.com/(?:browse/)?video/(\d{7,9})(?:.*?)?"
+        )
+        _id = self.match_url()
+
+        if _id is None:
+            raise ValueError(f"'{self.url}' is not a valid TIDAL track URL")
+        else:
+            self.tidal_id = _id
+            logger.info(f"TIDAL video ID parsed from input: {self.tidal_id}")
 
 
 def match_tidal_url(input_str: str) -> Optional[TidalResource]:
@@ -511,5 +529,9 @@ def match_tidal_url(input_str: str) -> Optional[TidalResource]:
             tidal_resource: TidalTrack = TidalTrack(input_str)
         except ValueError as ve:
             logger.debug(ve)
+            try:
+                tidal_resource: TidalVideo = TidalVideo(input_str)
+            except ValueError as ver:
+                logger.debug(ver)
     finally:
         return tidal_resource

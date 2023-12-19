@@ -20,16 +20,21 @@ class RequestsClient:
     def __init__(self, session: Session):
         self.session = session
         
-    def download(self, url: str, timeout: Optional[int] = None):
-        with self.session.get(url=uri, timeout=timeout) as response:
+    def download(self, url: str, timeout: Optional[int] = None, headers={}, verify_ssl=True):
+        p: Dict[str, None] = {k: None for k in self.session.params}
+        with self.session.get(url=url, timeout=timeout, params=p) as response:
             return response.text, response.url
 
 
-def playlister(session: Session, vesrj: VideosEndpointStreamResponseJSON) -> Playlist:
+def playlister(
+    session: Session,
+    vesrj: VideosEndpointStreamResponseJSON
+) -> m3u8.M3U8:
     """Attempts to parse a VideosEndpointStreamResponseJSON object into an
     m3u8.M3U8 object. Requires fetching HTTP(s) resources, so takes a
     requests.Session object as an argument. If error occurs, raises
     TidalM3U8Exception"""
+    em_three_you_ate: Optional[m3u8.M3U8] = None
     if vesrj.manifest_mime_type == "application/vnd.tidal.emu":
         try:
             manifest: Dict[str, str] = json.loads(vesrj.manifest_bytes)
@@ -51,10 +56,10 @@ def playlister(session: Session, vesrj: VideosEndpointStreamResponseJSON) -> Pla
                 "M3U8 file"
             )
 
-        m3u8: m3u8.M3U8 = m3u8.load(
+        em_three_you_ate: m3u8.M3U8 = m3u8.load(
             url, http_client=RequestsClient(session=session)
         )
-        return m3u8
+    return em_three_you_ate
 
 
 def variant_streams(

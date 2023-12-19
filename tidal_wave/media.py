@@ -7,7 +7,6 @@ from pathlib import Path
 import random
 import sys
 import time
-from tempfile import NamedTemporaryFile
 from typing import Dict, List, Optional, Tuple
 
 from .dash import (
@@ -17,7 +16,7 @@ from .dash import (
     TidalManifestException,
     XMLDASHManifest,
 )
-from .hls import playlister, variant_streams, TidalM3U8Exception
+from .hls import m3u8, playlister, variant_streams, TidalM3U8Exception
 from .models import (
     AlbumsEndpointResponseJSON,
     AlbumsItemsResponseJSON,
@@ -37,9 +36,12 @@ from .requesting import (
     request_lyrics,
     request_stream,
     request_tracks,
+    request_video_contributors,
+    request_video_stream,
+    request_videos,
     ResponseJSON,
 )
-from .utils import download_artist_image, download_cover_image
+from .utils import download_artist_image, download_cover_image, temporary_file
 
 import ffmpeg
 import mutagen
@@ -387,7 +389,7 @@ class Track:
             f"Writing track {self.track_id} to '{str(self.outfile.absolute())}'"
         )
 
-        with NamedTemporaryFile() as ntf:
+        with temporary_file() as ntf:
             if len(urls) == 1:
                 # Implement HTTP range requests here to mimic official clients
                 range_size: int = 1024 * 1024  # 1 MiB
@@ -624,35 +626,22 @@ class Video:
     def __post_init__(self):
         self._has_lyrics: Optional[bool] = None
         self.tags: dict = {}
+        self.codec: str = "mp4"
 
     def get_metadata(self, session: Session):
         self.metadata: Optional[VideosEndpointResponseJSON] = request_videos(
             session=session, identifier=self.video_id
         )
 
-    # TODO: request_video_contributors
     def get_contributors(self, session: Session):
         self.contributors: Optional[VideosContributorsResponseJSON] = request_video_contributors(
             session=session, identifier=self.video_id
         )
 
-    # TODO: request_video_lyrics
-    def get_lyrics(self, session: Session):
-        if self._has_lyrics is None:
-            self.lyrics: Optional[VideosLyricsResponseJSON] = request_video_lyrics(
-                session=session, identifier=self.video.id
-            )
-            if self.lyrics is None:
-                self._has_lyrics = False
-            else:
-                self._has_lyrics = True
-        else:
-            return self.lyrics
-
-    def get_stream(self, session: Session, video_format: VideoFormat):
+    def get_stream(self, session: Session, video_format = VideoFormat.high):
         """Populates self.stream"""
         self.stream: Optional[VideosEndpointStreamResponseJSON] = request_video_stream(
-            session=session, track_id=self.video_id, video_quality=video_format.value
+            session=session, video_id=self.video_id, video_quality=video_format.value
         )
 
     def get_m3u8(self, session: Session):
@@ -663,7 +652,6 @@ class Video:
         be a multivariant playlist, meaning further processing of its 
         contents will be necessary."""
         self.m3u8: m3u8.Playlist = playlister(session=session, vesrj=self.stream)
-        # {'mimeType': 'application/vnd.apple.mpegurl','urls': ['http://im-cf.manifest.tidal.com/1/manifests/CAESCTMxNjQ3MjIwMiIWZkdkeTBhWXJCMFZOYXFtaEV2WmxjdyIWcjdaQ0YwYTN5UnNrd2ZyR1lIUlNpZyIWSENfeVRHTU00WlA2UXoyZ2hJVUNFQSIWZWFEcHVlbTRueE5QZUZmdjRlTVBtZyIWbkVfRXJwSkdQczJBMWJWZjJORDlTQSIWdFRHY20ycFNpVTktaHBtVDlzUlNvdyIWdVJDMlNqMFJQYWVMSnN6NWRhRXZtdyIWZnNYUWZpNk01LUdpeUV3dE9JNTZ2d1AB.m3u8?Expires=1702683931&Signature=G52MyAHA11QubVPrvIytV~wxVCdmSQdESLf~vChcAZeGYD9rHqMRVkU0LJv66kZ9gvc4UfDK1hvOlAEUGh0GvH3mg2Am2v7xPl9LG87~Xe1CNkYcyhkhqDBtUFiJytnBzwvoYBXSOtm2ZvfjTD9mkgPhQmr5-SivxEcm0cFMqpGPFvwjd2Ii7csVdK-cpTLeoHDbfYfg9ABj3r5TG4hj7pzajEfKrhspm0S16affqrCgkTM1e31FQlZoxnxCSgazgK-KOBNRVVfvy7WLnWdPg2DNfJptc~TLloR8F05X8b5-5id5inmZKNvIw5sKmx4Fd8~3oba5QFRfh06ei~nfrg__&Key-Pair-Id=K2Y1HUH0IQYYB2']}
 
     def set_urls(self):
         """This method uses self.m3u8, an m3u8.M3U8 object that is variant:
@@ -671,37 +659,56 @@ class Video:
         It retrieves the highest-quality .m3u8 in its .playlists attribute,
         and sets self.urls as the list of strings from that m3u8.Playlist"""
         # TODO: for now, just get the highest-bandwidth playlist
-        self.playlist: m3u8.Playlist = variant_streams(self.m3u8)
-        if self.playlist is None:
+        playlist: m3u8.Playlist = variant_streams(self.m3u8)
+        self.M3U8 = m3u8.load(playlist.uri)
+        if self.M3U8 is None or len(self.M3U8.files) == 0:
             raise TidalM3U8Exception(
                 f"HLS media segments are not available for video {self.video_id}"
             )
-        self.urls: List[str] = self.playlist.files
+        self.urls: List[str] = self.M3U8.files
 
-    # TODO: set self.artist_dir
-    def save_artist_image(self, session: Session):
-        for a in self.metadata.artists:
-            video_artist_image: path = self.artist_dir / f"{a.name}.jpg"
-            if not video_artist_image.exists():
-                download_artist_image(session, a, self.artist_dir)
+    def set_artist_dir(self, out_dir: Path):
+        self.artist_dir: Path = out_dir / self.metadata.artist.name
+        self.artist_dir.mkdir(parents=True, exist_ok=True)
+
+    def set_filename(self, out_dir: Path):
+        track_substring: str = f"{self.metadata.name} [{self.stream.video_quality}]"
+        self.filename: Optional[str] = f"{track_substring}.{self.codec}"
+
+    def set_outfile(self):
+        """Uses self.artist_dir and self.metadata and self.filename
+        to craft the pathlib.Path object, self.outfile, that is a
+        reference to where the track will be written on disk."""
+        self.outfile: Path = self.artist_dir / self.filename
+
+        if (self.outfile.exists()) and (self.outfile.stat().st_size > 0):
+            logger.info(
+                f"Video {str(self.outfile.absolute())} already exists "
+                "and therefore will not be overwritten"
+            )
+            return
+        else:
+            return self.outfile
 
     def download(self, session: Session, out_dir: Path) -> Optional[Path]:
         if session.session_id is not None:
-            self.download_headers["sessionId"] = session.session_id
-        self.download_params = {"deviceType": None, "locale": None, "countryCode": None}
-        # self.outfile should already have been setted by set_outfile()
+            download_headers: Dict[str, str] = {"sessionId": session.session_id}
+        else:
+            download_headers: dict = dict()
+        download_params: Dict[str, None] = {k: None for k in session.params}
+        # self.outfile should already have been setted by self.set_outfile()
         logger.info(
-            f"Writing track {self.track_id} to {str(self.outfile.absolute())}"
+            f"Writing video {self.video_id} to {str(self.outfile.absolute())}"
         )
 
-        with NamedTemporaryFile() as ntf:
+        with temporary_file() as ntf:
             for u in self.urls:
                 download_request = session.prepare_request(
                     Request(
                         "GET",
                         url=u,
-                        headers=self.download_headers,
-                        params=self.download_params,
+                        headers=download_headers,
+                        params=download_params,
                     )
                 )
                 with session.send(download_request) as download_response:
@@ -720,40 +727,29 @@ class Video:
                 loglevel="quiet"
             ).run()
 
-        logger.info(f"Track {self.track_id} written to {str(self.outfile.absolute())}")
+        logger.info(f"Video {self.video_id} written to {str(self.outfile.absolute())}")
         return self.outfile
 
     def craft_tags(self):
-        """Using the TAG_MAPPING dictionary,
-        write the correct values of various metadata tags to the file.
-        E.g. for .flac files, the album's artist is 'ALBUMARTIST',
-        but for .m4a files, the album's artist is 'aART'."""
+        """Using the TAG_MAPPING dictionary, write the correct values of
+        various metadata tags to the file. Videos are .mp4"""
         tags = dict()
         tag_map = {k: v["m4a"] for k, v in TAG_MAPPING.items()}
 
-        tags[tag_map["album"]] = self.album.title
         tags[tag_map["artist"]] = ";".join((a.name for a in self.metadata.artists))
         tags[tag_map["artists"]] = [a.name for a in self.metadata.artists]
-        tags[tag_map["comment"]] = self.metadata.url
-        tags[tag_map["copyright"]] = self.metadata.copyright
+        tags[tag_map["comment"]] = f"https://tidal.com/browse/video/{self.video_id}"
         tags[tag_map["date"]] = str(self.metadata.release_date)
         tags[tag_map["title"]] = self.metadata.title
 
         # TODO: contributors
-        for tag in {"composer", "lyricist", "mixer", "producer"}:
+        for tag in {"composer", "director", "lyricist", "producer"}:
             try:
                 _credits_tag = ";".join(getattr(self.credits, tag))
             except (TypeError, AttributeError):  # NoneType problems
                 continue
             else:
                 tags[tag_map[tag]] = _credits_tag
-        # lyrics
-        try:
-            _lyrics = self.lyrics.subtitles
-        except (TypeError, AttributeError):  # NoneType problems
-            pass
-        else:
-            tags[tag_map["lyrics"]] = _lyrics
             
         # Have to convert to bytes the values of the tags starting with '----'
         for k, v in tags.copy().items():
@@ -771,13 +767,38 @@ class Video:
         self.mutagen = mutagen.File(self.outfile)
         self.mutagen.clear()
         self.mutagen.update(**self.tags)
-        self.mutagen["covr"] = [
-            MP4Cover(self.cover_path.read_bytes(), imageformat=MP4Cover.FORMAT_JPEG)
-        ]
         self.mutagen.save()
 
 
+    def get(
+        self,
+        session: Session,
+        out_dir: Path,
+    ) -> Optional[str]:
+        self.get_metadata(session)
 
+        self.get_contributors(session)
+        self.get_stream(session)
+        self.get_m3u8(session)
+        self.set_urls()
+        self.set_artist_dir(out_dir)
+        self.set_filename(out_dir)
+        outfile: Optional[Path] = self.set_outfile()
+        if outfile is None:
+            return
+
+        if self.download(session, out_dir) is None:
+            return
+
+        self.craft_tags()
+        self.set_tags()
+        return str(self.outfile.absolute())
+
+    def dump(self, fp=sys.stdout):
+        json.dump({self.metadata.title: str(self.outfile.absolute())}, fp)
+
+    def dumps(self) -> str:
+        return json.dumps({self.metadata.title: str(self.outfile.absolute())})
 
 
 
