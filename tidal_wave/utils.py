@@ -1,6 +1,9 @@
+from contextlib import contextmanager
 from io import BytesIO
 import logging
+import os
 from pathlib import Path
+import tempfile
 from typing import Optional
 
 from .models import Artist
@@ -84,7 +87,7 @@ def download_artist_image(
 
 
 def download_artist_bio(
-    session: Session, artist: Artist, output_dir: Path 
+    session: Session, artist: Artist, output_dir: Path
 ) -> Optional[Path]:
     """Given a UUID that corresponds to a (JPEG) image on Tidal's servers,
     download the image file and write it as '{artist name}.jpeg'
@@ -112,3 +115,18 @@ def download_artist_bio(
             f"'{str(output_file.absolute())}'"
         )
         return output_file
+
+
+@contextmanager
+def temporary_file():
+    file_name: str = os.path.join(tempfile.gettempdir(), os.urandom(24).hex())
+    # Code to acquire resource, e.g.:
+    if not os.path.exists(file_name):
+        open(file=file_name, mode="x").close()
+    tf = open(file=file_name, mode="wb")
+    try:
+        yield tf
+    finally:
+        # Code to release resource, e.g.:
+        tf.close()
+        os.unlink(tf.name)
