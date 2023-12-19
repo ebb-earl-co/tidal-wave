@@ -4,7 +4,7 @@ requires = ["setuptools", "wheel"]
 universal = 0  # Make the generated wheels have "py3" tag
 [project]
 name = "tidal-wave"
-version = "2023.12.5"
+version = "2023.12.6"
 description = "A tool to wave at the TIDAL music service."
 authors = [
     {name = "colinho", email = "pypi@colin.technology"}
@@ -28,6 +28,7 @@ dependencies = [
     "dataclass-wizard",
     "ffmpeg-python",
     "mutagen",
+    "m3u8",
     "platformdirs",
     "requests",
     "typer"
