@@ -7,6 +7,7 @@ from .models import (
     AlbumsItemsResponseJSON,
     AlbumsReviewResponseJSON,
     ArtistsBioResponseJSON,
+    PlaylistsEndpointResponseJSON,
     SessionsEndpointResponseJSON,
     SubscriptionEndpointResponseJSON,
     TracksCreditsResponseJSON,
@@ -28,6 +29,7 @@ ResponseJSON = Union[
     AlbumsItemsResponseJSON,
     AlbumsReviewResponseJSON,
     ArtistsBioResponseJSON,
+    PlaylistsEndpointResponseJSON,
     SessionsEndpointResponseJSON,
     SubscriptionEndpointResponseJSON,
     TracksCreditsResponseJSON,
@@ -236,6 +238,14 @@ request_video_stream: Callable[
     subclass=VideosEndpointStreamResponseJSON,
 )()
 
+request_playlists: Callable[
+    [Session, int], Optional[PlaylistsEndpointResponseJSON]
+] = partial(
+    requester_maker,
+    endpoint="playlists",
+    headers={"Accept": "application/json"},
+    subclass=PlaylistsEndpointResponseJSON,
+)
 
 def get_album_id(session: Session, track_id: int) -> Optional[int]:
     """Given the Tidal ID to a track, query the Tidal API in order to retrieve

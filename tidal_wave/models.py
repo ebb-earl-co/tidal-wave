@@ -77,7 +77,7 @@ class Artist:
     id: int
     name: str
     type: str
-    picture: Optional[str] = field(repr=False)
+    picture: Optional[str] = field(repr=False, default=None)
 
     def picture_url(self, dimension: int = 320) -> Optional[str]:
         if self.picture is None:
@@ -354,24 +354,23 @@ class VideosEndpointResponseJSON(dataclass_wizard.JSONWizard):
     release_date: Annotated[
         datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")
     ]
-    image_path: Optional[str]
-    image_id: str
-    vibrant_color: str
+    # image_path: Optional[str]
+    # image_id: str
+    # vibrant_color: str
     duration: int  # seconds
     quality: str
-    stream_ready: bool
-    ad_supported_stream_ready: bool
-    dj_ready: bool
-    stem_ready: bool
-    stream_start_date: Annotated[
-        datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")
-    ]
+    # stream_ready: bool
+    # ad_supported_stream_ready: bool
+    # dj_ready: bool
+    # stem_ready: bool
+    # stream_start_date: Annotated[
+    #     datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")
+    # ]
     allow_streaming: bool
     explicit: bool
     popularity: int
     type: str
-    ads_url: Optional[str]
-    ads_pre_paywall_only: bool
+    # ads_url: Optional[str] ads_pre_paywall_only: bool
     artist: "Artist"
     artists: List["Artist"]
     # album: Optional["TrackAlbum"]  # Any?
@@ -445,6 +444,45 @@ class VideosContributorsResponseJSON(dataclass_wizard.JSONWizard):
         )
 
 
+@dataclass(frozen=True)
+class PlaylistCreator:
+    id: int
+    name: Optional[str] = field(default=None)
+    type: Optional[str] = field(default=None)
+
+
+@dataclass
+class PlaylistsEndpointResponseJSON(dataclass_wizard.JSONWizard):
+    """Response from the TIDAL API, videos/<VIDEOID> endpoint.If the params and
+    headers are correctly specified, the API returns metadata of the available
+    version of the (music) video, including video quality, video title, date,
+    video artists, duration, etc."""
+
+    uuid: str = field(repr=False)
+    title: str
+    number_of_tracks: int
+    number_of_videos: int
+    creator: "PlaylistCreator"
+    description: str
+    duration: int
+    last_updated: Annotated[
+        datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")
+    ]
+    created: Annotated[
+        datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")
+    ]
+    type: str
+    public_playlist: bool
+    url: str
+    image: str  # UUID v4
+    popularity: int
+    square_image: str  # UUID v4
+    promoted_artists: List["Artist"]
+    last_item_added_at: Annotated[
+        datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")
+    ]
+
+
 class TidalResource:
     """Parent class to subclasses representing different TIDAL music
     service objects; e.g. Track, Album. This class is not meant to be
@@ -456,13 +494,13 @@ class TidalResource:
         self.url = url
 
     def match_url(self) -> Optional[int]:
-        _match: re.Match = re.match(self.pattern, self.url)
+        _match: re.Match = re.match(self.pattern, self.url, re.IGNORECASE)
         try:
             _id: str = _match.groups()[0]
         except AttributeError:
             return
         else:
-            return int(_id)
+            return _id
 
 
 @dataclass
@@ -481,7 +519,7 @@ class TidalAlbum(TidalResource):
         if _id is None:
             raise ValueError(f"'{self.url}' is not a valid TIDAL album URL")
         else:
-            self.tidal_id = _id
+            self.tidal_id = int(_id)
             logger.info(f"TIDAL album ID parsed from input: {self.tidal_id}")
 
 
@@ -499,13 +537,27 @@ class TidalTrack(TidalResource):
         if _id is None:
             raise ValueError(f"'{self.url}' is not a valid TIDAL track URL")
         else:
-            self.tidal_id = _id
+            self.tidal_id = int(_id)
             logger.info(f"TIDAL track ID parsed from input: {self.tidal_id}")
 
 
 @dataclass
 class TidalPlaylist(TidalResource):
-    NotImplemented
+    """Class representing a TIDAL playlist. Its main purpose is the
+    __post_init__ checking process"""
+
+    url: str
+
+    def __post_init__(self):
+        self.pattern: str = r"http(?:s)?://(?:listen\.)?tidal\.com/(?:browse/)?playlist/([0-9a-f]{8}\-[0-9a-f]{4}\-4[0-9a-f]{3}\-[89ab][0-9a-f]{3}\-[0-9a-f]{12})(?:.*?)?"
+
+        _id = self.match_url()
+
+        if _id is None:
+            raise ValueError(f"'{self.url}' is not a valid TIDAL playlist URL")
+        else:
+            self.tidal_id = _id
+            logger.info(f"TIDAL playlist ID parsed from input: {self.tidal_id}")
 
 
 @dataclass
@@ -522,9 +574,9 @@ class TidalVideo(TidalResource):
         _id = self.match_url()
 
         if _id is None:
-            raise ValueError(f"'{self.url}' is not a valid TIDAL track URL")
+            raise ValueError(f"'{self.url}' is not a valid TIDAL video URL")
         else:
-            self.tidal_id = _id
+            self.tidal_id = int(_id)
             logger.info(f"TIDAL video ID parsed from input: {self.tidal_id}")
 
 
@@ -547,5 +599,9 @@ def match_tidal_url(input_str: str) -> Optional[TidalResource]:
                 tidal_resource: TidalVideo = TidalVideo(input_str)
             except ValueError as ver:
                 logger.debug(ver)
+                try:
+                    tidal_resource: TidalPlaylist = TidalPlaylist(input_str)
+                except ValueError as verr:
+                    logger.debug(verr)
     finally:
         return tidal_resource

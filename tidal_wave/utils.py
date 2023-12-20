@@ -33,7 +33,7 @@ def download_cover_image(
         if not r.ok:
             logger.warning(
                 "Could not retrieve data from Tidal resources/images URL "
-                f"for album with ID {album_id} due to error code: {r.status_code}"
+                f"due to error code: {r.status_code}"
             )
             logger.debug(r.reason)
             return
