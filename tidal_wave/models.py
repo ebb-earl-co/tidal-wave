@@ -136,9 +136,9 @@ class TracksEndpointResponseJSON(dataclass_wizard.JSONWizard):
 
     def __post_init__(self):
         self.name: str = (
-            self.title.replace("/", "_").replace("|", "_")
+            self.title.replace("/", "_").replace("|", "_").replace(":", " -")
             if self.version is None
-            else f"{self.title.replace('/', '_').replace('|', '_')} ({self.version})"
+            else f"{self.title.replace('/', '_').replace('|', '_').replace(':', ' -')} ({self.version})"
         )
 
 
@@ -168,7 +168,9 @@ class AlbumsEndpointResponseJSON(dataclass_wizard.JSONWizard):
 
     def __post_init__(self):
         self.cover_url: str = IMAGE_URL % f"{self.cover.replace('-', '/')}/1280x1280"
-        self.name: str = self.title.replace("/", "_").replace("|", "_")
+        self.name: str = (
+            self.title.replace("/", "_").replace("|", "_").replace(":", " -")
+        )
 
 
 @dataclass(frozen=True)
@@ -330,11 +332,9 @@ class VideosEndpointStreamResponseJSON(dataclass_wizard.JSONWizard):
 
     video_id: int
     stream_type: str  # ON_DEMAND
-    # asset_presentation: str
     video_quality: VideoQualityType
     manifest: str = field(repr=False)
     manifest_mime_type: str = field(repr=False)
-    # manifest_hash: str
 
     def __post_init__(self):
         self.manifest_bytes: bytes = base64.b64decode(self.manifest)
@@ -354,29 +354,17 @@ class VideosEndpointResponseJSON(dataclass_wizard.JSONWizard):
     release_date: Annotated[
         datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")
     ]
-    # image_path: Optional[str]
-    # image_id: str
-    # vibrant_color: str
     duration: int  # seconds
     quality: str
-    # stream_ready: bool
-    # ad_supported_stream_ready: bool
-    # dj_ready: bool
-    # stem_ready: bool
-    # stream_start_date: Annotated[
-    #     datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")
-    # ]
-    allow_streaming: bool
     explicit: bool
-    popularity: int
     type: str
-    # ads_url: Optional[str] ads_pre_paywall_only: bool
     artist: "Artist"
     artists: List["Artist"]
-    # album: Optional["TrackAlbum"]  # Any?
 
     def __post_init__(self):
-        self.name: str = self.title.replace("/", "_").replace("|", "_")
+        self.name: str = (
+            self.title.replace("/", "_").replace("|", "_").replace(":", " -")
+        )
 
 
 @dataclass(frozen=True)
@@ -462,9 +450,9 @@ class PlaylistsEndpointResponseJSON(dataclass_wizard.JSONWizard):
     title: str
     number_of_tracks: int
     number_of_videos: int
-    creator: "PlaylistCreator"
+    # creator: "PlaylistCreator"
     description: str
-    duration: int
+    # duration: int
     last_updated: Annotated[
         datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")
     ]
@@ -475,7 +463,7 @@ class PlaylistsEndpointResponseJSON(dataclass_wizard.JSONWizard):
     image: str  # UUID v4
     popularity: int
     square_image: str  # UUID v4
-    promoted_artists: List["Artist"]
+    # promoted_artists: List["Artist"]
     last_item_added_at: Annotated[
         datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")
     ]

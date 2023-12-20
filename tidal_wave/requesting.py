@@ -75,19 +75,17 @@ def requester_maker(
                     logger.warning(
                         f"404 Client Error: not found for TIDAL API endpoint {e}/{i}{u}"
                     )
+                elif resp.status_code == 401:
+                    logger.warning(
+                        f"401 Client Error: Unauthorized for TIDAL API endpoint {e}/{i}{u}"
+                    )
                 else:
                     logger.exception(he)
             else:
                 if cf:
                     data = sc.from_dict({"credits": resp.json()})
-                    logger.debug(
-                        f"{resp.status_code} response from TIDAL API to request: {e}/{i}{u}"
-                    )
                 else:
                     data = sc.from_dict(resp.json())
-                    logger.debug(
-                        f"{resp.status_code} response from TIDAL API to request: {e}/{i}{u}"
-                    )
             finally:
                 return data
 

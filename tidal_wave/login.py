@@ -48,7 +48,7 @@ def load_token_from_disk(
     token_path: Path = TOKEN_DIR_PATH / "android-tidal.token",
 ) -> Optional[str]:
     if not token_path.exists():
-        logger.error(f"FileNotFoundError: {str(token_path.absolute())}")
+        logger.warning(f"FileNotFoundError: {str(token_path.absolute())}")
         return
     token_file_contents: str = token_path.read_bytes()
     decoded_token_file_contents: str = base64.b64decode(token_file_contents).decode(
@@ -58,7 +58,9 @@ def load_token_from_disk(
     try:
         bearer_token_json: dict = json.loads(decoded_token_file_contents)
     except json.decoder.JSONDecodeError:
-        logger.error(f"File '{path_to_token_file.absolute()}' cannot be parsed as JSON")
+        logger.warning(
+            f"File '{path_to_token_file.absolute()}' cannot be parsed as JSON"
+        )
         return
     else:
         return bearer_token_json.get("access_token")
