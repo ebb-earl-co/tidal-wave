@@ -468,9 +468,7 @@ class PlaylistsEndpointResponseJSON(dataclass_wizard.JSONWizard):
     last_updated: Annotated[
         datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")
     ]
-    created: Annotated[
-        datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")
-    ]
+    created: Annotated[datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")]
     type: str
     public_playlist: bool
     url: str

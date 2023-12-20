@@ -50,7 +50,9 @@ class PlaylistsItemsResponseJSON:
     limit: int
     offset: int
     total_number_of_items: int
-    items: Tuple[Optional[Union["TracksEndpointResponseJSON", "VideosEndpointResponseJSON"]]]
+    items: Tuple[
+        Optional[Union["TracksEndpointResponseJSON", "VideosEndpointResponseJSON"]]
+    ]
 
 
 def playlist_maker(
@@ -67,9 +69,10 @@ def playlist_maker(
     if len(items) == 0:
         return
 
-    playlist_items: List[Optional[Union["TracksEndpointResponseJSON", "VideosEndpointResponseJSON"]]] = \
-        [None] * init_args["total_number_of_items"]
-    
+    playlist_items: List[
+        Optional[Union["TracksEndpointResponseJSON", "VideosEndpointResponseJSON"]]
+    ] = [None] * init_args["total_number_of_items"]
+
     for i, namespace in enumerate(items):
         if namespace.type == "track":
             try:
@@ -99,23 +102,28 @@ def playlist_maker(
             continue  # value stays None
     else:
         init_args["items"] = tuple(playlist_items)
-    
+
     return PlaylistsItemsResponseJSON(**init_args)
 
 
 def get_playlist(
-    session: Session,
-    playlist_id: str
+    session: Session, playlist_id: str
 ) -> Optional["PlaylistsItemsResponseJSON"]:
     playlists_items_response_json: Optional["PlaylistsItemsResponseJSON"] = None
     try:
-        playlists_response: dict = request_playlist_items(session=session, playlist_id=playlist_id)
-        playlists_items_response_json: Optional["PlaylistsItemsResponseJSON"] = \
-            playlist_maker(playlists_response=playlists_response)
+        playlists_response: dict = request_playlist_items(
+            session=session, playlist_id=playlist_id
+        )
+        playlists_items_response_json: Optional[
+            "PlaylistsItemsResponseJSON"
+        ] = playlist_maker(playlists_response=playlists_response)
     except Exception as e:
         logger.exception(TidalException(e.args[0]))
     finally:
         return playlists_items_response_json
 
+
 # union type for type hinting
-PlaylistItem = Optional[Union["TracksEndpointResponseJSON", "VideosEndpointResponseJSON"]]
+PlaylistItem = Optional[
+    Union["TracksEndpointResponseJSON", "VideosEndpointResponseJSON"]
+]

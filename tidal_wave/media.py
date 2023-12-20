@@ -1,7 +1,6 @@
 from collections import OrderedDict
 from dataclasses import dataclass
 from enum import Enum
-import itertools
 import json
 import logging
 from pathlib import Path
@@ -702,8 +701,9 @@ class Video:
         self.artist_dir.mkdir(parents=True, exist_ok=True)
 
     def set_filename(self, out_dir: Path):
-        self.filename: str = \
+        self.filename: str = (
             f"{self.metadata.name} [{self.stream.video_quality}].{self.codec}"
+        )
 
     def set_outfile(self):
         """Uses self.artist_dir and self.metadata and self.filename
@@ -902,7 +902,7 @@ class Playlist:
                 tracks_videos[i] = track
                 sleep_to_mimic_human_activity()
             elif isinstance(item, VideosEndpointResponseJSON):
-                video: Video = Video(video_id=item.id) 
+                video: Video = Video(video_id=item.id)
                 video.get(
                     session=session,
                     out_dir=self.playlist_dir,
@@ -915,8 +915,9 @@ class Playlist:
                 sleep_to_mimic_human_activity()
                 continue
         else:
-            self.tracks_videos: Tuple[Tuple[int, Optional[Union[Track, Video]]]] = \
-                tuple(tracks_videos)
+            self.tracks_videos: Tuple[
+                Tuple[int, Optional[Union[Track, Video]]]
+            ] = tuple(tracks_videos)
 
     def flatten_playlist_dir(self):
         """When self.get_items() is called, the tracks and/or videos in
@@ -941,7 +942,7 @@ class Playlist:
             else:
                 files[i - 1] = {i: None}
                 continue
-            
+
             # otherwise, move files and clean up
             if isinstance(tv, Track):
                 new_path: Path = self.playlist_dir / f"{i:03d} - {tv.trackname}"
@@ -955,7 +956,7 @@ class Playlist:
                 files[i - 1] = {i: str(new_path.absolute())}
         else:
             self.files: List[Dict[int, Optional[str]]] = files
-        
+
         for tv in self.tracks_videos:
             if isinstance(tv, Track):
                 shutil.rmtree(tv.album_dir)

@@ -22,7 +22,10 @@ app = typer.Typer()
 @app.command()
 def main(
     tidal_url: Annotated[
-        str, typer.Argument(help="The Tidal track or album or video or playlist to download")
+        str,
+        typer.Argument(
+            help="The Tidal track or album or video or playlist to download"
+        ),
     ],
     audio_format: Annotated[
         AudioFormat, typer.Option(case_sensitive=False)
@@ -83,7 +86,9 @@ def main(
             raise typer.Exit(code=0)
         elif isinstance(tidal_resource, TidalPlaylist):
             playlist = Playlist(playlist_id=tidal_resource.tidal_id)
-            playlist.get(session=session, audio_format=audio_format, out_dir=output_directory)
+            playlist.get(
+                session=session, audio_format=audio_format, out_dir=output_directory
+            )
             if loglevel == LogLevel.debug:
                 playlist.dump()
             raise typer.Exit(code=0)
