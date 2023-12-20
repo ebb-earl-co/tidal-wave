@@ -8,7 +8,7 @@ import random
 import shutil
 import sys
 import time
-from typing import Dict, Iterator, List, Optional, Tuple
+from typing import Dict, Iterator, List, Optional, Set, Tuple
 
 from .dash import (
     manifester,
@@ -966,13 +966,50 @@ class Playlist:
                 files[i - 1] = {i: str(new_path.absolute())}
         else:
             self.files: List[Dict[int, Optional[str]]] = files
-
+            
+        # Find all subdirectories written to
+        subdirs: Set[Path] = set()
         for tv in self.tracks_videos:
             if isinstance(tv, Track):
-                shutil.rmtree(tv.album_dir)
-                shutil.rmtree(tv.album_dir.parent)
+                subdirs.add(tv.album_dir)
+                subdirs.add(tv.album_dir.parent)
             elif isinstance(tv, Video):
-                shutil.rmtree(tv.artist_dir)
+                subdirs.add(tv.artist_dir)
+            
+        # Copy all artist images, artist bio JSON files out
+        # of subdirs
+        artist_images: Set[Path] = set()
+        for subdir in subdirs:
+            for p in subdir.glob("*.jpg"):
+                if p.name == "cover.jpeg":
+                    continue
+                artist_images.add(p)
+        else:
+            for artist_image_path in artist_images:
+                if artist_image_path.exists():
+                    shutil.copyfile(
+                        artist_image_path.absolute(),
+                        self.playlist_dir / artist_image_path.name
+                    )
+        
+        artist_bios: Set[Path] = set()
+        for subdir in subdirs:
+            for p in subdir.glob("*bio.json"):
+                artist_bios.add(p)
+        else:
+            for artist_bio_path in artist_bios:
+                if artist_bio_path.exists():
+                    shutil.copyfile(
+                        artist_bio_path.absolute(),
+                        self.playlist_dir / artist_bio_path.name
+                    )
+            
+        # Remove all subdirs
+        for subdir in subdirs:
+            if subdir.exists():
+                shutil.rmtree(subdir)
+        else:
+            return self.playlist_dir
 
     def dumps(self):
         return json.dumps(self.files)
