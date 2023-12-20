@@ -624,14 +624,14 @@ class Track:
         outfile: Optional[Path] = self.set_outfile()
         if outfile is None:
             return
-        
+
         try:
             self.get_lyrics(session)
         except:
             pass
 
         self.save_album_cover(session)
-        
+
         try:
             self.save_artist_image(session)
         except:
@@ -857,7 +857,9 @@ class Playlist:
         self.metadata: Optional[PlaylistsEndpointResponseJSON] = request_playlists(
             session=session, identifier=self.playlist_id
         )
-        self.name = self.metadata.title.replace("/", "_").replace("|", "_").replace(":", " -")
+        self.name = (
+            self.metadata.title.replace("/", "_").replace("|", "_").replace(":", " -")
+        )
 
     def set_items(self, session: Session):
         playlist_items: Optional[PlaylistsItemsResponseJSON] = get_playlist(
@@ -966,7 +968,7 @@ class Playlist:
                 files[i - 1] = {i: str(new_path.absolute())}
         else:
             self.files: List[Dict[int, Optional[str]]] = files
-            
+
         # Find all subdirectories written to
         subdirs: Set[Path] = set()
         for tv in self.tracks_videos:
@@ -975,7 +977,7 @@ class Playlist:
                 subdirs.add(tv.album_dir.parent)
             elif isinstance(tv, Video):
                 subdirs.add(tv.artist_dir)
-            
+
         # Copy all artist images, artist bio JSON files out
         # of subdirs
         artist_images: Set[Path] = set()
@@ -989,9 +991,9 @@ class Playlist:
                 if artist_image_path.exists():
                     shutil.copyfile(
                         artist_image_path.absolute(),
-                        self.playlist_dir / artist_image_path.name
+                        self.playlist_dir / artist_image_path.name,
                     )
-        
+
         artist_bios: Set[Path] = set()
         for subdir in subdirs:
             for p in subdir.glob("*bio.json"):
@@ -1001,9 +1003,9 @@ class Playlist:
                 if artist_bio_path.exists():
                     shutil.copyfile(
                         artist_bio_path.absolute(),
-                        self.playlist_dir / artist_bio_path.name
+                        self.playlist_dir / artist_bio_path.name,
                     )
-            
+
         # Remove all subdirs
         for subdir in subdirs:
             if subdir.exists():

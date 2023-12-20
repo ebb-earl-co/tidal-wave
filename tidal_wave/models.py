@@ -138,7 +138,7 @@ class TracksEndpointResponseJSON(dataclass_wizard.JSONWizard):
         self.name: str = (
             self.title.replace("/", "_").replace("|", "_").replace(":", " -")
             if self.version is None
-            else f"{self.title.replace('/', '_').replace('|', '_').replace(":", " -")} ({self.version})"
+            else f"{self.title.replace('/', '_').replace('|', '_').replace(':', ' -')} ({self.version})"
         )
 
 
@@ -168,7 +168,9 @@ class AlbumsEndpointResponseJSON(dataclass_wizard.JSONWizard):
 
     def __post_init__(self):
         self.cover_url: str = IMAGE_URL % f"{self.cover.replace('-', '/')}/1280x1280"
-        self.name: str = self.title.replace("/", "_").replace("|", "_").replace(":", " -")
+        self.name: str = (
+            self.title.replace("/", "_").replace("|", "_").replace(":", " -")
+        )
 
 
 @dataclass(frozen=True)
@@ -360,7 +362,9 @@ class VideosEndpointResponseJSON(dataclass_wizard.JSONWizard):
     artists: List["Artist"]
 
     def __post_init__(self):
-        self.name: str = self.title.replace("/", "_").replace("|", "_").replace(":", " -")
+        self.name: str = (
+            self.title.replace("/", "_").replace("|", "_").replace(":", " -")
+        )
 
 
 @dataclass(frozen=True)

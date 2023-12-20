@@ -58,7 +58,9 @@ def load_token_from_disk(
     try:
         bearer_token_json: dict = json.loads(decoded_token_file_contents)
     except json.decoder.JSONDecodeError:
-        logger.warning(f"File '{path_to_token_file.absolute()}' cannot be parsed as JSON")
+        logger.warning(
+            f"File '{path_to_token_file.absolute()}' cannot be parsed as JSON"
+        )
         return
     else:
         return bearer_token_json.get("access_token")
