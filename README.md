@@ -12,7 +12,7 @@ This project is inspired by [`qobuz-dl`](https://github.com/vitiko98/qobuz-dl), 
 * If available, lyrics are added as metadata to tracks
 * If available, album reviews are downloaded as JSON 
 * Video download support
-* _Coming soon_: Playlist download support (video and audio)
+* Playlist download support (video or audio or both)
 
 ## Getting Started
 A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to retrieve HiRes FLAC, Dolby Atmos, and Sony 360 Reality Audio tracks. Simply a [HiFi](https://tidal.com/pricing) plan is sufficient to download in 16-bit, 44.1 kHz (i.e. lossless) or lower quality as well as videos.
@@ -21,7 +21,7 @@ A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to ret
  - This is a Python tool, so you will need [Python 3](https://www.python.org/downloads/) on your system: this tool supports Python 3.8 or newer. 
  - As resources will be fetched from the World Wide Web, an Internet connection is required
  - The excellent tool [FFmpeg](http://ffmpeg.org/download.html) is necessary for audio file manipulation. It is available from almost every package manager; or static builds are available from [John Van Sickle](https://www.johnvansickle.com/ffmpeg/).
-   - For Windows, it's available in the [Microsoft App Store](https://apps.microsoft.com/detail/9NB2FLX7X7WG) or from [`chocolatey`](https://community.chocolatey.org/packages/ffmpeg)
+   - For Windows, the [FFmpeg download page](http://ffmpeg.org/download.html#build-windows) lists 2 resources; or [`chocolatey`](https://community.chocolatey.org/packages/ffmpeg) is an option
  - Only a handful of Python libraries are dependencies:
    - [`dataclass-wizard`](https://pypi.org/project/dataclass-wizard/)
    - [`ffmpeg-python`](https://pypi.org/project/ffmpeg-python/)
@@ -37,6 +37,11 @@ Install this project with [`pip`](https://pip.pypa.io/en/stable/): either with a
 $ python3 -m pip install tidal-wave
 ```
 
+Optionally, to get the full `typer` experience when using this utility, add `[all]` to the end of the `pip install command`:
+```bash
+$ python3 -m pip install tidal-wave[all]
+```
+
 Alternatively, you can clone this repository; `cd` into it; and install from there:
 ```bash
 $ git clone https://github.com/ebb-earl-co/tidal-wave.git
@@ -46,9 +51,10 @@ $ source .venv/bin/activate
 $ (.venv) pip install .
 ```
 
-Optionally, to get the full `typer` experience when using this utility, add `[all]` to the end of the `pip install command`:
+As yet another option, if you don't want to mess with `pip`, you can download the `.pyz` artifact in the [releases](https://github.com/ebb-earl-co/tidal-wave/releases) page. It is a binary created using the [`shiv`](https://pypi.org/project/shiv/) project and is used in the following way:
 ```bash
-$ python3 -m pip install tidal-wave[all]
+# download the .pyz file of the latest (or your desired) release
+$ python3 tidal-wave_<VERSION>.pyz --help
 ```
 
 ## Quickstart
@@ -96,8 +102,13 @@ $ python3 tidal-wave https://tidal.com/browse/track/226092704
  $ python3 tidal-wave https://tidal.com/browse/album/... --audio-format hires --loglevel warning
  ```
 
- - To (attempt to) get a video, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos!
+ - To (attempt to) get a video, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos.
  ```bash
  $ python3 tidal-wave https://tidal.com/browse/video/...
+ ```
+
+ - To (attempt to) get an entire playlist, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos.
+ ```bash
+ $ python3 tidal-wave https://tidal.com/browse/playlist/...
  ```
  **Keep in mind that authentication from an Android (preferred), iOS, Windows, or macOS device will need to be extracted and passed to this tool in order to access HiRes FLAC and Sony 360 Reality Audio versions of tracks**
