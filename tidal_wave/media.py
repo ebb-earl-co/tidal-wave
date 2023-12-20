@@ -95,6 +95,7 @@ TAG_MAPPING: Dict[str, Dict[str, str]] = {
     "composer": {"flac": "COMPOSER", "m4a": "\xa9wrt"},
     "copyright": {"flac": "COPYRIGHT", "m4a": "cprt"},
     "date": {"flac": "DATE", "m4a": "\xa9day"},
+    "director": {"flac": None, "m4a": "----:com.apple.iTunes:DIRECTOR"},
     "engineer": {"flac": "ENGINEER", "m4a": "----:com.apple.iTunes:ENGINEER"},
     "isrc": {"flac": "ISRC", "m4a": "----:com.apple.iTunes:ISRC"},
     "lyrics": {"flac": "LYRICS", "m4a": "\xa9lyr"},
@@ -614,16 +615,23 @@ class Track:
             self.album = album
 
         self.get_credits(session)
-        self.get_lyrics(session)
         self.get_stream(session, audio_format)
+        if self.stream is None:
+            return
         self.set_manifest()
         self.set_album_dir(out_dir)
         self.set_filename(audio_format, out_dir)
         outfile: Optional[Path] = self.set_outfile()
         if outfile is None:
             return
+        
+        try:
+            self.get_lyrics(session)
+        except:
+            pass
 
         self.save_album_cover(session)
+        
         try:
             self.save_artist_image(session)
         except:
@@ -813,6 +821,8 @@ class Video:
 
         self.get_contributors(session)
         self.get_stream(session)
+        if self.stream is None:
+            return
         self.get_m3u8(session)
         self.set_urls()
         self.set_artist_dir(out_dir)
@@ -847,7 +857,7 @@ class Playlist:
         self.metadata: Optional[PlaylistsEndpointResponseJSON] = request_playlists(
             session=session, identifier=self.playlist_id
         )
-        self.name = self.metadata.title.replace("/", "_").replace("|", "_")
+        self.name = self.metadata.title.replace("/", "_").replace("|", "_").replace(":", " -")
 
     def set_items(self, session: Session):
         playlist_items: Optional[PlaylistsItemsResponseJSON] = get_playlist(
