@@ -8,8 +8,8 @@ import sys
 from typing import Optional
 
 from .login import login, AudioFormat, LogLevel
-from .media import Album, Track, Video
-from .models import match_tidal_url, TidalAlbum, TidalTrack, TidalVideo
+from .media import Album, Playlist, Track, Video
+from .models import match_tidal_url, TidalAlbum, TidalPlaylist, TidalTrack, TidalVideo
 from .requesting import get_album_id
 
 from platformdirs import user_music_path
@@ -22,7 +22,10 @@ app = typer.Typer()
 @app.command()
 def main(
     tidal_url: Annotated[
-        str, typer.Argument(help="The Tidal track or album or video to download")
+        str,
+        typer.Argument(
+            help="The Tidal track or album or video or playlist to download"
+        ),
     ],
     audio_format: Annotated[
         AudioFormat, typer.Option(case_sensitive=False)
@@ -45,12 +48,12 @@ def main(
     logger = logging.getLogger(__name__)
 
     tidal_resource: Optional[
-        Union[TidalResource, TidalTrack, TidalVideo]
+        Union[TidalAlbum, TidalPlaylist, TidalTrack, TidalVideo]
     ] = match_tidal_url(tidal_url)
 
     if tidal_resource is None:
         logger.critical(
-            f"Cannot parse '{tidal_url}' as a Tidal track, album, or video URL"
+            f"Cannot parse '{tidal_url}' as a Tidal track, album, playlist, or video URL"
         )
         raise typer.Exit(code=1)
 
@@ -80,6 +83,14 @@ def main(
             video.get(session=session, out_dir=output_directory)
             if loglevel == LogLevel.debug:
                 video.dump()
+            raise typer.Exit(code=0)
+        elif isinstance(tidal_resource, TidalPlaylist):
+            playlist = Playlist(playlist_id=tidal_resource.tidal_id)
+            playlist.get(
+                session=session, audio_format=audio_format, out_dir=output_directory
+            )
+            if loglevel == LogLevel.debug:
+                playlist.dump()
             raise typer.Exit(code=0)
         else:
             raise NotImplementedError
