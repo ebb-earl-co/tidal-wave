@@ -599,6 +599,7 @@ class Track:
                     f"{self.track_id} is not available in Dolby Atmos "
                     "format. Downloading of track will not continue."
                 )
+                self.outfile = None
                 return
         elif audio_format == AudioFormat.sony_360_reality_audio:
             if "SONY_360RA" not in self.metadata.media_metadata.tags:
@@ -607,6 +608,7 @@ class Track:
                     f"{self.track_id} is not available in Sony 360 Reality Audio "
                     "format. Downloading of track will not continue."
                 )
+                self.outfile = None
                 return
 
         if album is None:
@@ -651,10 +653,24 @@ class Track:
         return str(self.outfile.absolute())
 
     def dump(self, fp=sys.stdout):
-        json.dump({self.metadata.track_number: str(self.outfile.absolute())}, fp)
+        k: int = int(self.metadata.track_number)
+        if self.outfile is None:
+            v: Optional[str] = None
+        elif not isinstance(self.outfile, Path):
+            v: Optional[str] = None
+        else:
+            v: Optional[str] = str(self.outfile.absolute())
+        json.dump({k: v}, fp)
 
     def dumps(self) -> str:
-        return json.dumps({self.metadata.track_number: str(self.outfile.absolute())})
+        k: int = int(self.metadata.track_number)
+        if self.outfile is None:
+            v: Optional[str] = None
+        elif not isinstance(self.outfile, Path):
+            v: Optional[str] = None
+        else:
+            v: Optional[str] = str(self.outfile.absolute())
+        json.dumps({k: v})
 
 
 @dataclass
@@ -818,7 +834,7 @@ class Video:
             self.get_metadata(session)
         else:
             self.metadata = metadata
-        
+
         # check for 404 error with metadata
         if self.metadata is None:
             return
@@ -944,7 +960,7 @@ class Playlist:
         subdirectories created"""
         files: List[Dict[int, Optional[str]]] = [None] * len(self.tracks_videos)
         subdirs: Set[Path] = set()
-        
+
         for i, tv in enumerate(self.tracks_videos, 1):
             if getattr(tv, "outfile") is None:
                 subdirs.add(tv.album_dir)
@@ -981,6 +997,8 @@ class Playlist:
         else:
             self.files: List[Dict[int, Optional[str]]] = files
 
+        # Find all subdirectories written to
+        subdirs: Set[Path] = set()
         for tv in self.tracks_videos:
             if isinstance(tv, Track):
                 subdirs.add(tv.album_dir)
