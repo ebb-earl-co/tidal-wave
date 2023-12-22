@@ -599,6 +599,7 @@ class Track:
                     f"{self.track_id} is not available in Dolby Atmos "
                     "format. Downloading of track will not continue."
                 )
+                self.outfile = None
                 return
         elif audio_format == AudioFormat.sony_360_reality_audio:
             if "SONY_360RA" not in self.metadata.media_metadata.tags:
@@ -607,6 +608,7 @@ class Track:
                     f"{self.track_id} is not available in Sony 360 Reality Audio "
                     "format. Downloading of track will not continue."
                 )
+                self.outfile = None
                 return
 
         if album is None:
@@ -651,10 +653,24 @@ class Track:
         return str(self.outfile.absolute())
 
     def dump(self, fp=sys.stdout):
-        json.dump({self.metadata.track_number: str(self.outfile.absolute())}, fp)
+        k: int = int(self.metadata.track_number)
+        if self.outfile is None:
+            v: Optional[str] = None
+        elif not isinstance(self.outfile, Path):
+            v: Optional[str] = None
+        else:
+            v: Optional[str] = str(self.outfile.absolute())
+        json.dump({k: v}, fp)
 
     def dumps(self) -> str:
-        return json.dumps({self.metadata.track_number: str(self.outfile.absolute())})
+        k: int = int(self.metadata.track_number)
+        if self.outfile is None:
+            v: Optional[str] = None
+        elif not isinstance(self.outfile, Path):
+            v: Optional[str] = None
+        else:
+            v: Optional[str] = str(self.outfile.absolute())
+        json.dumps({k: v})
 
 
 @dataclass

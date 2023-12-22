@@ -574,11 +574,11 @@ def match_tidal_url(input_str: str) -> Optional[TidalResource]:
     """
     tidal_resource: Optional[TidalResource] = None
     try:
-        tidal_resource: TidalAlbum = TidalAlbum(input_str)
+        tidal_resource: TidalTrack = TidalTrack(input_str)
     except ValueError as v:
         logger.debug(v)
         try:
-            tidal_resource: TidalTrack = TidalTrack(input_str)
+            tidal_resource: TidalAlbum = TidalAlbum(input_str)
         except ValueError as ve:
             logger.debug(ve)
             try:
