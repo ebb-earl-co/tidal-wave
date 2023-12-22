@@ -818,6 +818,10 @@ class Video:
             self.get_metadata(session)
         else:
             self.metadata = metadata
+        
+        # check for 404 error with metadata
+        if self.metadata is None:
+            return
 
         self.get_contributors(session)
         self.get_stream(session)
@@ -939,7 +943,15 @@ class Playlist:
         audio and video files to self.playlist_dir, and removes the various
         subdirectories created"""
         files: List[Dict[int, Optional[str]]] = [None] * len(self.tracks_videos)
+        subdirs: Set[Path] = set()
+        
         for i, tv in enumerate(self.tracks_videos, 1):
+            if getattr(tv, "outfile") is None:
+                subdirs.add(tv.album_dir)
+                subdirs.add(tv.album_dir.parent)
+                files[i - 1] = {i: None}
+                continue
+
             _path: Optional[Path] = Path(tv.outfile) if tv is not None else None
             # if the item never got turned into a track or video
             if _path is None:
