@@ -834,7 +834,7 @@ class Video:
             self.get_metadata(session)
         else:
             self.metadata = metadata
-        
+
         # check for 404 error with metadata
         if self.metadata is None:
             return
@@ -960,7 +960,7 @@ class Playlist:
         subdirectories created"""
         files: List[Dict[int, Optional[str]]] = [None] * len(self.tracks_videos)
         subdirs: Set[Path] = set()
-        
+
         for i, tv in enumerate(self.tracks_videos, 1):
             if getattr(tv, "outfile") is None:
                 subdirs.add(tv.album_dir)
