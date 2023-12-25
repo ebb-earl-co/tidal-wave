@@ -1,60 +1,7 @@
-from dataclasses import dataclass
 from enum import Enum
-import json
-import logging
-from pathlib import Path
 import random
-import shutil
-import sys
 import time
-from typing import Dict, Iterator, List, Optional, Set, Tuple
-
-from .dash import (
-    manifester,
-    JSONDASHManifest,
-    Manifest,
-    TidalManifestException,
-    XMLDASHManifest,
-)
-from .hls import m3u8, playlister, variant_streams, TidalM3U8Exception
-from .models import (
-    AlbumsEndpointResponseJSON,
-    AlbumsItemsResponseJSON,
-    AlbumsReviewResponseJSON,
-    ArtistsBioResponseJSON,
-    TracksCreditsResponseJSON,
-    TracksEndpointResponseJSON,
-    TracksEndpointStreamResponseJSON,
-    TracksLyricsResponseJSON,
-    VideosEndpointResponseJSON,
-)
-from .playlists import get_playlist, PlaylistItem, PlaylistsItemsResponseJSON
-from .requesting import (
-    fetch_content_length,
-    http_request_range_headers,
-    request_album_items,
-    request_album_review,
-    request_albums,
-    request_artist_bio,
-    request_credits,
-    request_lyrics,
-    request_playlists,
-    request_stream,
-    request_tracks,
-    request_video_contributors,
-    request_video_stream,
-    request_videos,
-    ResponseJSON,
-)
-from .utils import download_artist_image, download_cover_image, temporary_file
-
-import ffmpeg
-import mutagen
-from mutagen.mp4 import MP4Cover
-from platformdirs import user_music_path
-from requests import Request, Session
-
-MaybeResponse = Optional[ResponseJSON]
+from typing import Dict, Optional
 
 
 class AudioFormat(str, Enum):
@@ -120,11 +67,3 @@ TAG_MAPPING: Dict[str, Dict[str, str]] = {
     },
     "title": {"flac": "TITLE", "m4a": "\xa9nam"},
 }
-
-logger = logging.getLogger(__name__)
-
-
-def sleep_to_mimic_human_activity():
-    _time = random.randint(500, 5000) / 500
-    logger.info(f"Sleeping for {_time} seconds to mimic human activity")
-    time.sleep(_time)

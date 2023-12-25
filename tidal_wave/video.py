@@ -1,7 +1,21 @@
+from dataclasses import dataclass
+import json
+import logging
+from pathlib import Path
+import sys
 from typing import Optional
 
+from .hls import playlister, variant_streams
+from .media import TAG_MAPPING, VideoFormat
+from .requesting import request_videos, request_video_contributors, request_video_stream
+from .utils import temporary_file
+
+import ffmpeg
+import mutagen
 import m3u8
 from requests import Session
+
+logger = logging.getLogger("__name__")
 
 
 @dataclass
@@ -13,17 +27,20 @@ class Video:
         self.codec: str = "mp4"
 
     def get_metadata(self, session: Session):
+        """Request from TIDAL API /videos endpoint"""
         self.metadata: Optional[VideosEndpointResponseJSON] = request_videos(
             session=session, identifier=self.video_id
         )
 
     def get_contributors(self, session: Session):
+        """Request from TIDAL API /videos/contributors endpoint"""
         self.contributors: Optional[
             VideosContributorsResponseJSON
         ] = request_video_contributors(session=session, identifier=self.video_id)
 
     def get_stream(self, session: Session, video_format=VideoFormat.high):
-        """Populates self.stream"""
+        """Populates self.stream by requesting from TIDAL API
+        /videos/playbackinfopostpaywall endpoint"""
         self.stream: Optional[VideosEndpointStreamResponseJSON] = request_video_stream(
             session=session, video_id=self.video_id, video_quality=video_format.value
         )
@@ -52,10 +69,14 @@ class Video:
         self.urls: List[str] = self.M3U8.files
 
     def set_artist_dir(self, out_dir: Path):
+        """Set self.artist_dir, which is the subdirectory of `out_dir`
+        with name `self.metadata.artist.name`"""
         self.artist_dir: Path = out_dir / self.metadata.artist.name
         self.artist_dir.mkdir(parents=True, exist_ok=True)
 
     def set_filename(self, out_dir: Path):
+        """Set self.filename, which is constructed from self.metadata.name
+        and self.stream.video_quality"""
         self.filename: str = (
             f"{self.metadata.name} [{self.stream.video_quality}].{self.codec}"
         )
@@ -76,27 +97,24 @@ class Video:
             return self.outfile
 
     def download(self, session: Session, out_dir: Path) -> Optional[Path]:
+        """Requests the HLS video files that constitute self.video_id.
+        Writes HLS bytes to a temporary file, then uses FFmpeg to write the
+        video data to self.outfile"""
         if session.session_id is not None:
             download_headers: Dict[str, str] = {"sessionId": session.session_id}
         else:
             download_headers: dict = dict()
         download_params: Dict[str, None] = {k: None for k in session.params}
-        # self.outfile should already have been setted by self.set_outfile()
+        # self.outfile should already have been set by self.set_outfile()
         logger.info(
             f"Writing video {self.video_id} to '{str(self.outfile.absolute())}'"
         )
 
         with temporary_file() as ntf:
             for u in self.urls:
-                download_request = session.prepare_request(
-                    Request(
-                        "GET",
-                        url=u,
-                        headers=download_headers,
-                        params=download_params,
-                    )
-                )
-                with session.send(download_request) as download_response:
+                with session.send(
+                    url=u, headers=download_headers, params=download_params
+                ) as download_response:
                     if not download_response.ok:
                         logger.warning(f"Could not download {self}")
                     else:
@@ -161,6 +179,20 @@ class Video:
         out_dir: Path,
         metadata: Optional["VideosEndpointResponseJSON"] = None,
     ) -> Optional[str]:
+        """The main method of this class. Executes a number of other methods
+        in a row:
+          - self.get_metadata()
+          - self.get_contributors()
+          - self.get_stream()
+          - self.get_m3u8()
+          - self.set_urls()
+          - self.set_artist_dir()
+          - self.set_filename()
+          - self.set_outfile()
+          - self.download()
+          - self.craft_tags()
+          - self.set_tags()
+        """
         if metadata is None:
             self.get_metadata(session)
         else:
@@ -194,4 +226,3 @@ class Video:
 
     def dumps(self) -> str:
         return json.dumps({self.metadata.title: str(self.outfile.absolute())})
-

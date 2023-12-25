@@ -1,9 +1,15 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import json
 from pathlib import Path
-from typing import Optional
+import sys
+from typing import List, Optional
 
 from requests import Session
+
+from .media import AudioFormat
+from .requesting import request_albums, request_album_items, request_album_review
+from .track import Track
+from .utils import download_cover_image, sleep_to_mimic_human_activity
 
 
 @dataclass
@@ -97,4 +103,3 @@ class Album:
         self.save_cover_image(session, out_dir)
         self.get_review(session)
         self.get_tracks(session, audio_format, out_dir)
-

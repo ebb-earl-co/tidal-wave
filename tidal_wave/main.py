@@ -8,7 +8,10 @@ import sys
 from typing import Optional
 
 from .login import login, AudioFormat, LogLevel
-from .media import Album, Playlist, Track, Video
+from .album import Album
+from .playlist import Playlist
+from .track import Track
+from .video import Video
 from .models import match_tidal_url, TidalAlbum, TidalPlaylist, TidalTrack, TidalVideo
 from .requesting import get_album_id
 
@@ -32,9 +35,7 @@ def main(
     ] = AudioFormat.lossless.value,
     output_directory: Annotated[
         Path,
-        typer.Argument(
-            help="The parent directory under which files will be written; i.e. output_directory/<artist name>/<album name>/"
-        ),
+        typer.Argument(help="The parent directory under which files will be written"),
     ] = user_music_path(),
     loglevel: Annotated[
         LogLevel, typer.Option(case_sensitive=False)
@@ -53,7 +54,7 @@ def main(
 
     if tidal_resource is None:
         logger.critical(
-            f"Cannot parse '{tidal_url}' as a Tidal track, album, playlist, or video URL"
+            f"Cannot parse '{tidal_url}' as a TIDAL track, album, playlist, or video URL"
         )
         raise typer.Exit(code=1)
 
@@ -67,6 +68,7 @@ def main(
             track.get(
                 session=session, audio_format=audio_format, out_dir=output_directory
             )
+
             if loglevel == LogLevel.debug:
                 track.dump()
             raise typer.Exit(code=0)
@@ -75,12 +77,14 @@ def main(
             album.get(
                 session=session, audio_format=audio_format, out_dir=output_directory
             )
+
             if loglevel == LogLevel.debug:
                 album.dump()
             raise typer.Exit(code=0)
         elif isinstance(tidal_resource, TidalVideo):
             video = Video(video_id=tidal_resource.tidal_id)
             video.get(session=session, out_dir=output_directory)
+
             if loglevel == LogLevel.debug:
                 video.dump()
             raise typer.Exit(code=0)
@@ -89,6 +93,7 @@ def main(
             playlist.get(
                 session=session, audio_format=audio_format, out_dir=output_directory
             )
+
             if loglevel == LogLevel.debug:
                 playlist.dump()
             raise typer.Exit(code=0)

@@ -1,7 +1,17 @@
+from dataclasses import dataclass
+import json
+import logging
+from pathlib import Path
+import shutil
+import sys
 from typing import Optional
 
-from requests import Session
+import mutagen
+from mutagen.mp4 import MP4Cover
+import ffmpeg
+from requests import Request, Session
 
+from .dash import manifester, JSONDASHManifest, XMLDASHManifest
 from .media import af_aq, AudioFormat, TAG_MAPPING
 from .models import (
     AlbumsEndpointResponseJSON,
@@ -20,8 +30,10 @@ from .requesting import (
     request_lyrics,
     request_stream,
     request_tracks,
-    ResponseJSON,
 )
+from .utils import download_cover_image, temporary_file
+
+logger = logging.getLogger("__name__")
 
 
 @dataclass
@@ -240,15 +252,12 @@ class Track:
                             urls[0],
                             params={k: None for k in session.params},
                             headers={"Range": rh},
-                            stream=True,
                         ) as rr:
                             if not rr.ok:
                                 logger.warning(f"Could not download {self}")
                                 return
                             else:
-                                for chunk in rr.iter_content(chunk_size=1024):
-                                    if chunk:
-                                        ntf.write(chunk)
+                                ntf.write(rr.content)
                     else:
                         ntf.seek(0)
 
@@ -477,4 +486,3 @@ class Track:
         else:
             v: Optional[str] = str(self.outfile.absolute())
         json.dumps({k: v})
-
