@@ -3,13 +3,11 @@ from enum import Enum
 import json
 import logging
 from pathlib import Path
-import platform
 import sys
 from typing import Dict, Optional, Set, Tuple
 
 from .models import BearerAuth, SessionsEndpointResponseJSON
 from .oauth import (
-    PROJECT_NAME,
     TOKEN_DIR_PATH,
     BearerToken,
     TidalOauth,
@@ -17,7 +15,6 @@ from .oauth import (
 )
 from .utils import TIDAL_API_URL
 
-from platformdirs import user_config_path
 import requests
 import typer
 
@@ -47,6 +44,8 @@ class LogLevel(str, Enum):
 def load_token_from_disk(
     token_path: Path = TOKEN_DIR_PATH / "android-tidal.token",
 ) -> Optional[str]:
+    """Attempt to read `token_path` from disk and decoded its contents
+    as JSON"""
     if not token_path.exists():
         logger.warning(f"FileNotFoundError: {str(token_path.absolute())}")
         return
@@ -70,7 +69,7 @@ def validate_token(
     token: str, headers: Dict[str, str] = COMMON_HEADERS
 ) -> Optional[requests.Session]:
     """Send a GET request to the /sessions endpoint of Tidal's API.
-    If `token` is valid, use the `SessionsEndpointResponseJSON` object
+    If `token` is valid, use the SessionsEndpointResponseJSON object
     that was returned from the API to create a requests.Session object with
     some additional attributes. Otherwise, return None"""
     auth_headers: Dict[str, str] = {**headers, "Authorization": f"Bearer {token}"}
@@ -110,8 +109,10 @@ def validate_token(
 def login_fire_tv(
     token_path: Path = TOKEN_DIR_PATH / "fire_tv-tidal.token",
 ) -> Optional[requests.Session]:
-    # new approach so that FileNotFoundError, which is handled,
-    # does not explode on the STDERR output:
+    """Load `token_path` from disk, initializing a BearerToken from its
+    contents. If successful, return a requests.Session object with
+    extra attributes set
+    """
     bearer_token = BearerToken.load(p=token_path)
     if bearer_token is not None:
         bearer_token.save(p=token_path)
@@ -151,7 +152,7 @@ def login_android(
     if _token is None:
         logger.warning("Could not load access token from disk")
         _token: str = typer.prompt(
-            "Enter TIDAL access token from an Android (the part after 'Bearer '): "
+            "Enter TIDAL access token from an Android (the part after 'Bearer ')"
         )
         dt_input: str = typer.prompt(
             "Is this from device type: phone, tablet, or other? "
@@ -245,7 +246,7 @@ def login(
         _input: str = ""
         while _input not in options:
             _input = typer.prompt(
-                "For which of Android [a] or Windows [w] would you like to provide an API token? "
+                "For which of Android [a] or Windows [w] would you like to provide an API token?"
             ).lower()
         else:
             if _input in {"android", "a"}:

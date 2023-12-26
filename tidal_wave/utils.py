@@ -3,8 +3,10 @@ from io import BytesIO
 import logging
 import os
 from pathlib import Path
+import random
 import tempfile
-from typing import Optional
+import time
+from typing import Optional, Tuple, Union
 
 from .models import Artist
 
@@ -21,13 +23,16 @@ def download_cover_image(
     cover_uuid: str,
     output_dir: Path,
     file_name: str = "cover.jpg",
-    dimension: int = 1280,
+    dimension: Union[int, Tuple[int]] = 1280,
 ) -> Optional[Path]:
     """Given a UUID that corresponds to a (JPEG) image on Tidal's servers,
     download the image file and write it as 'cover.jpeg' or 'cover.png'
     in the directory `path_to_output_dir`. Returns path to downloaded file"""
     cover_url_part: str = cover_uuid.replace("-", "/")
-    _url: str = IMAGE_URL % f"{cover_url_part}/{dimension}x{dimension}"
+    if isinstance(dimension, int):
+        _url: str = IMAGE_URL % f"{cover_url_part}/{dimension}x{dimension}"
+    elif isinstance(dimension, tuple):
+        _url: str = IMAGE_URL % f"{cover_url_part}/{dimension[0]}x{dimension[1]}"
 
     with session.get(url=_url, headers={"Accept": "image/jpeg"}) as r:
         if not r.ok:
@@ -119,14 +124,22 @@ def download_artist_bio(
 
 @contextmanager
 def temporary_file():
+    """This context-managed function is a stand-in for
+    tempfile.NamedTemporaryFile as that stdlib object experiences
+    errors on Windows."""
     file_name: str = os.path.join(tempfile.gettempdir(), os.urandom(24).hex())
-    # Code to acquire resource, e.g.:
     if not os.path.exists(file_name):
         open(file=file_name, mode="x").close()
+
     tf = open(file=file_name, mode="wb")
     try:
         yield tf
     finally:
-        # Code to release resource, e.g.:
         tf.close()
         os.unlink(tf.name)
+
+
+def sleep_to_mimic_human_activity():
+    _time = random.randint(500, 5000) / 500
+    logger.info(f"Sleeping for {_time} seconds to mimic human activity")
+    time.sleep(_time)
