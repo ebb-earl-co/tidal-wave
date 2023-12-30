@@ -278,28 +278,21 @@ class Track:
                         f"Track {self.track_id} written to '{str(self.outfile.absolute())}'"
                     )
                     return self.outfile
-            # As DASH is inherently many small parts of the overall file,
-            # download all of them without range headers or streaming chunks
+
             for u in urls:
-                download_request = session.prepare_request(
-                    Request(
-                        "GET",
-                        url=u,
-                        headers=self.download_headers,
-                        params=self.download_params,
-                    )
-                )
-                with session.send(download_request) as download_response:
-                    if not download_response.ok:
+                with session.get(
+                    url=u, headers=self.download_headers, params=self.download_params
+                ) as resp:
+                    if not resp.ok:
                         logger.warning(f"Could not download {self}")
                         return
                     else:
-                        ntf.write(download_response.content)
+                        ntf.write(resp.content)
             else:
                 ntf.seek(0)
 
             if self.codec == "flac":
-                # Have to use FFMPEG to re-mux the audio bytes, otherwise
+                # Have to use FFmpeg to re-mux the audio bytes, otherwise
                 # mutagen chokes on NoFlacHeaderError
                 ffmpeg.input(ntf.name, hide_banner=None, y=None).output(
                     str(self.outfile.absolute()), acodec="copy", loglevel="quiet"
@@ -354,6 +347,7 @@ class Track:
             pass
         else:
             tags[tag_map["lyrics"]] = _lyrics
+
         # track and disk
         if self.codec == "flac":
             tags["DISCTOTAL"] = f"{self.metadata.volume_number}"
@@ -406,6 +400,11 @@ class Track:
             self.get_metadata(session)
         else:
             self.metadata = metadata
+        
+        if self.metadata is None:
+            # self.failed = True
+            self.outfile = None
+            return
 
         if audio_format == AudioFormat.dolby_atmos:
             if "DOLBY_ATMOS" not in self.metadata.media_metadata.tags:
@@ -425,11 +424,25 @@ class Track:
                 )
                 self.outfile = None
                 return
+        elif audio_format == AudioFormat.mqa:
+            if "MQA" not in self.metadata.media_metadata.tags:
+                logger.warning(
+                    "MQA audio format was requested, but track "
+                    f"{self.track_id} is not available in MQA audio "
+                    "format. Downloading of track will not continue."
+                )
+                self.outfile = None
+                return
 
         if album is None:
             self.get_album(session)
         else:
             self.album = album
+            
+        if self.album is None:
+            # self.failed = True
+            self.outfile = None
+            return
 
         self.get_credits(session)
         self.get_stream(session, audio_format)
