@@ -2,53 +2,29 @@
 FROM debian:bookworm-slim as build_image
 RUN export DEBIAN_FRONTEND=noninteractive && apt-get update -qq && apt-get -y install --no-install-recommends \
   autoconf \
-  automake \
+  bzip2 \
   build-essential \
-  ca-certificates \
-  cmake \
   git-core \
-  libtool \
-  meson \
-  ninja-build \
   pkg-config \
   wget \
   yasm \
   zlib1g-dev
 RUN mkdir ~/ffmpeg_sources ~/ffmpeg_build ~/bin
-# NASM
 RUN cd ~/ffmpeg_sources && \
-    wget https://www.nasm.us/pub/nasm/releasebuilds/2.16.01/nasm-2.16.01.tar.bz2 && \
-    tar xjvf nasm-2.16.01.tar.bz2 && \
-    cd nasm-2.16.01 && \
-    ./autogen.sh && \
-    PATH="$HOME/bin:$PATH" ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin" && \
-    make && \
-    make install
-# libx264
-RUN cd ~/ffmpeg_sources && \
-    git -C x264 pull 2> /dev/null || git clone --depth 1 https://code.videolan.org/videolan/x264.git && \
-    cd x264 && \
-    PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin" --enable-static --enable-pic && \
+    wget --no-check-certificate -O ffmpeg-snapshot.tar.bz2 https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2 && \
+    tar xjvf ffmpeg-snapshot.tar.bz2 && \
+    cd ffmpeg && \
+    PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
+      --prefix="$HOME/ffmpeg_build" \
+      --pkg-config-flags="--static" \
+      --extra-cflags="-I$HOME/ffmpeg_build/include" \
+      --extra-ldflags="-L$HOME/ffmpeg_build/lib" \
+      --extra-libs="-lpthread -lm" \
+      --ld="g++" \
+      --bindir="$HOME/bin" && \
     PATH="$HOME/bin:$PATH" make && \
-    make install
-# FFmpeg
-RUN cd ~/ffmpeg_sources && \
-wget -O ffmpeg-snapshot.tar.bz2 https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2 && \
-tar xjvf ffmpeg-snapshot.tar.bz2 && \
-cd ffmpeg && \
-PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
-  --prefix="$HOME/ffmpeg_build" \
-  --pkg-config-flags="--static" \
-  --extra-cflags="-I$HOME/ffmpeg_build/include" \
-  --extra-ldflags="-L$HOME/ffmpeg_build/lib" \
-  --extra-libs="-lpthread -lm" \
-  --ld="g++" \
-  --bindir="$HOME/bin" \
-  --enable-gpl \
-  --enable-libx264 && \
-PATH="$HOME/bin:$PATH" make && \
-make install && \
-hash -r
+    make install && \
+    hash -r
 
 FROM python:3.11-slim as runtime_image
 ENV PIP_DEFAULT_TIMEOUT=100 \
