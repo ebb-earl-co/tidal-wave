@@ -4,7 +4,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update -qq && apt-get -y in
   autoconf \
   bzip2 \
   build-essential \
-  git-core \
   pkg-config \
   wget \
   yasm \
