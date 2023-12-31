@@ -112,7 +112,7 @@ class Video:
 
         with temporary_file() as ntf:
             for u in self.urls:
-                with session.send(
+                with session.get(
                     url=u, headers=download_headers, params=download_params
                 ) as download_response:
                     if not download_response.ok:
