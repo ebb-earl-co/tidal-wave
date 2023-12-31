@@ -18,10 +18,12 @@ This project is inspired by [`qobuz-dl`](https://github.com/vitiko98/qobuz-dl), 
 A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to retrieve HiRes FLAC, Dolby Atmos, and Sony 360 Reality Audio tracks. Simply a [HiFi](https://tidal.com/pricing) plan is sufficient to download in 16-bit, 44.1 kHz (i.e. lossless) or lower quality as well as videos.
 
 ### Requirements
- - This is a Python tool, so you will need [Python 3](https://www.python.org/downloads/) on your system: this tool supports Python 3.8 or newer. 
+ - This is a Python tool, so you will need [Python 3](https://www.python.org/downloads/) on your system: this tool supports Python 3.8 or newer.
+   - *However*, as of version [2023.12.10](https://github.com/ebb-earl-co/tidal-wave/releases/tag/2023.12.10), a [GitHub container](https://github.com/ebb-earl-co/tidal-wave/pkgs/container/tidal-wave) and `pyapp`-compiled binaries are release artifacts that do not require Python installed
  - As resources will be fetched from the World Wide Web, an Internet connection is required
  - The excellent tool [FFmpeg](http://ffmpeg.org/download.html) is necessary for audio file manipulation. It is available from almost every package manager; or static builds are available from [John Van Sickle](https://www.johnvansickle.com/ffmpeg/).
    - For Windows, the [FFmpeg download page](http://ffmpeg.org/download.html#build-windows) lists 2 resources; or [`chocolatey`](https://community.chocolatey.org/packages/ffmpeg) is an option
+   - The Dockerfile [builds FFmpeg](https://github.com/ebb-earl-co/tidal-wave/blob/trunk/Dockerfile#L12) into the image
  - Only a handful of Python libraries are dependencies:
    - [`dataclass-wizard`](https://pypi.org/project/dataclass-wizard/)
    - [`ffmpeg-python`](https://pypi.org/project/ffmpeg-python/)
@@ -32,6 +34,7 @@ A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to ret
    - [`typer`](https://pypi.org/project/typer/)
 
 ## Installation
+### `pip` install
 Install this project with [`pip`](https://pip.pypa.io/en/stable/): either with a virtual environment (preferred) or any other way you desire:
 ```bash
 $ python3 -m pip install tidal-wave
@@ -41,7 +44,7 @@ Optionally, to get the full `typer` experience when using this utility, add `[al
 ```bash
 $ python3 -m pip install tidal-wave[all]
 ```
-
+### Local `pip` install
 Alternatively, you can clone this repository; `cd` into it; and install from there:
 ```bash
 $ git clone https://github.com/ebb-earl-co/tidal-wave.git
@@ -50,11 +53,24 @@ $ python3 -m venv .venv
 $ source .venv/bin/activate
 $ (.venv) pip install .
 ```
-
+### Shiv executable
 As yet another option, if you don't want to mess with `pip`, you can download the `.pyz` artifact in the [releases](https://github.com/ebb-earl-co/tidal-wave/releases) page. It is a binary created using the [`shiv`](https://pypi.org/project/shiv/) project and is used in the following way:
 ```bash
 # download the .pyz file of the latest (or your desired) release
 $ python3 tidal-wave_<VERSION>.pyz --help
+```
+### `pyapp` executable
+Download the Rust-compiled binary from [the Releases](https://github.com/ebb-earl-co/tidal-wave/releases/latest), and, on macOS or GNU/Linux, make it executable
+```bash
+$ wget https://github.com/ebb-earl-co/tidal-wave/releases/download/<VERSION>/tidal-wave_<VERSION>.pyapp
+$ chmod +x ./tidal-wave_<VERSION>.pyapp
+```
+Or, on Windows, once the .exe file is downloaded, you might have to allow a security exception for an unkown developer.
+
+### Docker
+Pull the image from GitHub container repo:
+```bash
+docker pull ghcr.io/ebb-earl-co/tidal-wave:latest
 ```
 
 ## Quickstart
@@ -64,7 +80,7 @@ Usage: tidal-wave [OPTIONS] TIDAL_URL [OUTPUT_DIRECTORY]
                                                                                                                                                                                             
 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ *    tidal_url             TEXT                The Tidal track or album or video to download [default: None] [required]                                                                  │
-│      output_directory      [OUTPUT_DIRECTORY]  The parent directory under which files will be written; i.e. output_directory/<artist name>/<album name>/ [default: ]                     │
+│      output_directory      [OUTPUT_DIRECTORY]  The parent directory under which files will be written [default: /home/$USER/Music]                                                       │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ --audio-format        [360|Atmos|HiRes|MQA|Lossless|High|Low]         [default: Lossless]                                                                                                │
@@ -87,16 +103,15 @@ Similarly, all media retrieved is placed in subdirectories of the user's default
  - Even videos are downloaded here (for now) for simplicity
 
 ### Example
- - First, find the URL of the track or album ID desired. Then, simmply pass it as the first argument to `tidal-wave` with no other arguments to: *download the track/album in Lossless quality to a subdirectory of user's music directory and INFO-level logging.*
+ - First, find the URL of the track or album ID desired. Then, simmply pass it as the first argument to `tidal-wave` with no other arguments to: *download the track/album/playlist in Lossless quality to a subdirectory of user's music directory and INFO-level logging.*
 ```bash
 $ python3 tidal-wave https://tidal.com/browse/track/226092704
 ```
-
  - To (attempt to) get a Dolby Atmos track, and you desire to see *all* of the log output, the following will do that
  ```bash
  $ python3 tidal-wave https://tidal.com/browse/track/... --audio-format atmos --loglevel debug
  ```
-
+ **Keep in mind that authentication from an Android (preferred), iOS, Windows, or macOS device will need to be extracted and passed to this tool in order to access HiRes FLAC and Sony 360 Reality Audio versions of tracks**
  - To (attempt to) get a HiRes FLAC version of an album, and you desire to see only warnings and errors, the following will do that:
  ```bash
  $ python3 tidal-wave https://tidal.com/browse/album/... --audio-format hires --loglevel warning
@@ -111,4 +126,15 @@ $ python3 tidal-wave https://tidal.com/browse/track/226092704
  ```bash
  $ python3 tidal-wave https://tidal.com/browse/playlist/...
  ```
- **Keep in mind that authentication from an Android (preferred), iOS, Windows, or macOS device will need to be extracted and passed to this tool in order to access HiRes FLAC and Sony 360 Reality Audio versions of tracks**
+
+#### Docker example
+The command line options are the same for the Python invocation, but in order to save configuration and audio data, volumes need to be passed. If they are bind mounts to directories, **they must be created before executing `docker run` to avoid permissions issues**! For example,
+```bash
+$ mkdir -p ./Music/ ./config/tidal-wave/
+$ docker run \
+    --name tidal-wave \
+    --volume ./Music:/home/debian/Music \
+    --volume ./config/tidal-wave:/home/debian/.config/tidal-wave \
+    ghcr.io/ebb-earl-co/tidal-wave:latest \
+    https://tidal.com/browse/track/...
+```
