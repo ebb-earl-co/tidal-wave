@@ -9,10 +9,11 @@ from typing import Optional
 
 from .login import login, AudioFormat, LogLevel
 from .album import Album
+from .mix import Mix
 from .playlist import Playlist
 from .track import Track
 from .video import Video
-from .models import match_tidal_url, TidalAlbum, TidalPlaylist, TidalTrack, TidalVideo
+from .models import match_tidal_url, TidalAlbum, TidalMix, TidalPlaylist, TidalTrack, TidalVideo
 from .requesting import get_album_id
 
 from platformdirs import user_music_path
@@ -27,7 +28,7 @@ def main(
     tidal_url: Annotated[
         str,
         typer.Argument(
-            help="The Tidal track or album or video or playlist to download"
+            help="The Tidal album or mix or playlist or track or video to download"
         ),
     ],
     audio_format: Annotated[
@@ -49,7 +50,7 @@ def main(
     logger = logging.getLogger(__name__)
 
     tidal_resource: Optional[
-        Union[TidalAlbum, TidalPlaylist, TidalTrack, TidalVideo]
+        Union[TidalAlbum, TidalMix, TidalPlaylist, TidalTrack, TidalVideo]
     ] = match_tidal_url(tidal_url)
 
     if tidal_resource is None:
@@ -96,6 +97,15 @@ def main(
 
             if loglevel == LogLevel.debug:
                 playlist.dump()
+            raise typer.Exit(code=0)
+        elif isinstance(tidal_resource, TidalMix):
+            mix = Mix(mix_id=tidal_resource.tidal_id)
+            mix.get(
+                session=session, audio_format=audio_format, out_dir=output_directory
+            )
+
+            if loglevel == LogLevel.debug:
+                mix.dump()
             raise typer.Exit(code=0)
         else:
             raise NotImplementedError
