@@ -123,11 +123,11 @@ def download_artist_bio(
 
 
 @contextmanager
-def temporary_file():
+def temporary_file(suffix: str = ".mka"):
     """This context-managed function is a stand-in for
     tempfile.NamedTemporaryFile as that stdlib object experiences
     errors on Windows."""
-    file_name: str = os.path.join(tempfile.gettempdir(), os.urandom(24).hex())
+    file_name: str = os.path.join(tempfile.gettempdir(), f"{os.urandom(24).hex()}{suffix}")
     if not os.path.exists(file_name):
         open(file=file_name, mode="x").close()
 
