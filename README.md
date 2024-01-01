@@ -13,6 +13,7 @@ This project is inspired by [`qobuz-dl`](https://github.com/vitiko98/qobuz-dl), 
 * If available, album reviews are downloaded as JSON 
 * Video download support
 * Playlist download support (video or audio or both)
+* Mix download support (video or audio)
 
 ## Getting Started
 A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to retrieve HiRes FLAC, Dolby Atmos, and Sony 360 Reality Audio tracks. Simply a [HiFi](https://tidal.com/pricing) plan is sufficient to download in 16-bit, 44.1 kHz (i.e. lossless) or lower quality as well as videos.
@@ -57,7 +58,8 @@ $ (.venv) pip install .
 As yet another option, if you don't want to mess with `pip`, you can download the `.pyz` artifact in the [releases](https://github.com/ebb-earl-co/tidal-wave/releases) page. It is a binary created using the [`shiv`](https://pypi.org/project/shiv/) project and is used in the following way:
 ```bash
 # download the .pyz file of the latest (or your desired) release
-$ python3 tidal-wave_<VERSION>.pyz --help
+$ wget https://github.com/ebb-earl-co/tidal-wave/releases/download/<VERSION>/tidal-wave_<VERSION>.pyz
+$ ./tidal-wave_<VERSION>.pyz --help
 ```
 ### `pyapp` executable
 Download the Rust-compiled binary from [the Releases](https://github.com/ebb-earl-co/tidal-wave/releases/latest), and, on macOS or GNU/Linux, make it executable
@@ -79,7 +81,7 @@ Run `python3 tidal-wave --help` to see the options available. Or, if you followe
 Usage: tidal-wave [OPTIONS] TIDAL_URL [OUTPUT_DIRECTORY]                                                                                                                                  
                                                                                                                                                                                             
 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ *    tidal_url             TEXT                The Tidal track or album or video to download [default: None] [required]                                                                  │
+│ *    tidal_url             TEXT                The Tidal album or mix or playlist or track or video to download [default: None] [required]                                               │
 │      output_directory      [OUTPUT_DIRECTORY]  The parent directory under which files will be written [default: /home/$USER/Music]                                                       │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
@@ -104,27 +106,32 @@ Similarly, all media retrieved is placed in subdirectories of the user's default
 
 ### Example
  - First, find the URL of the track or album ID desired. Then, simmply pass it as the first argument to `tidal-wave` with no other arguments to: *download the track/album/playlist in Lossless quality to a subdirectory of user's music directory and INFO-level logging.*
-```bash
-$ python3 tidal-wave https://tidal.com/browse/track/226092704
-```
+ ```bash
+ (.venv) $ tidal-wave https://tidal.com/browse/track/226092704
+ ```
  - To (attempt to) get a Dolby Atmos track, and you desire to see *all* of the log output, the following will do that
  ```bash
- $ python3 tidal-wave https://tidal.com/browse/track/... --audio-format atmos --loglevel debug
+ (.venv) $ tidal-wave https://tidal.com/browse/track/... --audio-format atmos --loglevel debug
  ```
  **Keep in mind that authentication from an Android (preferred), iOS, Windows, or macOS device will need to be extracted and passed to this tool in order to access HiRes FLAC and Sony 360 Reality Audio versions of tracks**
  - To (attempt to) get a HiRes FLAC version of an album, and you desire to see only warnings and errors, the following will do that:
  ```bash
- $ python3 tidal-wave https://tidal.com/browse/album/... --audio-format hires --loglevel warning
+ $ ./tidal-wave_<VERSION>.pyz https://tidal.com/browse/album/... --audio-format hires --loglevel warning
  ```
 
  - To (attempt to) get a video, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos.
  ```bash
- $ python3 tidal-wave https://tidal.com/browse/video/...
+ $ ./tidal-wave_<VERSION>.pyz https://tidal.com/browse/video/...
  ```
 
  - To (attempt to) get an entire playlist, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos.
  ```bash
- $ python3 tidal-wave https://tidal.com/browse/playlist/...
+ $ ./tidal-wave_<VERSION>.pyapp https://tidal.com/browse/playlist/...
+ ```
+
+ - To (attempt to) get an mix, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos.
+ ```bash
+ $ ./tidal-wave_<VERSION>.pyapp https://tidal.com/browse/mix/...
  ```
 
 #### Docker example
