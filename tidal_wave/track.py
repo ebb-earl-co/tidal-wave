@@ -2,7 +2,9 @@ from dataclasses import dataclass
 import json
 import logging
 from pathlib import Path
+import shlex
 import shutil
+import subprocess
 import sys
 from typing import Optional
 
@@ -387,6 +389,14 @@ class Track:
                 MP4Cover(self.cover_path.read_bytes(), imageformat=MP4Cover.FORMAT_JPEG)
             ]
         self.mutagen.save()
+        # Make sure audio track comes first because of
+        # less-sophisticated audio players
+        with temporary_file(suffix=".mka") as tf:
+            cmd: List[str] = shlex.split(
+                f"""ffmpeg -hide_banner -loglevel quiet -y -i "{str(self.outfile.absolute())}" -map 0:a:0 -map 0:v:0 -c copy {tf.name}"""
+            )
+            subprocess.run(cmd)
+            shutil.copyfile(tf.name, str(self.outfile.absolute()))
 
     def get(
         self,
@@ -400,7 +410,7 @@ class Track:
             self.get_metadata(session)
         else:
             self.metadata = metadata
-        
+
         if self.metadata is None:
             # self.failed = True
             self.outfile = None
@@ -438,7 +448,7 @@ class Track:
             self.get_album(session)
         else:
             self.album = album
-            
+
         if self.album is None:
             # self.failed = True
             self.outfile = None

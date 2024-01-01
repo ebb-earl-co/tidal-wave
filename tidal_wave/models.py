@@ -432,13 +432,6 @@ class VideosContributorsResponseJSON(dataclass_wizard.JSONWizard):
         )
 
 
-@dataclass(frozen=True)
-class PlaylistCreator:
-    id: int
-    name: Optional[str] = field(default=None)
-    type: Optional[str] = field(default=None)
-
-
 @dataclass
 class PlaylistsEndpointResponseJSON(dataclass_wizard.JSONWizard):
     """Response from the TIDAL API, videos/<VIDEOID> endpoint.If the params and
@@ -450,9 +443,7 @@ class PlaylistsEndpointResponseJSON(dataclass_wizard.JSONWizard):
     title: str
     number_of_tracks: int
     number_of_videos: int
-    # creator: "PlaylistCreator"
     description: str
-    # duration: int
     last_updated: Annotated[
         datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")
     ]
@@ -463,7 +454,6 @@ class PlaylistsEndpointResponseJSON(dataclass_wizard.JSONWizard):
     image: str  # UUID v4
     popularity: int
     square_image: str  # UUID v4
-    # promoted_artists: List["Artist"]
     last_item_added_at: Annotated[
         datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")
     ]
@@ -507,6 +497,23 @@ class TidalAlbum(TidalResource):
         else:
             self.tidal_id = int(_id)
             logger.info(f"TIDAL album ID parsed from input: {self.tidal_id}")
+
+
+@dataclass
+class TidalMix(TidalResource):
+    url: str
+
+    def __post_init__(self):
+        self.pattern: str = (
+            r"http(?:s)?://(?:listen\.)?tidal\.com/(?:browse/)?mix/(\w{30})(?:.*?)?"
+        )
+        _id = self.match_url()
+
+        if _id is None:
+            raise ValueError(f"'{self.url}' is not a valid TIDAL mix URL")
+        else:
+            self.tidal_id = _id
+            logger.info(f"TIDAL mix ID parsed from input: {self.tidal_id}")
 
 
 @dataclass
@@ -589,5 +596,9 @@ def match_tidal_url(input_str: str) -> Optional[TidalResource]:
                     tidal_resource: TidalPlaylist = TidalPlaylist(input_str)
                 except ValueError as verr:
                     logger.debug(verr)
+                    try:
+                        tidal_resource: TidalMix = TidalMix(input_str)
+                    except ValueError as valerr:
+                        logger.debug(valerr)
     finally:
         return tidal_resource

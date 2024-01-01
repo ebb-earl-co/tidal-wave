@@ -11,69 +11,64 @@ from requests import HTTPError, Session
 
 from .media import AudioFormat
 from .models import TracksEndpointResponseJSON, VideosEndpointResponseJSON
-from .requesting import request_playlists
 from .track import Track
-from .utils import download_cover_image, sleep_to_mimic_human_activity, TIDAL_API_URL
+from .utils import sleep_to_mimic_human_activity, TIDAL_API_URL
 from .video import Video
 
 logger = logging.getLogger("__name__")
 
+# union type for type hinting
+MixItem = Optional[Union["TracksEndpointResponseJSON", "VideosEndpointResponseJSON"]]
+
 
 @dataclass
-class Playlist:
-    playlist_id: str  # UUID4
+class Mix:
+    mix_id: str
 
     def __post_init__(self):
-        self.playlist_dir: Optional[Path] = None
-        self.playlist_cover_saved: bool = False
+        self.mix_dir: Optional[Path] = None
+        self.mix_cover_saved: bool = False
 
     def get_metadata(self, session: Session):
         """Request from TIDAL API /playlists endpoint"""
-        self.metadata: Optional[PlaylistsEndpointResponseJSON] = request_playlists(
-            session=session, identifier=self.playlist_id
+        self.metadata: Optional[PlaylistsEndpointResponseJSON] = request_mixes(
+            session=session, mix_id=self.mix_id
         )
         self.name = (
             self.metadata.title.replace("/", "_").replace("|", "_").replace(":", " -")
         )
 
     def set_items(self, session: Session):
-        """Uses data from TIDAL API /playlists/items endpoint to
+        """Uses data from TIDAL API /mixes/items endpoint to
         populate self.items"""
-        playlist_items: Optional[PlaylistsItemsResponseJSON] = get_playlist(
-            session=session, playlist_id=self.playlist_id
+        mix_items: Optional[MixesItemsResponseJSON] = get_mix(
+            session=session, mix_id=self.mix_id
         )
-        if playlist_items is None:
+        if mix_items is None:
             self.items = tuple()
         else:
-            self.items: Tuple[Optional[PlaylistItem]] = tuple(playlist_items.items)
+            self.items: Tuple[Optional[MixItem]] = tuple(mix_items.items)
 
     def set_dir(self, out_dir: Path):
-        """Populates self.playlist_dir based on self.name, self.playlist_id"""
-        playlist_substring: str = f"{self.name} [{self.playlist_id}]"
-        self.playlist_dir: Path = out_dir / "Playlists" / playlist_substring
-        self.playlist_dir.mkdir(parents=True, exist_ok=True)
+        """Populates self.mix_dir based on self.name, self.mix_id"""
+        mix_substring: str = f"{self.name} [{self.mix_id}]"
+        self.mix_dir: Path = out_dir / "Mixes" / mix_substring
+        self.mix_dir.mkdir(parents=True, exist_ok=True)
 
     def save_cover_image(self, session: Session, out_dir: Path):
         """Requests self.metadata.image and attempts to write it to disk"""
-        if self.playlist_dir is None:
+        if self.mix_dir is None:
             self.set_dir(out_dir=out_dir)
-        self.cover_path: Path = self.playlist_dir / "cover.jpg"
+        self.cover_path: Path = self.mix_dir / "cover.jpg"
         if not self.cover_path.exists():
-            download_cover_image(
-                session=session,
-                cover_uuid=self.metadata.image,
-                output_dir=self.playlist_dir,
-                dimension=1080,
-            )
-        else:
-            self.playlist_cover_saved = True
+            with session.get(
+                url=self.metadata.image, params={k: None for k in session.params}
+            ) as r:
+                (self.mix_dir / "cover.jpg").write_bytes(r.content)
 
-    def save_description(self):
-        """Requests self.metadata.description and attempts to write it to disk"""
-        description_path: Path = self.playlist_dir / "PlaylistDescription.txt"
-        if self.metadata.description is not None and len(self.metadata.description) > 0:
-            if not description_path.exists():
-                description_path.write_text(f"{self.metadata.description}\n")
+            self.mix_cover_saved = True
+        else:
+            self.mix_cover_saved = True
 
     def get_items(self, session: Session, audio_format: AudioFormat):
         """Using either Track.get() or Video.get(), attempt to request
@@ -91,7 +86,7 @@ class Playlist:
                 track.get(
                     session=session,
                     audio_format=audio_format,
-                    out_dir=self.playlist_dir,
+                    out_dir=self.mix_dir,
                     metadata=item,
                 )
                 tracks_videos[i] = track
@@ -100,7 +95,7 @@ class Playlist:
                 video: Video = Video(video_id=item.id)
                 video.get(
                     session=session,
-                    out_dir=self.playlist_dir,
+                    out_dir=self.mix_dir,
                     metadata=item,
                 )
                 tracks_videos[i] = video
@@ -115,12 +110,12 @@ class Playlist:
             ] = tuple(tracks_videos)
         return tracks_videos
 
-    def flatten_playlist_dir(self):
+    def flatten_mix_dir(self):
         """When self.get_items() is called, the tracks and/or videos in
         self.items are downloaded using their self-contained .get() logic;
         this means that they will be downloaded to albums. This function
-        "flattens" self.playlist_dir, meaning that it moves all downloaded
-        audio and video files to self.playlist_dir, and removes the various
+        "flattens" self.mix_dir, meaning that it moves all downloaded
+        audio and video files to self.mix_dir, and removes the various
         subdirectories created"""
         files: List[Dict[int, Optional[str]]] = [None] * len(self.tracks_videos)
         if len(self.tracks_videos) == 0:
@@ -156,12 +151,12 @@ class Playlist:
 
             # otherwise, move files and clean up
             if isinstance(tv, Track):
-                new_path: Path = self.playlist_dir / f"{i:03d} - {tv.trackname}"
+                new_path: Path = self.mix_dir / f"{i:03d} - {tv.trackname}"
                 new_path.write_bytes(_path.read_bytes())
                 _path.unlink()
                 files[i - 1] = {i: str(new_path.absolute())}
             elif isinstance(tv, Video):
-                new_path: Path = self.playlist_dir / f"{i:03d} - {_path.name}"
+                new_path: Path = self.mix_dir / f"{i:03d} - {_path.name}"
                 new_path.write_bytes(_path.read_bytes())
                 _path.unlink()
                 files[i - 1] = {i: str(new_path.absolute())}
@@ -195,7 +190,7 @@ class Playlist:
                 if artist_image_path.exists():
                     shutil.copyfile(
                         artist_image_path.absolute(),
-                        self.playlist_dir / artist_image_path.name,
+                        self.mix_dir / artist_image_path.name,
                     )
 
         artist_bios: Set[Path] = set()
@@ -207,7 +202,7 @@ class Playlist:
                 if artist_bio_path.exists():
                     shutil.copyfile(
                         artist_bio_path.absolute(),
-                        self.playlist_dir / artist_bio_path.name,
+                        self.mix_dir / artist_bio_path.name,
                     )
 
         # Remove all subdirs
@@ -215,7 +210,7 @@ class Playlist:
             if subdir.exists():
                 shutil.rmtree(subdir)
         else:
-            return self.playlist_dir
+            return self.mix_dir
 
     def dumps(self):
         return json.dumps(self.files)
@@ -230,7 +225,6 @@ class Playlist:
           - self.set_items()
           - self.set_dir()
           - self.save_cover_image()
-          - self.save_description()
           - self.get_items()
           - self.flatten_playlist_dir()
         """
@@ -245,47 +239,82 @@ class Playlist:
 
         _get_items = self.get_items(session, audio_format)
         if _get_items is None:
-            logger.critical(f"Could not retrieve playlist with ID '{self.playlist_id}'")
+            logger.critical(f"Could not retrieve mix with ID '{self.mix_id}'")
             return
-        self.flatten_playlist_dir()
-        logger.info(f"Playlist files written to '{self.playlist_dir}'")
+        self.flatten_mix_dir()
+        logger.info(f"Mix files written to '{self.mix_dir}'")
 
 
-class TidalPlaylistException(Exception):
+class TidalMixException(Exception):
     pass
 
 
-def request_playlist_items(session: Session, playlist_id: str) -> Optional[dict]:
-    """Request from TIDAL API /playlists/items endpoint."""
-    url: str = f"{TIDAL_API_URL}/playlists/{playlist_id}/items"
+def request_mixes(session: Session, mix_id: str) -> Optional[SimpleNamespace]:
+    """Request from TIDAL API /pages/mix endpoint."""
+    url: str = f"{TIDAL_API_URL}/pages/mix?mixId={mix_id}"
     kwargs: dict = {"url": url}
-    kwargs["params"] = {"limit": 100}
+    kwargs["params"] = {"deviceType": "PHONE"}
     kwargs["headers"] = {"Accept": "application/json"}
 
-    data: Optional[dict] = None
-    logger.info(f"Requesting from TIDAL API: playlists/{playlist_id}/items")
+    logger.info(f"Requesting from TIDAL API: mixes/{mix_id}/items")
     with session.get(**kwargs) as resp:
         try:
             resp.raise_for_status()
         except HTTPError as he:
             if resp.status_code == 404:
                 logger.warning(
-                    f"404 Client Error: not found for TIDAL API endpoint playlists/{playlist_id}/items"
+                    f"404 Client Error: not found for TIDAL API endpoint pages/mix"
+                )
+            else:
+                logger.exception(he)
+            return
+
+        d = dict()
+        d["title"] = resp.json().get("title")
+        d["description"] = resp.json().get("rows")[0]["modules"][0]["mix"]["subTitle"]
+        d["image"] = (
+            resp.json()
+            .get("rows", [{}])[0]
+            .get("modules")[0]["mix"]["images"]["LARGE"]["url"]
+        )
+
+        logger.debug(
+            f"{resp.status_code} response from TIDAL API to request: pages/mix"
+        )
+        return SimpleNamespace(**d)
+
+
+def request_mix_items(session: Session, mix_id: str) -> Optional[Dict]:
+    """Request from TIDAL API /mixes/items endpoint."""
+    url: str = f"{TIDAL_API_URL}/mixes/{mix_id}/items"
+    kwargs: dict = {"url": url}
+    kwargs["params"] = {"limit": 100}
+    kwargs["headers"] = {"Accept": "application/json"}
+
+    data: Optional[dict] = None
+    logger.info(f"Requesting from TIDAL API: mixes/{mix_id}/items")
+    with session.get(**kwargs) as resp:
+        try:
+            resp.raise_for_status()
+        except HTTPError as he:
+            if resp.status_code == 404:
+                logger.warning(
+                    f"404 Client Error: not found for TIDAL API endpoint mixes/{mix_id}/items"
                 )
             else:
                 logger.exception(he)
         else:
             data = resp.json()
             logger.debug(
-                f"{resp.status_code} response from TIDAL API to request: playlists/{playlist_id}/items"
+                f"{resp.status_code} response from TIDAL API to request: mixes/{mix_id}/items"
             )
         finally:
             return data
 
 
 @dataclass(frozen=True)
-class PlaylistsItemsResponseJSON:
-    """The response from the TIDAL API endpoint /playlists/<ID>/items
+class MixesItemsResponseJSON:
+    """The response from the TIDAL API endpoint /mixes/<ID>/items
     is modeled by this class."""
 
     limit: int
@@ -296,31 +325,31 @@ class PlaylistsItemsResponseJSON:
     ]
 
 
-def playlist_maker(
-    playlists_response: Dict[str, Union[int, List[dict]]]
-) -> "PlaylistsItemsResponseJSON":
+def mix_maker(
+    mixes_response: Dict[str, Union[int, List[dict]]]
+) -> "MixesItemsResponseJSON":
     """This function massages the response from the TIDAL API endpoint
-    playlists/items into a format that PlaylistsItemsResponseJSON.from_dict()
-    can ingest. Returns a PlaylistsItemsResponseJSON instance"""
+    mixes/items into a format that MixesItemsResponseJSON.from_dict()
+    can ingest. Returns a MixesItemsResponseJSON instance"""
     init_args: dict = {}
-    init_args["limit"] = playlists_response.get("limit")
-    init_args["offset"] = playlists_response.get("offset")
-    init_args["total_number_of_items"] = playlists_response.get("totalNumberOfItems")
+    init_args["limit"] = mixes_response.get("limit")
+    init_args["offset"] = mixes_response.get("offset")
+    init_args["total_number_of_items"] = mixes_response.get("totalNumberOfItems")
 
     items: Tuple[SimpleNamespace] = tuple(
-        SimpleNamespace(**d) for d in playlists_response["items"]
+        SimpleNamespace(**d) for d in mixes_response["items"]
     )
     if len(items) == 0:
         return
 
-    playlist_items: List[
+    mixes_items: List[
         Optional[Union["TracksEndpointResponseJSON", "VideosEndpointResponseJSON"]]
     ] = [None] * init_args["total_number_of_items"]
 
     for i, namespace in enumerate(items):
         if namespace.type == "track":
             try:
-                playlist_item = TracksEndpointResponseJSON.from_dict(namespace.item)
+                mix_item = TracksEndpointResponseJSON.from_dict(namespace.item)
             except Exception as e:
                 logger.warning(
                     f"TidalPlaylistException: unable to parse playlist item [i] "
@@ -329,48 +358,38 @@ def playlist_maker(
                 logger.debug(e)
                 # value stays None
             else:
-                playlist_items[i] = playlist_item
+                mixes_items[i] = mix_item
         elif namespace.type == "video":
             try:
-                playlist_item = VideosEndpointResponseJSON.from_dict(namespace.item)
+                mix_item = VideosEndpointResponseJSON.from_dict(namespace.item)
             except Exception as e:
                 logger.warning(
-                    f"TidalPlaylistException: unable to parse playlist item [i] "
+                    f"TidalMixException: unable to parse mix item [i] "
                     f"with type '{namespace.type}'"
                 )
                 logger.debug(e)
                 # value stays None
             else:
-                playlist_items[i] = playlist_item
+                mixes_items[i] = mix_item
         else:
             continue  # value stays None
     else:
-        init_args["items"] = tuple(playlist_items)
+        init_args["items"] = tuple(mixes_items)
 
-    return PlaylistsItemsResponseJSON(**init_args)
+    return MixesItemsResponseJSON(**init_args)
 
 
-def get_playlist(
-    session: Session, playlist_id: str
-) -> Optional["PlaylistsItemsResponseJSON"]:
-    """The pattern for playlist items retrieval does not follow the
+def get_mix(session: Session, mix_id: str) -> Optional["MixesItemsResponseJSON"]:
+    """The pattern for mix items retrieval does not follow the
     requesting.request_* functions, hence its implementation here.
     """
-    playlists_items_response_json: Optional["PlaylistsItemsResponseJSON"] = None
+    mixes_items_response_json: Optional["MixesItemsResponseJSON"] = None
     try:
-        playlists_response: dict = request_playlist_items(
-            session=session, playlist_id=playlist_id
+        mixes_response: dict = request_mix_items(session=session, mix_id=mix_id)
+        mixes_items_response_json: Optional["MixesItemsResponseJSON"] = mix_maker(
+            mixes_response=mixes_response
         )
-        playlists_items_response_json: Optional[
-            "PlaylistsItemsResponseJSON"
-        ] = playlist_maker(playlists_response=playlists_response)
     except Exception as e:
-        logger.exception(TidalPlaylistException(e.args[0]))
+        logger.exception(TidalMixException(e.args[0]))
     finally:
-        return playlists_items_response_json
-
-
-# union type for type hinting
-PlaylistItem = Optional[
-    Union["TracksEndpointResponseJSON", "VideosEndpointResponseJSON"]
-]
+        return mixes_items_response_json
