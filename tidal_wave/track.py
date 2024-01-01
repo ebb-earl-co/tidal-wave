@@ -393,7 +393,7 @@ class Track:
         # less-sophisticated audio players
         with temporary_file(suffix=".mka") as tf:
             cmd: List[str] = shlex.split(
-                f'''ffmpeg -hide_banner -loglevel quiet -y -i "{str(self.outfile.absolute())}" -map 0:a:0 -map 0:v:0 -c copy {tf.name}'''
+                f"""ffmpeg -hide_banner -loglevel quiet -y -i "{str(self.outfile.absolute())}" -map 0:a:0 -map 0:v:0 -c copy {tf.name}"""
             )
             subprocess.run(cmd)
             shutil.copyfile(tf.name, str(self.outfile.absolute()))
