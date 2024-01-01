@@ -400,7 +400,7 @@ class Track:
             self.get_metadata(session)
         else:
             self.metadata = metadata
-        
+
         if self.metadata is None:
             # self.failed = True
             self.outfile = None
@@ -438,7 +438,7 @@ class Track:
             self.get_album(session)
         else:
             self.album = album
-            
+
         if self.album is None:
             # self.failed = True
             self.outfile = None

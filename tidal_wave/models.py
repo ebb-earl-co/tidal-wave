@@ -497,16 +497,16 @@ class TidalAlbum(TidalResource):
         else:
             self.tidal_id = int(_id)
             logger.info(f"TIDAL album ID parsed from input: {self.tidal_id}")
-            
+
 
 @dataclass
 class TidalMix(TidalResource):
-    
     url: str
-    
+
     def __post_init__(self):
-        self.pattern: str = \
+        self.pattern: str = (
             r"http(?:s)?://(?:listen\.)?tidal\.com/(?:browse/)?mix/(\w{30})(?:.*?)?"
+        )
         _id = self.match_url()
 
         if _id is None:
@@ -514,7 +514,7 @@ class TidalMix(TidalResource):
         else:
             self.tidal_id = _id
             logger.info(f"TIDAL mix ID parsed from input: {self.tidal_id}")
-        
+
 
 @dataclass
 class TidalTrack(TidalResource):

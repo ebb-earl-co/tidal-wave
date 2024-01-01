@@ -18,19 +18,17 @@ from .video import Video
 logger = logging.getLogger("__name__")
 
 # union type for type hinting
-MixItem = Optional[
-    Union["TracksEndpointResponseJSON", "VideosEndpointResponseJSON"]
-]
+MixItem = Optional[Union["TracksEndpointResponseJSON", "VideosEndpointResponseJSON"]]
 
 
 @dataclass
 class Mix:
     mix_id: str
-    
+
     def __post_init__(self):
         self.mix_dir: Optional[Path] = None
         self.mix_cover_saved: bool = False
-    
+
     def get_metadata(self, session: Session):
         """Request from TIDAL API /playlists endpoint"""
         self.metadata: Optional[PlaylistsEndpointResponseJSON] = request_mixes(
@@ -39,7 +37,7 @@ class Mix:
         self.name = (
             self.metadata.title.replace("/", "_").replace("|", "_").replace(":", " -")
         )
-    
+
     def set_items(self, session: Session):
         """Uses data from TIDAL API /mixes/items endpoint to
         populate self.items"""
@@ -50,13 +48,13 @@ class Mix:
             self.items = tuple()
         else:
             self.items: Tuple[Optional[MixItem]] = tuple(mix_items.items)
-    
+
     def set_dir(self, out_dir: Path):
         """Populates self.mix_dir based on self.name, self.mix_id"""
         mix_substring: str = f"{self.name} [{self.mix_id}]"
         self.mix_dir: Path = out_dir / "Mixes" / mix_substring
         self.mix_dir.mkdir(parents=True, exist_ok=True)
-    
+
     def save_cover_image(self, session: Session, out_dir: Path):
         """Requests self.metadata.image and attempts to write it to disk"""
         if self.mix_dir is None:
@@ -64,15 +62,14 @@ class Mix:
         self.cover_path: Path = self.mix_dir / "cover.jpg"
         if not self.cover_path.exists():
             with session.get(
-                url=self.metadata.image,
-                params={k: None for k in session.params}
+                url=self.metadata.image, params={k: None for k in session.params}
             ) as r:
                 (self.mix_dir / "cover.jpg").write_bytes(r.content)
-             
+
             self.mix_cover_saved = True
         else:
             self.mix_cover_saved = True
-    
+
     def get_items(self, session: Session, audio_format: AudioFormat):
         """Using either Track.get() or Video.get(), attempt to request
         the data for each track or video in self.items"""
@@ -112,7 +109,7 @@ class Mix:
                 Tuple[int, Optional[Union[Track, Video]]]
             ] = tuple(tracks_videos)
         return tracks_videos
-    
+
     def flatten_mix_dir(self):
         """When self.get_items() is called, the tracks and/or videos in
         self.items are downloaded using their self-contained .get() logic;
@@ -214,13 +211,13 @@ class Mix:
                 shutil.rmtree(subdir)
         else:
             return self.mix_dir
-    
+
     def dumps(self):
         return json.dumps(self.files)
 
     def dump(self, fp=sys.stdout):
         json.dump(self.files, fp)
-        
+
     def get(self, session: Session, audio_format: AudioFormat, out_dir: Path):
         """The main method of this class, executing a number of other methods
         in a row:
@@ -246,8 +243,8 @@ class Mix:
             return
         self.flatten_mix_dir()
         logger.info(f"Mix files written to '{self.mix_dir}'")
-    
-    
+
+
 class TidalMixException(Exception):
     pass
 
@@ -258,7 +255,7 @@ def request_mixes(session: Session, mix_id: str) -> Optional[SimpleNamespace]:
     kwargs: dict = {"url": url}
     kwargs["params"] = {"deviceType": "PHONE"}
     kwargs["headers"] = {"Accept": "application/json"}
-    
+
     logger.info(f"Requesting from TIDAL API: mixes/{mix_id}/items")
     with session.get(**kwargs) as resp:
         try:
@@ -271,15 +268,17 @@ def request_mixes(session: Session, mix_id: str) -> Optional[SimpleNamespace]:
             else:
                 logger.exception(he)
             return
-        
+
         d = dict()
         d["title"] = resp.json().get("title")
-        d["description"] = \
-            resp.json().get("rows")[0]["modules"][0]["mix"]["subTitle"]
-        d["image"] = \
-            resp.json().get("rows", [{}])[0].get("modules")[0]["mix"]["images"]["LARGE"]["url"]
-        
-        logger.debug( 
+        d["description"] = resp.json().get("rows")[0]["modules"][0]["mix"]["subTitle"]
+        d["image"] = (
+            resp.json()
+            .get("rows", [{}])[0]
+            .get("modules")[0]["mix"]["images"]["LARGE"]["url"]
+        )
+
+        logger.debug(
             f"{resp.status_code} response from TIDAL API to request: pages/mix"
         )
         return SimpleNamespace(**d)
@@ -291,7 +290,7 @@ def request_mix_items(session: Session, mix_id: str) -> Optional[Dict]:
     kwargs: dict = {"url": url}
     kwargs["params"] = {"limit": 100}
     kwargs["headers"] = {"Accept": "application/json"}
-    
+
     data: Optional[dict] = None
     logger.info(f"Requesting from TIDAL API: mixes/{mix_id}/items")
     with session.get(**kwargs) as resp:
@@ -311,7 +310,7 @@ def request_mix_items(session: Session, mix_id: str) -> Optional[Dict]:
             )
         finally:
             return data
-        
+
 
 @dataclass(frozen=True)
 class MixesItemsResponseJSON:
@@ -324,7 +323,7 @@ class MixesItemsResponseJSON:
     items: Tuple[
         Optional[Union["TracksEndpointResponseJSON", "VideosEndpointResponseJSON"]]
     ]
-    
+
 
 def mix_maker(
     mixes_response: Dict[str, Union[int, List[dict]]]
@@ -386,12 +385,10 @@ def get_mix(session: Session, mix_id: str) -> Optional["MixesItemsResponseJSON"]
     """
     mixes_items_response_json: Optional["MixesItemsResponseJSON"] = None
     try:
-        mixes_response: dict = request_mix_items(
-            session=session, mix_id=mix_id
+        mixes_response: dict = request_mix_items(session=session, mix_id=mix_id)
+        mixes_items_response_json: Optional["MixesItemsResponseJSON"] = mix_maker(
+            mixes_response=mixes_response
         )
-        mixes_items_response_json: Optional[
-            "MixesItemsResponseJSON"
-        ] = mix_maker(mixes_response=mixes_response)
     except Exception as e:
         logger.exception(TidalMixException(e.args[0]))
     finally:

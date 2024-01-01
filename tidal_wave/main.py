@@ -13,7 +13,14 @@ from .mix import Mix
 from .playlist import Playlist
 from .track import Track
 from .video import Video
-from .models import match_tidal_url, TidalAlbum, TidalMix, TidalPlaylist, TidalTrack, TidalVideo
+from .models import (
+    match_tidal_url,
+    TidalAlbum,
+    TidalMix,
+    TidalPlaylist,
+    TidalTrack,
+    TidalVideo,
+)
 from .requesting import get_album_id
 
 from platformdirs import user_music_path
