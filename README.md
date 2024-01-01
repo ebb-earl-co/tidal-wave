@@ -74,6 +74,19 @@ Pull the image from GitHub container repo:
 ```bash
 docker pull ghcr.io/ebb-earl-co/tidal-wave:latest
 ```
+### `pyapp` executable
+Download the Rust-compiled binary from [the Releases](https://github.com/ebb-earl-co/tidal-wave/releases/latest), and, on macOS or GNU/Linux, make it executable
+```bash
+$ wget https://github.com/ebb-earl-co/tidal-wave/releases/download/<VERSION>/tidal-wave_<VERSION>.pyapp
+$ chmod +x ./tidal-wave_<VERSION>.pyapp
+```
+Or, on Windows, once the .exe file is downloaded, you might have to allow a security exception for an unkown developer.
+
+### Docker
+Pull the image from GitHub container repo:
+```bash
+docker pull ghcr.io/ebb-earl-co/tidal-wave:latest
+```
 
 ## Quickstart
 Run `python3 tidal-wave --help` to see the options available. Or, if you followed the repository cloning steps above, run `python3 -m tidal_wave --help` from the repository root directory, `tidal-wave`. In either case, you should see something like the following:
@@ -133,7 +146,6 @@ Similarly, all media retrieved is placed in subdirectories of the user's default
  ```bash
  $ ./tidal-wave_<VERSION>.pyapp https://tidal.com/browse/mix/...
  ```
-
 #### Docker example
 The command line options are the same for the Python invocation, but in order to save configuration and audio data, volumes need to be passed. If they are bind mounts to directories, **they must be created before executing `docker run` to avoid permissions issues**! For example,
 ```bash
