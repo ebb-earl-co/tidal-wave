@@ -207,7 +207,7 @@ def login_windows(
             "session_id": s.session_id,
             "client_id": s.client_id,
             "client_name": s.client_name,
-            "country_code": s.params["country_code"],
+            "country_code": s.params["countryCode"],
         }
         token_path.write_bytes(base64.b64encode(bytes(json.dumps(to_write), "UTF-8")))
     return s
