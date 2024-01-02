@@ -310,6 +310,50 @@ class TracksLyricsResponseJSON(dataclass_wizard.JSONWizard):
     is_right_to_left: bool
 
 
+@dataclass
+class ArtistsEndpointResponseJSON(dataclass_wizard.JSONWizard):
+    """The response from the TIDAL API endpoint /artists is
+    modeled by this class"""
+
+    id: int
+    name: str
+    artist_types: List[str]
+    url: str
+    picture: Optional[str] = field(repr=False, default=None)
+
+    def picture_url(self, dimension: int = 750) -> Optional[str]:
+        if self.picture is None:
+            return
+        elif len(self.picture) != 36 or self.picture.count("-") != 4:
+            # Should be a UUID
+            return
+        else:
+            _picture = self.picture.replace("-", "/")
+            return IMAGE_URL % f"{_picture}/{dimension}x{dimension}"
+
+
+@dataclass(frozen=True)
+class ArtistsAlbumsResponseJSON(dataclass_wizard.JSONWizard):
+    """The response from the TIDAL API endpoint /artists/<ID>/albums
+    is modeled by this class"""
+
+    limit: int
+    offset: int
+    total_number_of_items: int
+    items: List["AlbumsEndpointResponseJSON"]
+
+
+@dataclass(frozen=True)
+class ArtistsVideosResponseJSON(dataclass_wizard.JSONWizard):
+    """The response from the TIDAL API endpoint /artists/<ID>/videos
+    is modeled by this class"""
+
+    limit: int
+    offset: int
+    total_number_of_items: int
+    items: List["VideosEndpointResponseJSON"]
+
+
 @dataclass(frozen=True)
 class ArtistsBioResponseJSON(dataclass_wizard.JSONWizard):
     """The response from the TIDAL API endpoint /artists/<ID>/bio
@@ -500,6 +544,26 @@ class TidalAlbum(TidalResource):
 
 
 @dataclass
+class TidalArtist(TidalResource):
+    """Class representing a TIDAL artist. Its main purpose is the
+    __post_init__ checking process"""
+
+    url: str
+
+    def __post_init__(self):
+        self.pattern: str = (
+            r"http(?:s)?://(?:listen\.)?tidal\.com/(?:browse/)?artist/(\d{7,9})(?:.*?)?"
+        )
+        _id = self.match_url()
+
+        if _id is None:
+            raise ValueError(f"'{self.url}' is not a valid TIDAL album URL")
+        else:
+            self.tidal_id = int(_id)
+            logger.info(f"TIDAL album ID parsed from input: {self.tidal_id}")
+
+
+@dataclass
 class TidalMix(TidalResource):
     url: str
 
@@ -598,7 +662,11 @@ def match_tidal_url(input_str: str) -> Optional[TidalResource]:
                     logger.debug(verr)
                     try:
                         tidal_resource: TidalMix = TidalMix(input_str)
-                    except ValueError as valerr:
-                        logger.debug(valerr)
+                    except ValueError as vaerr:
+                        logger.debug(vaerr)
+                        try:
+                            tidal_resource: TidalArtist = TidalArtist(input_str)
+                        except ValueError as valerr:
+                            logger.debug(valerr)
     finally:
         return tidal_resource
