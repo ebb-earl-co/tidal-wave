@@ -7,6 +7,7 @@ from typing import List, Optional
 from requests import Session
 
 from .media import AudioFormat
+from .models import AlbumsEndpointResponseJSON
 from .requesting import request_albums, request_album_items, request_album_review
 from .track import Track
 from .utils import download_cover_image, sleep_to_mimic_human_activity
@@ -97,8 +98,18 @@ class Album:
     def dump(self, fp=sys.stdout):
         json.dump(self.track_files, fp)
 
-    def get(self, session: Session, audio_format: AudioFormat, out_dir: Path):
-        self.get_metadata(session)
+    def get(
+        self,
+        session: Session,
+        audio_format: AudioFormat,
+        out_dir: Path,
+        metadata: Optional[AlbumsEndpointResponseJSON] = None,
+    ):
+        if metadata is None:
+            self.get_metadata(session)
+        else:
+            self.metadata = metadata
+
         self.get_items(session)
         self.save_cover_image(session, out_dir)
         self.get_review(session)

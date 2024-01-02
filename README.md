@@ -100,11 +100,14 @@ Usage: tidal-wave [OPTIONS] TIDAL_URL [OUTPUT_DIRECTORY]
                                                                                                                                                                                             
 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ *    tidal_url             TEXT                The Tidal album or mix or playlist or track or video to download [default: None] [required]                                               │
-│      output_directory      [OUTPUT_DIRECTORY]  The parent directory under which files will be written [default: /home/$USER/Music]                                                       │
+>>>>>>> trunk
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --audio-format        [360|Atmos|HiRes|MQA|Lossless|High|Low]         [default: Lossless]                                                                                                │
-│ --loglevel            [DEBUG|INFO|WARNING|ERROR|CRITICAL]             [default: INFO]                                                                                                    │
+│ --audio-format               [360|Atmos|HiRes|MQA|Lossless|High|Low]  [default: Lossless]                                                                                                │
+│ --loglevel                   [DEBUG|INFO|WARNING|ERROR|CRITICAL]      [default: INFO]                                                                                                    │
+│ --include-eps-singles                                                 No-op unless passing TIDAL artist. Whether to include artist's EPs and singles with albums                         │
+│ --install-completion                                                  Install completion for the current shell.                                                                          │
+│ --show-completion                                                     Show completion for the current shell, to copy it or customize the installation.                                   │
 │ --help                                                                Show this message and exit.                                                                                        │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
@@ -151,6 +154,16 @@ Similarly, all media retrieved is placed in subdirectories of the user's default
  ```bash
  $ ./tidal-wave_<VERSION>.pyapp https://tidal.com/browse/mix/...
  ```
+
+ - To (attempt to) get all of an artist's works (albums and videos, **excluding EPs and singles**) in Dolby Atmos format and verbose logging, the following will do that:
+ ```bash
+ (.venv) $ python3 -m tidal_wave https://listen.tidal.com/artist/... --audio-format atmos --loglevel debug
+ ```
+
+ - To (attempt to) get all of an artist's works (**including EPs and singles**), in HiRes format, the following will do that:
+ ```bash
+ (.venv) $ tidal-wave https://listen.tidal.com/artist/... --audio-format hires --include-eps-singles
+ ```
 #### Docker example
 The command line options are the same for the Python invocation, but in order to save configuration and audio data, volumes need to be passed. If they are bind mounts to directories, **they must be created before executing `docker run` to avoid permissions issues**! For example,
 ```bash
@@ -161,4 +174,17 @@ $ docker run \
     --volume ./config/tidal-wave:/home/debian/.config/tidal-wave \
     ghcr.io/ebb-earl-co/tidal-wave:latest \
     https://tidal.com/browse/track/...
+```
+
+Using Docker might be an attractive idea in the event that you want to retrieve all of the videos, albums, EPs, and singles in highest quality possible for a given artist. The following Docker invocation will do that for you:
+```bash
+$ mkdir -p ./Music/ ./config/tidal-wave/
+$ docker run \
+    --name tidal-wave \
+    --volume ./Music:/home/debian/Music \
+    --volume ./config/tidal-wave:/home/debian/.config/tidal-wave \
+    ghcr.io/ebb-earl-co/tidal-wave:latest \
+    https://listen.tidal.com/artist/... \
+    --audio-format hires \
+    --include-eps-singles
 ```
