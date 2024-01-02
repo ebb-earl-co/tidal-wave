@@ -6,7 +6,10 @@ from .models import (
     AlbumsEndpointResponseJSON,
     AlbumsItemsResponseJSON,
     AlbumsReviewResponseJSON,
+    ArtistsAlbumsResponseJSON,
     ArtistsBioResponseJSON,
+    ArtistsEndpointResponseJSON,
+    ArtistsVideosResponseJSON,
     PlaylistsEndpointResponseJSON,
     SessionsEndpointResponseJSON,
     SubscriptionEndpointResponseJSON,
@@ -28,7 +31,10 @@ ResponseJSON = Union[
     AlbumsEndpointResponseJSON,
     AlbumsItemsResponseJSON,
     AlbumsReviewResponseJSON,
+    ArtistsAlbumsResponseJSON,
     ArtistsBioResponseJSON,
+    ArtistsEndpointResponseJSON,
+    ArtistsVideosResponseJSON,
     PlaylistsEndpointResponseJSON,
     SessionsEndpointResponseJSON,
     SubscriptionEndpointResponseJSON,
@@ -144,6 +150,46 @@ request_artist_bio: Callable[
     headers={"Accept": "application/json"},
     url_end="/bio",
     subclass=ArtistsBioResponseJSON,
+)
+
+request_artists: Callable[
+    [Session, int], Optional[ArtistsEndpointResponseJSON]
+] = partial(
+    requester_maker,
+    endpoint="artists",
+    headers={"Accept": "application/json"},
+    subclass=ArtistsEndpointResponseJSON,
+)
+
+request_artists_albums: Callable[
+    [Session, int], Optional[ArtistsAlbumsResponseJSON]
+] = partial(
+    requester_maker,
+    endpoint="artists",
+    headers={"Accept": "application/json"},
+    url_end="/albums",
+    subclass=ArtistsAlbumsResponseJSON,
+)
+
+request_artists_audio_works: Callable[
+    [Session, int], Optional[ArtistsAlbumsResponseJSON]
+] = partial(
+    requester_maker,
+    endpoint="artists",
+    headers={"Accept": "application/json"},
+    parameters={"filter": "EPSANDSINGLES"},
+    url_end="/albums",
+    subclass=ArtistsAlbumsResponseJSON,
+)
+
+request_artists_videos: Callable[
+    [Session, int], Optional[ArtistsAlbumsResponseJSON]
+] = partial(
+    requester_maker,
+    endpoint="artists",
+    headers={"Accept": "application/json"},
+    url_end="/videos",
+    subclass=ArtistsVideosResponseJSON,
 )
 
 request_tracks: Callable[
