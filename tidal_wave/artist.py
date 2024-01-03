@@ -28,9 +28,6 @@ logger = logging.getLogger("__name__")
 class Artist:
     artist_id: int
 
-    def __post_init__(self):
-        pass
-
     def set_metadata(self, session: Session):
         """This function requests from TIDAL API endpoint /artists and
         stores the results in self.metadata"""
@@ -134,5 +131,5 @@ class Artist:
         self.set_metadata(session)
         self.set_dir(out_dir)
         self.save_artist_image(session)
-        # self.get_videos(session, out_dir)
+        self.get_videos(session, out_dir)
         self.get_albums(session, audio_format, out_dir, include_eps_singles)

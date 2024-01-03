@@ -19,6 +19,7 @@ This project is inspired by [`qobuz-dl`](https://github.com/vitiko98/qobuz-dl), 
 * Video download support
 * Playlist download support (video or audio or both)
 * Mix download support (video or audio)
+* Artist's entire works download support (video and audio; albums or albums and EPs and singles)
 
 ## Getting Started
 A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to retrieve HiRes FLAC, Dolby Atmos, and Sony 360 Reality Audio tracks. Simply a [HiFi](https://tidal.com/pricing) plan is sufficient to download in 16-bit, 44.1 kHz (i.e. lossless) or lower quality as well as videos.
@@ -100,7 +101,7 @@ Usage: tidal-wave [OPTIONS] TIDAL_URL [OUTPUT_DIRECTORY]
                                                                                                                                                                                             
 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ *    tidal_url             TEXT                The Tidal album or mix or playlist or track or video to download [default: None] [required]                                               │
->>>>>>> trunk
+│      output_directory      [OUTPUT_DIRECTORY]  The parent directory under which files will be written [default: /home/${USER}/music/]                                                    │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ --audio-format               [360|Atmos|HiRes|MQA|Lossless|High|Low]  [default: Lossless]                                                                                                │
