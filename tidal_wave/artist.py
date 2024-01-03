@@ -67,7 +67,7 @@ class Artist:
         """This method sets self.artist_dir and creates the directory on the file system
         if it does not exist"""
         self.name: str = self.metadata.name.replace("..", "")
-        self.artist_dir = out_dir / name
+        self.artist_dir = out_dir / self.name
         self.artist_dir.mkdir(parents=True, exist_ok=True)
 
     def get_albums(
