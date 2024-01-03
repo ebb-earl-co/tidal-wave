@@ -66,7 +66,8 @@ class Artist:
     def set_dir(self, out_dir: Path):
         """This method sets self.artist_dir and creates the directory on the file system
         if it does not exist"""
-        self.artist_dir = out_dir / self.metadata.name
+        self.name: str = self.metadata.name.replace("..", "")
+        self.artist_dir = out_dir / self.name
         self.artist_dir.mkdir(parents=True, exist_ok=True)
 
     def get_albums(
@@ -81,13 +82,13 @@ class Artist:
             logger.info(
                 f"Starting attempt to get {self.albums.total_number_of_items} "
                 "albums, EPs, and singles for artist with ID "
-                f"{self.metadata.id},  '{self.metadata.name}'"
+                f"{self.metadata.id},  '{self.name}'"
             )
         else:
             self.set_albums(session)
             logger.info(
                 f"Starting attempt to get {self.albums.total_number_of_items} albums "
-                f"for artist with ID {self.metadata.id}, '{self.metadata.name}'"
+                f"for artist with ID {self.metadata.id}, '{self.name}'"
             )
 
         for i, a in enumerate(self.albums.items):
@@ -110,7 +111,7 @@ class Artist:
         self.set_videos(session)
         logger.info(
             f"Starting attempt to get {self.videos.total_number_of_items} videos "
-            f"for artist with ID {self.metadata.id}, '{self.metadata.name}'"
+            f"for artist with ID {self.metadata.id}, '{self.name}'"
         )
         for i, v in enumerate(self.videos.items):
             video: Video = Video(video_id=v.id)

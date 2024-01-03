@@ -35,7 +35,11 @@ class Mix:
             session=session, mix_id=self.mix_id
         )
         self.name = (
-            self.metadata.title.replace("/", "_").replace("|", "_").replace(":", " -")
+            self.metadata.title.replace("/", "_")
+            .replace("|", "_")
+            .replace(":", " -")
+            .replace('"', "")
+            .replace("..", "")
         )
 
     def set_items(self, session: Session):
