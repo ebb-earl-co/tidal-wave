@@ -25,6 +25,7 @@ classifiers=[
     "Operating System :: OS Independent"
 ]
 dependencies = [
+    "backoff",
     "dataclass-wizard",
     "ffmpeg-python",
     "mutagen",

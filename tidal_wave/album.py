@@ -10,7 +10,7 @@ from .media import AudioFormat
 from .models import AlbumsEndpointResponseJSON
 from .requesting import request_albums, request_album_items, request_album_review
 from .track import Track
-from .utils import download_cover_image, sleep_to_mimic_human_activity
+from .utils import download_cover_image 
 
 
 @dataclass
@@ -88,7 +88,6 @@ class Album:
                 album=self.metadata,
             )
             track_files[i] = {track.metadata.track_number: track_files_value}
-            sleep_to_mimic_human_activity()
         else:
             self.track_files = track_files
 
