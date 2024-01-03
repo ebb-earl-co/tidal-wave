@@ -170,6 +170,7 @@ The command line options are the same for the Python invocation, but in order to
 ```bash
 $ mkdir -p ./Music/ ./config/tidal-wave/
 $ docker run \
+    --rm -it \
     --name tidal-wave \
     --volume ./Music:/home/debian/Music \
     --volume ./config/tidal-wave:/home/debian/.config/tidal-wave \
@@ -182,6 +183,7 @@ Using Docker might be an attractive idea in the event that you want to retrieve 
 $ mkdir -p ./Music/ ./config/tidal-wave/
 $ docker run \
     --name tidal-wave \
+    --rm -it \
     --volume ./Music:/home/debian/Music \
     --volume ./config/tidal-wave:/home/debian/.config/tidal-wave \
     ghcr.io/ebb-earl-co/tidal-wave:latest \

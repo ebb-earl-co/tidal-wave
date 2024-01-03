@@ -191,7 +191,7 @@ def login_windows(
     _token: Optional[str] = load_token_from_disk(token_path=token_path)
     if _token is None:
         _token: str = typer.prompt(
-            "Enter Tidal API access token (the part after 'Bearer '): "
+            "Enter Tidal API access token (the part after 'Bearer ')"
         )
 
     s: Optional[requests.Session] = validate_token(_token)
