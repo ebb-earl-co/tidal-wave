@@ -33,7 +33,10 @@ class Playlist:
             session=session, identifier=self.playlist_id
         )
         self.name = (
-            self.metadata.title.replace("/", "_").replace("|", "_").replace(":", " -")
+            self.metadata.title.replace("/", "_")
+            .replace("|", "_")
+            .replace(":", " -")
+            .replace('"', "")
         )
 
     def set_items(self, session: Session):

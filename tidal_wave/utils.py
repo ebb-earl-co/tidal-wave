@@ -78,7 +78,7 @@ def download_artist_image(
         else:
             bytes_to_write = BytesIO(r.content)
 
-    file_name: str = f"{artist.name}.jpg"
+    file_name: str = f"{artist.name.replace('..', '')}.jpg"
     if bytes_to_write is not None:
         output_file: Path = output_dir / file_name
         bytes_to_write.seek(0)
@@ -109,7 +109,7 @@ def download_artist_bio(
         else:
             bytes_to_write = BytesIO(r.content)
 
-    file_name: str = f"{artist.name}.jpg"
+    file_name: str = f"{artist.name.replace('..', '')}.jpg"
     if bytes_to_write is not None:
         output_file: Path = output_dir / file_name
         bytes_to_write.seek(0)

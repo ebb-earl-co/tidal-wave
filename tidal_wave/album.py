@@ -45,9 +45,9 @@ class Album:
             )
 
     def set_dir(self, out_dir: Path):
-        artist_substring: str = self.metadata.artist.name
+        artist_substring: str = self.metadata.artist.name.replace("..", "")
         album_substring: str = (
-            f"{self.metadata.name} "
+            f"{self.metadata.name.replace('..', '')} "
             f"[{self.metadata.id}] [{self.metadata.release_date.year}]"
         )
         self.album_dir = out_dir / artist_substring / album_substring

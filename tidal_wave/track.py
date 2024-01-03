@@ -115,7 +115,7 @@ class Track:
             self.codec = "mp3"
 
     def set_album_dir(self, out_dir: Path):
-        artist_substring: str = self.album.artist.name
+        artist_substring: str = self.album.artist.name.replace("..", "")
         album_substring: str = (
             f"{self.album.name} " f"[{self.album.id}] [{self.album.release_date.year}]"
         )
@@ -127,7 +127,7 @@ class Track:
             (self.album_dir / volume_substring).mkdir(parents=True, exist_ok=True)
 
     def set_filename(self, audio_format: AudioFormat, out_dir: Path):
-        _track_part: str = f"{self.metadata.track_number:02d} - {self.metadata.name}"
+        _track_part: str = f"{self.metadata.track_number:02d} - {self.name}"
         if audio_format == AudioFormat.low:
             track_substring: str = f"{_track_part} [L]"
         elif audio_format == AudioFormat.high:
@@ -169,7 +169,7 @@ class Track:
             self.filename: Optional[str] = f"{track_substring}.{self.codec}"
 
         # for use in playlist file ordering
-        self.trackname: str = self.filename.split("- ")[-1]
+        self.trackname: str = re.match(r"(?:\d{2,3} - )(.+?$)", self.filename).groups()[0]
 
     def set_outfile(self):
         """Uses self.album_dir and self.metadata and self.filename
@@ -193,7 +193,9 @@ class Track:
 
     def save_artist_image(self, session: Session):
         for a in self.metadata.artists:
-            track_artist_image: Path = self.album_dir / f"{a.name}.jpg"
+            track_artist_image: Path = (
+                self.album_dir / f"{a.name.replace('..', '')}.jpg"
+            )
             if not track_artist_image.exists():
                 download_artist_image(session, a, self.album_dir)
 
