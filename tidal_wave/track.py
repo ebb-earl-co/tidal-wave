@@ -170,7 +170,9 @@ class Track:
             self.filename: Optional[str] = f"{track_substring}.{self.codec}"
 
         # for use in playlist file ordering
-        self.trackname: str = re.match(r"(?:\d{2,3} - )(.+?$)", self.filename).groups()[0]
+        self.trackname: str = re.match(r"(?:\d{2,3} - )(.+?$)", self.filename).groups()[
+            0
+        ]
 
     def set_outfile(self):
         """Uses self.album_dir and self.metadata and self.filename
