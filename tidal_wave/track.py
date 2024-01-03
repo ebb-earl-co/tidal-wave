@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import json
 import logging
 from pathlib import Path
+import re
 import shlex
 import shutil
 import subprocess
@@ -127,7 +128,7 @@ class Track:
             (self.album_dir / volume_substring).mkdir(parents=True, exist_ok=True)
 
     def set_filename(self, audio_format: AudioFormat, out_dir: Path):
-        _track_part: str = f"{self.metadata.track_number:02d} - {self.name}"
+        _track_part: str = f"{self.metadata.track_number:02d} - {self.metadata.name}"
         if audio_format == AudioFormat.low:
             track_substring: str = f"{_track_part} [L]"
         elif audio_format == AudioFormat.high:

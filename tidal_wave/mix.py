@@ -39,6 +39,7 @@ class Mix:
             .replace("|", "_")
             .replace(":", " -")
             .replace('"', "")
+            .replace("..", "")
         )
 
     def set_items(self, session: Session):
