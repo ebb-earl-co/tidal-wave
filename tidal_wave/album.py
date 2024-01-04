@@ -10,7 +10,7 @@ from .media import AudioFormat
 from .models import AlbumsEndpointResponseJSON
 from .requesting import request_albums, request_album_items, request_album_review
 from .track import Track
-from .utils import download_cover_image 
+from .utils import download_cover_image
 
 
 @dataclass
