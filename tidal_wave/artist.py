@@ -18,7 +18,7 @@ from .requesting import (
     request_artists_videos,
 )
 from .track import Track
-from .utils import download_cover_image, sleep_to_mimic_human_activity, TIDAL_API_URL
+from .utils import download_cover_image, TIDAL_API_URL
 from .video import Video
 
 logger = logging.getLogger("__name__")
@@ -120,7 +120,6 @@ class Artist:
                 out_dir=out_dir,
                 metadata=v,
             )
-            sleep_to_mimic_human_activity()
 
     def get(
         self,
