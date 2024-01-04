@@ -3,9 +3,7 @@ from io import BytesIO
 import logging
 import os
 from pathlib import Path
-import random
 import tempfile
-import time
 from typing import Optional, Tuple, Union
 
 from .models import Artist
@@ -139,9 +137,3 @@ def temporary_file(suffix: str = ".mka"):
     finally:
         tf.close()
         os.unlink(tf.name)
-
-
-def sleep_to_mimic_human_activity():
-    _time = random.randint(500, 5000) / 500
-    logger.info(f"Sleeping for {_time} seconds to mimic human activity")
-    time.sleep(_time)
