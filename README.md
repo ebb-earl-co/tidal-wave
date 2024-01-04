@@ -101,8 +101,8 @@ Run `python3 tidal-wave --help` to see the options available. Or, if you followe
 Usage: tidal-wave [OPTIONS] TIDAL_URL [OUTPUT_DIRECTORY]                                                                                                                                  
                                                                                                                                                                                             
 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ *    tidal_url             TEXT                The Tidal album or mix or playlist or track or video to download [default: None] [required]                                               │
-│      output_directory      [OUTPUT_DIRECTORY]  The parent directory under which files will be written [default: /home/${USER}/music/]                                                    │
+│ *    tidal_url             TEXT                The Tidal album or artist or mix or playlist or track or video to download [default: None] [required]                                     │
+│      output_directory      [OUTPUT_DIRECTORY]  The parent directory under which directory(ies) of files will be written [default: /home/${USER}/music/]                                  │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ --audio-format               [360|Atmos|HiRes|MQA|Lossless|High|Low]  [default: Lossless]                                                                                                │
