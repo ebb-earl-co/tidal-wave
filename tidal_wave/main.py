@@ -45,7 +45,9 @@ def main(
     ] = AudioFormat.lossless.value,
     output_directory: Annotated[
         Path,
-        typer.Argument(help="The parent directory under which directory(ies) of files will be written"),
+        typer.Argument(
+            help="The parent directory under which directory(ies) of files will be written"
+        ),
     ] = user_music_path(),
     loglevel: Annotated[
         LogLevel, typer.Option(case_sensitive=False)
