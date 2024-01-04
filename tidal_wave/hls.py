@@ -1,6 +1,6 @@
 import json
 import logging
-from requests import Response, Session
+from requests import Session
 from typing import Dict, List, Optional, Union
 
 from .models import VideosEndpointStreamResponseJSON

@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 from typing import Optional, Tuple, Union
 
-from .models import Artist, ArtistsBioResponseJSON
+from .models import Artist
 
 from requests import Session
 

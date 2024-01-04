@@ -1,13 +1,9 @@
-from dataclasses import dataclass, field
-import json
+from dataclasses import dataclass
 import logging
 from pathlib import Path
-import shutil
-import sys
-from types import SimpleNamespace
-from typing import Dict, List, Optional, Tuple, Union
+from typing import List, Optional
 
-from requests import HTTPError, Session
+from requests import Session
 
 from .album import Album
 from .media import AudioFormat
@@ -22,8 +18,7 @@ from .requesting import (
     request_artists_audio_works,
     request_artists_videos,
 )
-from .track import Track
-from .utils import download_cover_image, TIDAL_API_URL
+from .utils import download_cover_image
 from .video import Video
 
 logger = logging.getLogger("__name__")

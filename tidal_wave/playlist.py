@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import json
 import logging
 from pathlib import Path
@@ -244,7 +244,7 @@ class Playlist:
         self.save_cover_image(session, out_dir)
         try:
             self.save_description()
-        except:
+        except Exception:
             pass
 
         _get_items = self.get_items(session, audio_format)

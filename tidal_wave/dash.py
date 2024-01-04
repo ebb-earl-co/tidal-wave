@@ -1,10 +1,7 @@
-#!/usr/bin/env python3
-#! -*- coding: utf-8 -*-
-
 from dataclasses import dataclass, field
 import json
 import re
-from typing import Literal, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 from xml.etree import ElementTree as ET
 
 import dataclass_wizard

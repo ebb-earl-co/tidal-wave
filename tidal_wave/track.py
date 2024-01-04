@@ -12,7 +12,7 @@ from typing import Dict, Iterable, List, Optional
 import mutagen
 from mutagen.mp4 import MP4Cover
 import ffmpeg
-from requests import Request, Session
+from requests import Session
 
 from .dash import manifester, JSONDASHManifest, Manifest, XMLDASHManifest
 from .media import af_aq, AudioFormat, TAG_MAPPING
@@ -48,18 +48,6 @@ class Track:
         self.tags: dict = {}
         self.album_cover_saved: bool = False
 
-    def _lookup(self, af) -> AudioFormat:
-        af_aq: Dict[AudioFormat, str] = {
-            AudioFormat.sony_360_reality_audio: "LOW",
-            AudioFormat.dolby_atmos: "LOW",
-            AudioFormat.hi_res: "HI_RES",
-            AudioFormat.mqa: "HI_RES",
-            AudioFormat.lossless: "LOSSLESS",
-            AudioFormat.high: "HIGH",
-            AudioFormat.low: "LOW",
-        }
-        return af_aq.get(af)
-
     def get_metadata(self, session: Session):
         self.metadata: Optional[TracksEndpointResponseJSON] = request_tracks(
             session=session, identifier=self.track_id
@@ -89,7 +77,7 @@ class Track:
 
     def get_stream(self, session: Session, audio_format: AudioFormat):
         """Populates self.stream, self.manifest"""
-        aq: Optional[str] = self._lookup(audio_format)
+        aq: Optional[str] = af_aq.get(audio_format)
         self.stream: Optional[TracksEndpointStreamResponseJSON] = request_stream(
             session=session, track_id=self.track_id, audio_quality=aq
         )
@@ -398,7 +386,8 @@ class Track:
         # less-sophisticated audio players
         with temporary_file(suffix=".mka") as tf:
             cmd: List[str] = shlex.split(
-                f"""ffmpeg -hide_banner -loglevel quiet -y -i "{str(self.outfile.absolute())}" -map 0:a:0 -map 0:v:0 -c copy "{tf.name}" """
+                f"""ffmpeg -hide_banner -loglevel quiet -y -i "{str(self.outfile.absolute())}"
+                -map 0:a:0 -map 0:v:0 -c copy "{tf.name}" """
             )
             subprocess.run(cmd)
             shutil.copyfile(tf.name, str(self.outfile.absolute()))
@@ -472,19 +461,19 @@ class Track:
 
         try:
             self.get_lyrics(session)
-        except:
+        except Exception:
             pass
 
         self.save_album_cover(session)
 
         try:
             self.save_artist_image(session)
-        except:
+        except Exception:
             pass
 
         try:
             self.save_artist_bio(session)
-        except:
+        except Exception:
             pass
 
         if self.download(session, out_dir) is None:

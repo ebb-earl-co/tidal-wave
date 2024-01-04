@@ -197,7 +197,6 @@ def login_windows(
         logger.critical("Access token is not valid: exiting now.")
     else:
         logger.debug(f"Writing this access token to '{str(token_path.absolute())}'")
-        # s.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) TIDAL/2.35.0 Chrome/108.0.5359.215 Electron/22.3.27 Safari/537.36"
         s.headers["User-Agent"] = "TIDAL_NATIVE_PLAYER/WIN/3.1.2.195"
         s.params["deviceType"] = "DESKTOP"
         to_write: dict = {

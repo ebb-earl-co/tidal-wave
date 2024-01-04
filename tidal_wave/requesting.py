@@ -1,6 +1,6 @@
 from functools import partial
 import logging
-from typing import Callable, Dict, Iterable, Iterator, Optional, Tuple, Union
+from typing import Callable, Iterable, Iterator, Optional, Tuple, Union
 
 from .models import (
     AlbumsEndpointResponseJSON,
@@ -24,7 +24,7 @@ from .models import (
 from .utils import TIDAL_API_URL
 
 import backoff
-from requests import HTTPError, PreparedRequest, Request, Response, Session
+from requests import HTTPError, Response, Session
 
 logger: logging.Logger = logging.getLogger(__name__)
 

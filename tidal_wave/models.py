@@ -614,7 +614,10 @@ class TidalPlaylist(TidalResource):
     url: str
 
     def __post_init__(self):
-        self.pattern: str = r"http(?:s)?://(?:listen\.)?tidal\.com/(?:browse/)?playlist/([0-9a-f]{8}\-[0-9a-f]{4}\-4[0-9a-f]{3}\-[89ab][0-9a-f]{3}\-[0-9a-f]{12})(?:.*?)?"
+        self.pattern: str = (
+            r"http(?:s)?://(?:listen\.)?tidal\.com/(?:browse/)?playlist/"
+            r"([0-9a-f]{8}\-[0-9a-f]{4}\-4[0-9a-f]{3}\-[89ab][0-9a-f]{3}\-[0-9a-f]{12})(?:.*?)?"
+        )
 
         _id = self.match_url()
 
