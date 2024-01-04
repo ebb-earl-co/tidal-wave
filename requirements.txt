@@ -1,3 +1,4 @@
+backoff
 dataclass-wizard
 ffmpeg-python
 mutagen

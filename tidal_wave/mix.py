@@ -12,7 +12,7 @@ from requests import HTTPError, Session
 from .media import AudioFormat
 from .models import TracksEndpointResponseJSON, VideosEndpointResponseJSON
 from .track import Track
-from .utils import sleep_to_mimic_human_activity, TIDAL_API_URL
+from .utils import TIDAL_API_URL
 from .video import Video
 
 logger = logging.getLogger("__name__")
@@ -83,7 +83,6 @@ class Mix:
         for i, item in enumerate(self.items):
             if item is None:
                 tracks_videos[i] = None
-                sleep_to_mimic_human_activity()
                 continue
             elif isinstance(item, TracksEndpointResponseJSON):
                 track: Track = Track(track_id=item.id)
@@ -94,7 +93,6 @@ class Mix:
                     metadata=item,
                 )
                 tracks_videos[i] = track
-                sleep_to_mimic_human_activity()
             elif isinstance(item, VideosEndpointResponseJSON):
                 video: Video = Video(video_id=item.id)
                 video.get(
@@ -103,10 +101,8 @@ class Mix:
                     metadata=item,
                 )
                 tracks_videos[i] = video
-                sleep_to_mimic_human_activity()
             else:
                 tracks_videos[i] = None
-                sleep_to_mimic_human_activity()
                 continue
         else:
             self.tracks_videos: Tuple[

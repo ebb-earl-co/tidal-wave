@@ -23,7 +23,8 @@ from .models import (
 )
 from .utils import TIDAL_API_URL
 
-from requests import HTTPError, PreparedRequest, Request, Session
+import backoff
+from requests import HTTPError, PreparedRequest, Request, Response, Session
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -71,29 +72,43 @@ def requester_maker(
         if h is not None:
             kwargs["headers"] = h
 
+        @backoff.on_predicate(
+            backoff.expo,
+            predicate=lambda r: r.status_code == 429,
+            jitter=backoff.random_jitter,
+            max_time=10,
+            logger=logger,
+        )
+        def _get(s: Session, request_kwargs: dict) -> Response:
+            """Return a requests.Response object, from having passed request_kwargs
+            to s.get(), optionally retrying if 429 error occurs."""
+            with s.get(**request_kwargs) as r:
+                return r
+
         data: Optional[sc] = None
         logger.info(f"Requesting from TIDAL API: {e}/{i}{u}")
-        with s.get(**kwargs) as resp:
-            try:
-                resp.raise_for_status()
-            except HTTPError as he:
-                if resp.status_code == 404:
-                    logger.warning(
-                        f"404 Client Error: not found for TIDAL API endpoint {e}/{i}{u}"
-                    )
-                elif resp.status_code == 401:
-                    logger.warning(
-                        f"401 Client Error: Unauthorized for TIDAL API endpoint {e}/{i}{u}"
-                    )
-                else:
-                    logger.exception(he)
+        resp: Response = _get(s=s, request_kwargs=kwargs)
+
+        try:
+            resp.raise_for_status()
+        except HTTPError as he:
+            if resp.status_code == 404:
+                logger.warning(
+                    f"404 Client Error: not found for TIDAL API endpoint {e}/{i}{u}"
+                )
+            elif resp.status_code == 401:
+                logger.warning(
+                    f"401 Client Error: Unauthorized for TIDAL API endpoint {e}/{i}{u}"
+                )
             else:
-                if cf:
-                    data = sc.from_dict({"credits": resp.json()})
-                else:
-                    data = sc.from_dict(resp.json())
-            finally:
-                return data
+                logger.exception(he)
+        else:
+            if cf:
+                data = sc.from_dict({"credits": resp.json()})
+            else:
+                data = sc.from_dict(resp.json())
+        finally:
+            return data
 
     return function(
         s=session,

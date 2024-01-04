@@ -32,6 +32,7 @@ A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to ret
    - For Windows, the [FFmpeg download page](http://ffmpeg.org/download.html#build-windows) lists 2 resources; or [`chocolatey`](https://community.chocolatey.org/packages/ffmpeg) is an option
    - The Dockerfile [builds FFmpeg](https://github.com/ebb-earl-co/tidal-wave/blob/trunk/Dockerfile#L12) into the image
  - Only a handful of Python libraries are dependencies:
+   - [`backoff`](https://pypi.org/project/backoff/)
    - [`dataclass-wizard`](https://pypi.org/project/dataclass-wizard/)
    - [`ffmpeg-python`](https://pypi.org/project/ffmpeg-python/)
    - [`mutagen`](https://pypi.org/project/mutagen/)
