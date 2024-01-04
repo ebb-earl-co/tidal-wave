@@ -37,7 +37,7 @@ def main(
     tidal_url: Annotated[
         str,
         typer.Argument(
-            help="The Tidal album or mix or playlist or track or video to download"
+            help="The Tidal album or artist or mix or playlist or track or video to download"
         ),
     ],
     audio_format: Annotated[
@@ -45,7 +45,9 @@ def main(
     ] = AudioFormat.lossless.value,
     output_directory: Annotated[
         Path,
-        typer.Argument(help="The parent directory under which files will be written"),
+        typer.Argument(
+            help="The parent directory under which directory(ies) of files will be written"
+        ),
     ] = user_music_path(),
     loglevel: Annotated[
         LogLevel, typer.Option(case_sensitive=False)
@@ -71,7 +73,7 @@ def main(
 
     if tidal_resource is None:
         logger.critical(
-            f"Cannot parse '{tidal_url}' as a TIDAL track, album, playlist, or video URL"
+            f"Cannot parse '{tidal_url}' as a TIDAL album, artist, mix, playlist, track, or video URL"
         )
         raise typer.Exit(code=1)
 
