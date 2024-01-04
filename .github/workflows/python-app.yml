@@ -1,17 +1,11 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
-
 name: Python application
-
 on:
   push:
     branches: [ "trunk", "develop" ]
   pull_request:
     branches: [ "trunk", "develop" ]
-
 permissions:
   contents: read
-
 jobs:
   build:
     strategy:
@@ -19,10 +13,8 @@ jobs:
         version: [3.8, 3.9, 3.10, 3.11, 3.12]
         os: [ubuntu-latest, windows-latest, macOS-latest]
     runs-on: ${{ matrix.os }}
-
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python 3.8+
     - uses: actions/setup-python@v3
       with:
         python-version: "${{ matrix.version }}"
@@ -38,6 +30,4 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Format with Black
-      run: |
-        black tidal_wave
-    
+      run: black tidal_wave
