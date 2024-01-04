@@ -5,12 +5,16 @@ from pathlib import Path
 import shutil
 import sys
 from types import SimpleNamespace
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 from requests import HTTPError, Session
 
 from .media import AudioFormat
-from .models import TracksEndpointResponseJSON, VideosEndpointResponseJSON
+from .models import (
+    PlaylistsEndpointResponseJSON,
+    TracksEndpointResponseJSON,
+    VideosEndpointResponseJSON,
+)
 from .track import Track
 from .utils import TIDAL_API_URL
 from .video import Video

@@ -11,6 +11,11 @@ from requests import HTTPError, Session
 
 from .album import Album
 from .media import AudioFormat
+from .models import (
+    ArtistsAlbumsResponseJSON,
+    ArtistsEndpointResponseJSON,
+    ArtistsVideosResponseJSON,
+)
 from .requesting import (
     request_artists,
     request_artists_albums,

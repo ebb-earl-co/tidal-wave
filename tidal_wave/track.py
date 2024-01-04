@@ -7,14 +7,14 @@ import shlex
 import shutil
 import subprocess
 import sys
-from typing import Optional
+from typing import Dict, Iterable, List, Optional
 
 import mutagen
 from mutagen.mp4 import MP4Cover
 import ffmpeg
 from requests import Request, Session
 
-from .dash import manifester, JSONDASHManifest, XMLDASHManifest
+from .dash import manifester, JSONDASHManifest, Manifest, XMLDASHManifest
 from .media import af_aq, AudioFormat, TAG_MAPPING
 from .models import (
     AlbumsEndpointResponseJSON,
@@ -34,7 +34,7 @@ from .requesting import (
     request_stream,
     request_tracks,
 )
-from .utils import download_cover_image, temporary_file
+from .utils import download_artist_image, download_cover_image, temporary_file
 
 logger = logging.getLogger("__name__")
 

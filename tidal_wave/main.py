@@ -5,7 +5,7 @@ from contextlib import closing
 import logging
 from pathlib import Path
 import sys
-from typing import Optional
+from typing import Optional, Union
 
 from .login import login, AudioFormat, LogLevel
 from .album import Album

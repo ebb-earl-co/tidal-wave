@@ -3,10 +3,15 @@ import json
 import logging
 from pathlib import Path
 import sys
-from typing import Optional
+from typing import Dict, List, Optional
 
-from .hls import playlister, variant_streams
+from .hls import playlister, variant_streams, TidalM3U8Exception
 from .media import TAG_MAPPING, VideoFormat
+from .models import (
+    VideosContributorsResponseJSON,
+    VideosEndpointResponseJSON,
+    VideosEndpointStreamResponseJSON,
+)
 from .requesting import request_videos, request_video_contributors, request_video_stream
 from .utils import temporary_file
 

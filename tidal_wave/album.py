@@ -7,7 +7,11 @@ from typing import List, Optional
 from requests import Session
 
 from .media import AudioFormat
-from .models import AlbumsEndpointResponseJSON
+from .models import (
+    AlbumsEndpointResponseJSON,
+    AlbumsItemsResponseJSON,
+    AlbumsReviewResponseJSON,
+)
 from .requesting import request_albums, request_album_items, request_album_review
 from .track import Track
 from .utils import download_cover_image
@@ -34,8 +38,6 @@ class Album:
         )
 
     def get_review(self, session: Session):
-        if self.album_dir is None:
-            self.set_dir(out_dir=out_dir)
         self.album_review: Optional[AlbumsReviewResponseJSON] = request_album_review(
             session=session, identifier=self.album_id
         )
