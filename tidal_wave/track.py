@@ -50,23 +50,23 @@ class Track:
 
     def get_metadata(self, session: Session):
         self.metadata: Optional[TracksEndpointResponseJSON] = request_tracks(
-            session=session, identifier=self.track_id
+            session, self.track_id
         )
 
     def get_album(self, session: Session):
         self.album: Optional[AlbumsEndpointResponseJSON] = request_albums(
-            session=session, identifier=self.metadata.album.id
+            session, self.metadata.album.id
         )
 
     def get_credits(self, session: Session):
         self.credits: Optional[TracksCreditsResponseJSON] = request_credits(
-            session=session, identifier=self.track_id
+            session, self.track_id
         )
 
     def get_lyrics(self, session: Session):
         if self._has_lyrics is None:
             self.lyrics: Optional[TracksLyricsResponseJSON] = request_lyrics(
-                session=session, identifier=self.track_id
+                session, self.track_id
             )
             if self.lyrics is None:
                 self._has_lyrics = False
@@ -79,7 +79,7 @@ class Track:
         """Populates self.stream, self.manifest"""
         aq: Optional[str] = af_aq.get(audio_format)
         self.stream: Optional[TracksEndpointStreamResponseJSON] = request_stream(
-            session=session, track_id=self.track_id, audio_quality=aq
+            session, self.track_id, aq
         )
 
     def set_manifest(self):
@@ -195,7 +195,7 @@ class Track:
             track_artist_bio_json: Path = self.album_dir / f"{a.name}-bio.json"
             if not track_artist_bio_json.exists():
                 artist_bio: Optional[ArtistsBioResponseJSON] = request_artist_bio(
-                    session=session, identifier=a.id
+                    session, a.id
                 )
                 if artist_bio is not None:
                     logger.info(
@@ -493,6 +493,7 @@ class Track:
         else:
             v: Optional[str] = str(self.outfile.absolute())
         json.dump({k: v}, fp)
+        return None
 
     def dumps(self) -> str:
         k: int = int(self.metadata.track_number)
@@ -503,3 +504,4 @@ class Track:
         else:
             v: Optional[str] = str(self.outfile.absolute())
         json.dumps({k: v})
+        return None
