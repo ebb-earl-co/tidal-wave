@@ -2,8 +2,6 @@ name: Pyapp Build on Ubuntu for GNU/Linux x86_64
 on:
   release:
     types: ["published"]
-  pull_request:
-    branches: ["trunk"]
 
 env:
   PYAPP_PROJECT_NAME: "tidal-wave"
