@@ -1,18 +1,19 @@
 name: Docker Image CI
 
 on:
-  push:
-    branches: [ "trunk" ]
-  pull_request:
-    branches: [ "trunk" ]
+  release:
+    types: ["published"]
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag ghcr.io/ebb-earl-co/tidal-wave:trunk
+    - name: Build the release-tag image
+      run: docker build . --file Dockerfile --tag ghcr.io/ebb-earl-co/tidal-wave:${{ github.event.release.tag_name }}
+    - name: Push the release-tag image
+      run: docker push ghcr.io/ebb-earl-co/tidal-wave:${{ github.event.release.tag_name }}
+    - name: Build the latest image
+      run: docker build . --file Dockerfile --tag ghcr.io/ebb-earl-co/tidal-wave:latest
+    - name: Push the latest image
+      run: docker push ghcr.io/ebb-earl-co/tidal-wave:latest
