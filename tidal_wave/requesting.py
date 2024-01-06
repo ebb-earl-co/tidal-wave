@@ -1,6 +1,6 @@
 from functools import partial
 import logging
-from typing import Callable, Dict, Iterable, Iterator, Optional, Tuple, Union
+from typing import Callable, Iterable, Iterator, Optional, Tuple, Union
 
 from .models import (
     AlbumsEndpointResponseJSON,
@@ -24,7 +24,7 @@ from .models import (
 from .utils import TIDAL_API_URL
 
 import backoff
-from requests import HTTPError, PreparedRequest, Request, Response, Session
+from requests import HTTPError, Response, Session
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ def requester_maker(
     url_end: str = "",
     headers: Optional[dict] = None,
     parameters: Optional[dict] = None,
-    subclass: Optional[ResponseJSON] = None,
+    subclass: Optional["ResponseJSON"] = None,
     credits_flag: bool = False,
 ) -> Callable:
     """This function is a function factory: it crafts nearly identical
@@ -127,192 +127,240 @@ def requester_maker(
 # process (on the happy path) creates a requests.Session object. Identifier
 # varies with the media type, etc.
 
-request_albums: Callable[
-    [Session, int], Optional[AlbumsEndpointResponseJSON]
-] = partial(
-    requester_maker,
-    endpoint="albums",
-    headers={"Accept": "application/json"},
-    subclass=AlbumsEndpointResponseJSON,
-)
 
-request_album_items: Callable[
-    [Session, int], Optional[AlbumsItemsResponseJSON]
-] = partial(
-    requester_maker,
-    endpoint="albums",
-    headers={"Accept": "application/json"},
-    parameters={"limit": 100},
-    url_end="/items",
-    subclass=AlbumsItemsResponseJSON,
-)
+def request_albums(
+    session: Session, identifier: int
+) -> Optional[AlbumsEndpointResponseJSON]:
+    return requester_maker(
+        session=session,
+        endpoint="albums",
+        identifier=identifier,
+        headers={"Accept": "application/json"},
+        subclass=AlbumsEndpointResponseJSON,
+    )
 
-request_album_review: Callable[
-    [Session, int], Optional[AlbumsItemsResponseJSON]
-] = partial(
-    requester_maker,
-    endpoint="albums",
-    headers={"Accept": "application/json"},
-    url_end="/review",
-    subclass=AlbumsReviewResponseJSON,
-)
 
-request_artist_bio: Callable[
-    [Session, int], Optional[ArtistsBioResponseJSON]
-] = partial(
-    requester_maker,
-    endpoint="artists",
-    headers={"Accept": "application/json"},
-    url_end="/bio",
-    subclass=ArtistsBioResponseJSON,
-)
+def request_album_items(
+    session: Session, identifier: int
+) -> Optional[AlbumsItemsResponseJSON]:
+    return requester_maker(
+        session=session,
+        endpoint="albums",
+        identifier=identifier,
+        headers={"Accept": "application/json"},
+        parameters={"limit": 100},
+        url_end="/items",
+        subclass=AlbumsItemsResponseJSON,
+    )
 
-request_artists: Callable[
-    [Session, int], Optional[ArtistsEndpointResponseJSON]
-] = partial(
-    requester_maker,
-    endpoint="artists",
-    headers={"Accept": "application/json"},
-    subclass=ArtistsEndpointResponseJSON,
-)
 
-request_artists_albums: Callable[
-    [Session, int], Optional[ArtistsAlbumsResponseJSON]
-] = partial(
-    requester_maker,
-    endpoint="artists",
-    headers={"Accept": "application/json"},
-    url_end="/albums",
-    subclass=ArtistsAlbumsResponseJSON,
-)
+def request_album_review(
+    session: Session, identifier: int
+) -> Optional[AlbumsReviewResponseJSON]:
+    return requester_maker(
+        session=session,
+        endpoint="albums",
+        identifier=identifier,
+        headers={"Accept": "application/json"},
+        url_end="/review",
+        subclass=AlbumsReviewResponseJSON,
+    )
 
-request_artists_audio_works: Callable[
-    [Session, int], Optional[ArtistsAlbumsResponseJSON]
-] = partial(
-    requester_maker,
-    endpoint="artists",
-    headers={"Accept": "application/json"},
-    parameters={"filter": "EPSANDSINGLES"},
-    url_end="/albums",
-    subclass=ArtistsAlbumsResponseJSON,
-)
 
-request_artists_videos: Callable[
-    [Session, int], Optional[ArtistsAlbumsResponseJSON]
-] = partial(
-    requester_maker,
-    endpoint="artists",
-    headers={"Accept": "application/json"},
-    url_end="/videos",
-    subclass=ArtistsVideosResponseJSON,
-)
+def request_artist_bio(
+    session: Session, identifier: int
+) -> Optional[ArtistsBioResponseJSON]:
+    return requester_maker(
+        session=session,
+        endpoint="artists",
+        identifier=identifier,
+        headers={"Accept": "application/json"},
+        url_end="/bio",
+        subclass=ArtistsBioResponseJSON,
+    )
 
-request_tracks: Callable[
-    [Session, int], Optional[TracksEndpointResponseJSON]
-] = partial(
-    requester_maker,
-    endpoint="tracks",
-    headers={"Accept": "application/json"},
-    subclass=TracksEndpointResponseJSON,
-)
+
+def request_artists(
+    session: Session, identifier: int
+) -> Optional[ArtistsEndpointResponseJSON]:
+    return requester_maker(
+        session=session,
+        endpoint="artists",
+        identifier=identifier,
+        headers={"Accept": "application/json"},
+        subclass=ArtistsEndpointResponseJSON,
+    )
+
+
+def request_artists_albums(
+    session: Session, identifier: int
+) -> Optional[ArtistsAlbumsResponseJSON]:
+    return requester_maker(
+        session=session,
+        endpoint="artists",
+        identifier=identifier,
+        headers={"Accept": "application/json"},
+        url_end="/albums",
+        subclass=ArtistsAlbumsResponseJSON,
+    )
+
+
+def request_artists_audio_works(
+    session: Session, identifier: int
+) -> Optional[ArtistsAlbumsResponseJSON]:
+    return requester_maker(
+        session=session,
+        endpoint="artists",
+        identifier=identifier,
+        headers={"Accept": "application/json"},
+        parameters={"filter": "EPSANDSINGLES"},
+        url_end="/albums",
+        subclass=ArtistsAlbumsResponseJSON,
+    )
+
+
+def request_artists_videos(
+    session: Session, identifier: int
+) -> Optional[ArtistsVideosResponseJSON]:
+    return requester_maker(
+        session=session,
+        endpoint="artists",
+        identifier=identifier,
+        headers={"Accept": "application/json"},
+        url_end="/videos",
+        subclass=ArtistsVideosResponseJSON,
+    )
+
+
+def request_tracks(
+    session: Session, identifier: int
+) -> Optional[TracksEndpointResponseJSON]:
+    return requester_maker(
+        session=session,
+        endpoint="tracks",
+        identifier=identifier,
+        headers={"Accept": "application/json"},
+        subclass=TracksEndpointResponseJSON,
+    )
+
 
 # This one's special, because its JSON response isn't proper JSON:
 # it's just an array of JSON objects, so we have to pass a flag to mark
 # that the logic common to the rest of the functions is slightly different here.
-request_credits: Callable[
-    [Session, int], Optional[TracksCreditsResponseJSON]
-] = partial(
-    requester_maker,
-    endpoint="tracks",
-    headers={"Accept": "application/json"},
-    parameters={"includeContributors": True},
-    url_end="/credits",
-    subclass=TracksCreditsResponseJSON,
-    credits_flag=True,
-)
+def request_credits(
+    session: Session, identifier: int
+) -> Optional[TracksCreditsResponseJSON]:
+    return requester_maker(
+        session=session,
+        endpoint="tracks",
+        identifier=identifier,
+        headers={"Accept": "application/json"},
+        parameters={"includeContributors": True},
+        url_end="/credits",
+        subclass=TracksCreditsResponseJSON,
+        credits_flag=True,
+    )
 
-request_lyrics: Callable[[Session, int], Optional[TracksLyricsResponseJSON]] = partial(
-    requester_maker,
-    endpoint="tracks",
-    headers={"Accept": "application/json"},
-    url_end="/lyrics",
-    subclass=TracksLyricsResponseJSON,
-)
 
-# One more layer of currying here, as the parameters argument
-# is dependent on a runtime variable.
-request_stream: Callable[
-    [Session, int, str], Optional[TracksEndpointStreamResponseJSON]
-] = lambda session, track_id, audio_quality: partial(
-    requester_maker,
-    session=session,
-    identifier=track_id,
-    endpoint="tracks",
-    headers={"Accept": "application/json"},
-    parameters={
-        "audioquality": audio_quality,
-        "playbackmode": "STREAM",
-        "assetpresentation": "FULL",
-    },
-    url_end="/playbackinfopostpaywall",
-    subclass=TracksEndpointStreamResponseJSON,
-)()
+def request_lyrics(
+    session: Session, identifier: int
+) -> Optional[TracksLyricsResponseJSON]:
+    return requester_maker(
+        session=session,
+        endpoint="tracks",
+        identifier=identifier,
+        headers={"Accept": "application/json"},
+        url_end="/lyrics",
+        subclass=TracksLyricsResponseJSON,
+    )
 
-request_videos: Callable[
-    [Session, int], Optional[VideosEndpointResponseJSON]
-] = partial(
-    requester_maker,
-    endpoint="videos",
-    headers={"Accept": "application/json"},
-    subclass=VideosEndpointResponseJSON,
-)
-
-request_video_contributors: Callable[
-    [Session, int], Optional[VideosContributorsResponseJSON]
-] = partial(
-    requester_maker,
-    endpoint="videos",
-    headers={"Accept": "application/json"},
-    parameters={"limit": 100},
-    url_end="/contributors",
-    subclass=VideosContributorsResponseJSON,
-)
 
 # One more layer of currying here, as the parameters argument
 # is dependent on a runtime variable.
-request_video_stream: Callable[
-    [Session, int, str], Optional[VideosEndpointStreamResponseJSON]
-] = lambda session, video_id, video_quality: partial(
-    requester_maker,
-    session=session,
-    identifier=video_id,
-    endpoint="videos",
-    headers={"Accept": "application/json"},
-    parameters={
-        "videoquality": video_quality,
-        "playbackmode": "STREAM",
-        "assetpresentation": "FULL",
-    },
-    url_end="/playbackinfopostpaywall",
-    subclass=VideosEndpointStreamResponseJSON,
-)()
 
-request_playlists: Callable[
-    [Session, int], Optional[PlaylistsEndpointResponseJSON]
-] = partial(
-    requester_maker,
-    endpoint="playlists",
-    headers={"Accept": "application/json"},
-    subclass=PlaylistsEndpointResponseJSON,
-)
+
+def request_stream(
+    session: Session, track_id: int, audio_quality: str
+) -> Optional[TracksEndpointStreamResponseJSON]:
+    func = partial(
+        requester_maker,
+        session=session,
+        endpoint="tracks",
+        identifier=track_id,
+        headers={"Accept": "application/json"},
+        parameters={
+            "audioquality": audio_quality,
+            "playbackmode": "STREAM",
+            "assetpresentation": "FULL",
+        },
+        url_end="/playbackinfopostpaywall",
+        subclass=TracksEndpointStreamResponseJSON,
+    )
+    return func()
+
+
+def request_videos(
+    session: Session, identifier: int
+) -> Optional[VideosEndpointResponseJSON]:
+    return requester_maker(
+        session=session,
+        endpoint="videos",
+        identifier=identifier,
+        headers={"Accept": "application/json"},
+        subclass=VideosEndpointResponseJSON,
+    )
+
+
+def request_video_contributors(
+    session: Session, identifier: int
+) -> Optional[VideosContributorsResponseJSON]:
+    return requester_maker(
+        session=session,
+        endpoint="videos",
+        identifier=identifier,
+        headers={"Accept": "application/json"},
+        parameters={"limit": 100},
+        url_end="/contributors",
+        subclass=VideosContributorsResponseJSON,
+    )
+
+
+def request_video_stream(
+    session: Session, video_id: int, video_quality: str
+) -> Optional[VideosEndpointStreamResponseJSON]:
+    func = partial(
+        requester_maker,
+        session=session,
+        identifier=video_id,
+        endpoint="videos",
+        headers={"Accept": "application/json"},
+        parameters={
+            "videoquality": video_quality,
+            "playbackmode": "STREAM",
+            "assetpresentation": "FULL",
+        },
+        url_end="/playbackinfopostpaywall",
+        subclass=VideosEndpointStreamResponseJSON,
+    )
+    return func()
+
+
+def request_playlists(
+    session: Session, identifier: int
+) -> Optional[PlaylistsEndpointResponseJSON]:
+    return requester_maker(
+        session=session,
+        endpoint="playlists",
+        identifier=identifier,
+        headers={"Accept": "application/json"},
+        subclass=PlaylistsEndpointResponseJSON,
+    )
 
 
 def get_album_id(session: Session, track_id: int) -> Optional[int]:
     """Given the Tidal ID to a track, query the Tidal API in order to retrieve
     the Tidal ID of the album to which the track belongs"""
-    terj: Optional[TracksEndpointResponseJSON] = request_tracks(
-        session=session, identifier=track_id
-    )
+    terj: Optional[TracksEndpointResponseJSON] = request_tracks(session, track_id)
     album_id: Optional[int] = None
 
     try:
@@ -323,7 +371,7 @@ def get_album_id(session: Session, track_id: int) -> Optional[int]:
         return album_id
 
 
-def contiguous_ranges(value: int, range_size: int) -> Iterator[Tuple[int]]:
+def contiguous_ranges(value: int, range_size: int) -> Iterator[Tuple[int, int]]:
     """This function is a generator: it yields two-tuples of int, with the
     tuples representing the (inclusive) boundaries of ranges of size
     range_size. The final tuple will represent a range <= range_size if
@@ -336,7 +384,7 @@ def contiguous_ranges(value: int, range_size: int) -> Iterator[Tuple[int]]:
     i: int = 0
     rs: int = range_size - 1
     while i + rs < value:
-        t: Tuple[int] = (i, i + rs)
+        t: Tuple[int, int] = (i, i + rs)
         i = t[-1] + 1
         yield t
     else:
@@ -359,7 +407,7 @@ def http_request_range_headers(
      'bytes=15-16')
     ```
     """
-    ranges: Iterator[Tuple[int]] = contiguous_ranges(content_length, range_size)
+    ranges: Iterator[Tuple[int, int]] = contiguous_ranges(content_length, range_size)
     iterable: Iterable = (f"bytes={t[0]}-{t[1]}" for t in ranges)
     if return_tuple:
         return tuple(iterable)
@@ -367,7 +415,7 @@ def http_request_range_headers(
         return iterable
 
 
-def fetch_content_length(session: Session, url: str) -> dict:
+def fetch_content_length(session: Session, url: str) -> int:
     """Attempt to get the amount of bytes pointed to by `url`. If
     the HEAD request from the requests.Session object, `session`,
     encounters an HTTP request; or if the server does not support

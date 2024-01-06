@@ -1,11 +1,7 @@
-#!/usr/bin/env python3
-#! -*- coding: utf-8 -*-
-
 from contextlib import closing
 import logging
 from pathlib import Path
-import sys
-from typing import Optional
+from typing import Optional, Union
 
 from .login import login, AudioFormat, LogLevel
 from .album import Album
@@ -23,7 +19,6 @@ from .models import (
     TidalTrack,
     TidalVideo,
 )
-from .requesting import get_album_id
 
 from platformdirs import user_music_path
 import typer

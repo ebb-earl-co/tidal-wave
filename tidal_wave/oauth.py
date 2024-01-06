@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-#! -*- coding: utf-8 -*-
-
 import base64
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone

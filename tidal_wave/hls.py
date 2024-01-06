@@ -1,7 +1,7 @@
 import json
 import logging
-from requests import Response, Session
-from typing import List, Optional, Union
+from requests import Session
+from typing import Dict, List, Optional, Union
 
 from .models import VideosEndpointStreamResponseJSON
 
@@ -29,7 +29,9 @@ class RequestsClient:
             return response.text, response.url
 
 
-def playlister(session: Session, vesrj: VideosEndpointStreamResponseJSON) -> m3u8.M3U8:
+def playlister(
+    session: Session, vesrj: Optional[VideosEndpointStreamResponseJSON]
+) -> m3u8.M3U8:
     """Attempts to parse a VideosEndpointStreamResponseJSON object into an
     m3u8.M3U8 object. Requires fetching HTTP(s) resources, so takes a
     requests.Session object as an argument. If error occurs, raises

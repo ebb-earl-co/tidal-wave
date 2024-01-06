@@ -1,24 +1,24 @@
-from dataclasses import dataclass, field
-import json
+from dataclasses import dataclass
 import logging
 from pathlib import Path
-import shutil
-import sys
-from types import SimpleNamespace
-from typing import Dict, List, Optional, Tuple, Union
+from typing import List, Optional
 
-from requests import HTTPError, Session
+from requests import Session
 
 from .album import Album
 from .media import AudioFormat
+from .models import (
+    ArtistsAlbumsResponseJSON,
+    ArtistsEndpointResponseJSON,
+    ArtistsVideosResponseJSON,
+)
 from .requesting import (
     request_artists,
     request_artists_albums,
     request_artists_audio_works,
     request_artists_videos,
 )
-from .track import Track
-from .utils import download_cover_image, TIDAL_API_URL
+from .utils import download_cover_image
 from .video import Video
 
 logger = logging.getLogger("__name__")
@@ -32,7 +32,7 @@ class Artist:
         """This function requests from TIDAL API endpoint /artists and
         stores the results in self.metadata"""
         self.metadata: Optional[ArtistsEndpointResponseJSON] = request_artists(
-            session=session, identifier=self.artist_id
+            session, self.artist_id
         )
 
     def save_artist_image(self, session: Session):
@@ -46,21 +46,21 @@ class Artist:
         """This function requests from TIDAL API endpoint /artists/albums and
         stores the results in self.albums"""
         self.albums: Optional[ArtistsAlbumsResponseJSON] = request_artists_albums(
-            session=session, identifier=self.artist_id
+            session, self.artist_id
         )
 
     def set_audio_works(self, session: Session):
         """This function requests from TIDAL API endpoint
         /artists/albums?filter=EPSANDSINGLES and stores the results in self.albums"""
         self.albums: Optional[ArtistsAlbumsResponseJSON] = request_artists_audio_works(
-            session=session, identifier=self.artist_id
+            session, self.artist_id
         )
 
     def set_videos(self, session: Session):
         """This function requests from TIDAL API endpoint /artists/videos and
         stores the results in self.albums"""
         self.videos: Optional[ArtistsVideosResponseJSON] = request_artists_videos(
-            session=session, identifier=self.artist_id
+            session, self.artist_id
         )
 
     def set_dir(self, out_dir: Path):

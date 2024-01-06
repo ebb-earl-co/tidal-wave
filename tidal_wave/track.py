@@ -7,14 +7,14 @@ import shlex
 import shutil
 import subprocess
 import sys
-from typing import Optional
+from typing import Dict, Iterable, List, Optional
 
 import mutagen
 from mutagen.mp4 import MP4Cover
 import ffmpeg
-from requests import Request, Session
+from requests import Session
 
-from .dash import manifester, JSONDASHManifest, XMLDASHManifest
+from .dash import manifester, JSONDASHManifest, Manifest, XMLDASHManifest
 from .media import af_aq, AudioFormat, TAG_MAPPING
 from .models import (
     AlbumsEndpointResponseJSON,
@@ -34,7 +34,7 @@ from .requesting import (
     request_stream,
     request_tracks,
 )
-from .utils import download_cover_image, temporary_file
+from .utils import download_artist_image, download_cover_image, temporary_file
 
 logger = logging.getLogger("__name__")
 
@@ -48,37 +48,25 @@ class Track:
         self.tags: dict = {}
         self.album_cover_saved: bool = False
 
-    def _lookup(self, af) -> AudioFormat:
-        af_aq: Dict[AudioFormat, str] = {
-            AudioFormat.sony_360_reality_audio: "LOW",
-            AudioFormat.dolby_atmos: "LOW",
-            AudioFormat.hi_res: "HI_RES",
-            AudioFormat.mqa: "HI_RES",
-            AudioFormat.lossless: "LOSSLESS",
-            AudioFormat.high: "HIGH",
-            AudioFormat.low: "LOW",
-        }
-        return af_aq.get(af)
-
     def get_metadata(self, session: Session):
         self.metadata: Optional[TracksEndpointResponseJSON] = request_tracks(
-            session=session, identifier=self.track_id
+            session, self.track_id
         )
 
     def get_album(self, session: Session):
         self.album: Optional[AlbumsEndpointResponseJSON] = request_albums(
-            session=session, identifier=self.metadata.album.id
+            session, self.metadata.album.id
         )
 
     def get_credits(self, session: Session):
         self.credits: Optional[TracksCreditsResponseJSON] = request_credits(
-            session=session, identifier=self.track_id
+            session, self.track_id
         )
 
     def get_lyrics(self, session: Session):
         if self._has_lyrics is None:
             self.lyrics: Optional[TracksLyricsResponseJSON] = request_lyrics(
-                session=session, identifier=self.track_id
+                session, self.track_id
             )
             if self.lyrics is None:
                 self._has_lyrics = False
@@ -89,9 +77,9 @@ class Track:
 
     def get_stream(self, session: Session, audio_format: AudioFormat):
         """Populates self.stream, self.manifest"""
-        aq: Optional[str] = self._lookup(audio_format)
+        aq: Optional[str] = af_aq.get(audio_format)
         self.stream: Optional[TracksEndpointStreamResponseJSON] = request_stream(
-            session=session, track_id=self.track_id, audio_quality=aq
+            session, self.track_id, aq
         )
 
     def set_manifest(self):
@@ -207,7 +195,7 @@ class Track:
             track_artist_bio_json: Path = self.album_dir / f"{a.name}-bio.json"
             if not track_artist_bio_json.exists():
                 artist_bio: Optional[ArtistsBioResponseJSON] = request_artist_bio(
-                    session=session, identifier=a.id
+                    session, a.id
                 )
                 if artist_bio is not None:
                     logger.info(
@@ -393,12 +381,21 @@ class Track:
             self.mutagen["covr"] = [
                 MP4Cover(self.cover_path.read_bytes(), imageformat=MP4Cover.FORMAT_JPEG)
             ]
+        elif self.codec == "mka":
+            # FFmpeg chokes here with
+            # [matroska @ 0x5eb6a424f840] No wav codec tag found for codec none
+            # so DON'T attempt to add a cover image, and DON'T run the
+            # FFmpeg to put streams in order
+            self.mutagen.save()
+            return
+
         self.mutagen.save()
         # Make sure audio track comes first because of
         # less-sophisticated audio players
         with temporary_file(suffix=".mka") as tf:
             cmd: List[str] = shlex.split(
-                f"""ffmpeg -hide_banner -loglevel quiet -y -i "{str(self.outfile.absolute())}" -map 0:a:0 -map 0:v:0 -c copy "{tf.name}" """
+                f"""ffmpeg -hide_banner -loglevel quiet -y -i "{str(self.outfile.absolute())}"
+                -map 0:a:0 -map 0:v:0 -c copy "{tf.name}" """
             )
             subprocess.run(cmd)
             shutil.copyfile(tf.name, str(self.outfile.absolute()))
@@ -472,19 +469,19 @@ class Track:
 
         try:
             self.get_lyrics(session)
-        except:
+        except Exception:
             pass
 
         self.save_album_cover(session)
 
         try:
             self.save_artist_image(session)
-        except:
+        except Exception:
             pass
 
         try:
             self.save_artist_bio(session)
-        except:
+        except Exception:
             pass
 
         if self.download(session, out_dir) is None:
@@ -504,6 +501,7 @@ class Track:
         else:
             v: Optional[str] = str(self.outfile.absolute())
         json.dump({k: v}, fp)
+        return None
 
     def dumps(self) -> str:
         k: int = int(self.metadata.track_number)
@@ -514,3 +512,4 @@ class Track:
         else:
             v: Optional[str] = str(self.outfile.absolute())
         json.dumps({k: v})
+        return None

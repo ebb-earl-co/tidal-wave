@@ -1,19 +1,23 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import json
 import logging
 from pathlib import Path
 import shutil
 import sys
 from types import SimpleNamespace
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 from requests import HTTPError, Session
 
 from .media import AudioFormat
-from .models import TracksEndpointResponseJSON, VideosEndpointResponseJSON
+from .models import (
+    PlaylistsEndpointResponseJSON,
+    TracksEndpointResponseJSON,
+    VideosEndpointResponseJSON,
+)
 from .requesting import request_playlists
 from .track import Track
-from .utils import download_cover_image
+from .utils import download_cover_image, TIDAL_API_URL
 from .video import Video
 
 logger = logging.getLogger("__name__")
@@ -240,7 +244,7 @@ class Playlist:
         self.save_cover_image(session, out_dir)
         try:
             self.save_description()
-        except:
+        except Exception:
             pass
 
         _get_items = self.get_items(session, audio_format)

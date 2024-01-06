@@ -3,10 +3,15 @@ import json
 import logging
 from pathlib import Path
 import sys
-from typing import Optional
+from typing import Dict, List, Optional
 
-from .hls import playlister, variant_streams
+from .hls import playlister, variant_streams, TidalM3U8Exception
 from .media import TAG_MAPPING, VideoFormat
+from .models import (
+    VideosContributorsResponseJSON,
+    VideosEndpointResponseJSON,
+    VideosEndpointStreamResponseJSON,
+)
 from .requesting import request_videos, request_video_contributors, request_video_stream
 from .utils import temporary_file
 
@@ -29,20 +34,20 @@ class Video:
     def get_metadata(self, session: Session):
         """Request from TIDAL API /videos endpoint"""
         self.metadata: Optional[VideosEndpointResponseJSON] = request_videos(
-            session=session, identifier=self.video_id
+            session, self.video_id
         )
 
     def get_contributors(self, session: Session):
         """Request from TIDAL API /videos/contributors endpoint"""
         self.contributors: Optional[
             VideosContributorsResponseJSON
-        ] = request_video_contributors(session=session, identifier=self.video_id)
+        ] = request_video_contributors(session, self.video_id)
 
     def get_stream(self, session: Session, video_format=VideoFormat.high):
         """Populates self.stream by requesting from TIDAL API
         /videos/playbackinfopostpaywall endpoint"""
         self.stream: Optional[VideosEndpointStreamResponseJSON] = request_video_stream(
-            session=session, video_id=self.video_id, video_quality=video_format.value
+            session, self.video_id, video_format.value
         )
 
     def get_m3u8(self, session: Session):
@@ -200,22 +205,22 @@ class Video:
 
         # check for 404 error with metadata
         if self.metadata is None:
-            return
+            return None
 
         self.get_contributors(session)
         self.get_stream(session)
         if self.stream is None:
-            return
+            return None
         self.get_m3u8(session)
         self.set_urls()
         self.set_artist_dir(out_dir)
         self.set_filename(out_dir)
         outfile: Optional[Path] = self.set_outfile()
         if outfile is None:
-            return
+            return None
 
         if self.download(session, out_dir) is None:
-            return
+            return None
 
         self.craft_tags()
         self.set_tags()

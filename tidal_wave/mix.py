@@ -1,16 +1,20 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import json
 import logging
 from pathlib import Path
 import shutil
 import sys
 from types import SimpleNamespace
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 from requests import HTTPError, Session
 
 from .media import AudioFormat
-from .models import TracksEndpointResponseJSON, VideosEndpointResponseJSON
+from .models import (
+    PlaylistsEndpointResponseJSON,
+    TracksEndpointResponseJSON,
+    VideosEndpointResponseJSON,
+)
 from .track import Track
 from .utils import TIDAL_API_URL
 from .video import Video
@@ -234,7 +238,7 @@ class Mix:
         self.save_cover_image(session, out_dir)
         try:
             self.save_description()
-        except:
+        except Exception:
             pass
 
         _get_items = self.get_items(session, audio_format)
@@ -263,7 +267,7 @@ def request_mixes(session: Session, mix_id: str) -> Optional[SimpleNamespace]:
         except HTTPError as he:
             if resp.status_code == 404:
                 logger.warning(
-                    f"404 Client Error: not found for TIDAL API endpoint pages/mix"
+                    "404 Client Error: not found for TIDAL API endpoint pages/mix"
                 )
             else:
                 logger.exception(he)
