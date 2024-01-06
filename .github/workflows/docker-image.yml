@@ -1,19 +1,46 @@
+# https://docs.github.com/en/actions/publishing-packages/publishing-docker-images#publishing-images-to-github-packages
 name: Docker Image CI
 
 on:
   release:
     types: ["published"]
+  push:
+    branches: ["trunk"]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
     steps:
-    - uses: actions/checkout@v3
-    - name: Build the release-tag image
-      run: docker build . --file Dockerfile --tag ghcr.io/ebb-earl-co/tidal-wave:${{ github.event.release.tag_name }}
-    - name: Push the release-tag image
-      run: docker push ghcr.io/ebb-earl-co/tidal-wave:${{ github.event.release.tag_name }}
-    - name: Build the latest image
-      run: docker build . --file Dockerfile --tag ghcr.io/ebb-earl-co/tidal-wave:latest
-    - name: Push the latest image
-      run: docker push ghcr.io/ebb-earl-co/tidal-wave:latest
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+    - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
