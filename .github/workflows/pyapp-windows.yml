@@ -1,0 +1,36 @@
+name: Pyapp Build on Windows
+on:
+  release:
+    types: ["published"]
+
+env:
+  PYAPP_PROJECT_NAME: "tidal-wave"
+  PYAPP_PROJECT_VERSION: ${{ github.event.release.tag_name }}
+  PYAPP_EMBED: 1
+  PYAPP_PYTHON_VERSION: 3.11
+
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install pyapp from crates.io (also builds executable)
+      uses: baptiste0928/cargo-install@v2
+      with:
+        crate: pyapp
+        version: 0.13.0
+
+    - name: Rename just-compiled binary
+      run: |
+        Move-Item .\out\bin\pyapp.exe "${env:PYAPP_PROJECT_NAME}_${env:PYAPP_PROJECT_VERSION}_py311.pyapp.exe"
+
+    - name: Add (upload) artifact to release
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        files: "${env:PYAPP_PROJECT_NAME}_${env:PYAPP_PROJECT_VERSION}_py311.pyapp.exe"

@@ -1,0 +1,26 @@
+name: Build Python package
+on:
+  release:
+    types: ["published"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.11"
+        cache: "pip"  # caching pip dependencies
+    
+    - name: Build package
+      run: python3 -m build
+
+    - name: Publish package
+      uses: pypa/gh-action-pypi-publish@v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
