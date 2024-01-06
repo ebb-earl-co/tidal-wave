@@ -381,6 +381,14 @@ class Track:
             self.mutagen["covr"] = [
                 MP4Cover(self.cover_path.read_bytes(), imageformat=MP4Cover.FORMAT_JPEG)
             ]
+        elif self.codec == "mka":
+            # FFmpeg chokes here with
+            # [matroska @ 0x5eb6a424f840] No wav codec tag found for codec none
+            # so DON'T attempt to add a cover image, and DON'T run the
+            # FFmpeg to put streams in order
+            self.mutagen.save()
+            return
+
         self.mutagen.save()
         # Make sure audio track comes first because of
         # less-sophisticated audio players
