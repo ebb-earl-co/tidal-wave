@@ -328,7 +328,7 @@ class Track:
         tags[tag_map["track_peak_amplitude"]] = f"{self.metadata.peak}"
         tags[tag_map["track_replay_gain"]] = f"{self.metadata.replay_gain}"
         # credits
-        for tag in {"composer", "lyricist", "mixer", "producer", "remixer"}:
+        for tag in {"composer", "engineer", "lyricist", "mixer", "producer", "remixer"}:
             try:
                 _credits_tag = ";".join(getattr(self.credits, tag))
             except (TypeError, AttributeError):  # NoneType problems
@@ -343,12 +343,21 @@ class Track:
         else:
             tags[tag_map["lyrics"]] = _lyrics
 
-        # track and disk
         if self.codec == "flac":
+            # track and disk
             tags["DISCTOTAL"] = f"{self.metadata.volume_number}"
             tags["DISC"] = f"{self.album.number_of_volumes}"
             tags["TRACKTOTAL"] = f"{self.album.number_of_tracks}"
             tags["TRACKNUMBER"] = f"{self.metadata.track_number}"
+            # instrument-specific
+            ## piano
+            try:
+                piano_credits: List[str] = [f"{pc} (piano)" for pc in self.credits.piano]
+            except (TypeError, AttributeError):  # NoneType problems
+                pass
+            else:
+                tags["PERFORMER"] = piano_credits
+
         elif self.codec == "m4a":
             # Have to convert to bytes the values of the tags starting with '----'
             for k, v in tags.copy().items():
@@ -381,24 +390,31 @@ class Track:
             self.mutagen["covr"] = [
                 MP4Cover(self.cover_path.read_bytes(), imageformat=MP4Cover.FORMAT_JPEG)
             ]
-        elif self.codec == "mka":
-            # FFmpeg chokes here with
-            # [matroska @ 0x5eb6a424f840] No wav codec tag found for codec none
-            # so DON'T attempt to add a cover image, and DON'T run the
-            # FFmpeg to put streams in order
-            self.mutagen.save()
-            return
 
         self.mutagen.save()
         # Make sure audio track comes first because of
-        # less-sophisticated audio players
-        with temporary_file(suffix=".mka") as tf:
-            cmd: List[str] = shlex.split(
-                f"""ffmpeg -hide_banner -loglevel quiet -y -i "{str(self.outfile.absolute())}"
-                -map 0:a:0 -map 0:v:0 -c copy "{tf.name}" """
-            )
-            subprocess.run(cmd)
-            shutil.copyfile(tf.name, str(self.outfile.absolute()))
+        # less-sophisticated audio players that only
+        # recognize the first stream
+        if self.codec == "flac":
+            with temporary_file(suffix=".mka") as tf:
+                shutil.move(str(self.outfile.absolute()), tf.name)
+                cmd: List[str] = shlex.split(
+                    f"""ffmpeg -hide_banner -loglevel quiet -y -i "{tf.name}"
+                    -map 0:a:0 -map 0:v:0 -c:a copy -c:v copy
+                    -metadata:s:v title='Album cover' -metadata:s:v comment='Cover (front)'
+                    -disposition:v attached_pic "{str(self.outfile.absolute())}" """
+                )
+                subprocess.run(cmd)
+        elif self.codec == "m4a":
+            with temporary_file(suffix=".mka") as tf:
+                shutil.move(str(self.outfile.absolute()), tf.name)
+                cmd: List[str] = shlex.split(
+                    f"""ffmpeg -hide_banner -loglevel quiet -y -i "{tf.name}"
+                    -map 0:a:0 -map 0:v:0 -c:a copy -c:v copy
+                    "{str(self.outfile.absolute())}" """
+                )
+                subprocess.run(cmd)
+        
 
     def get(
         self,

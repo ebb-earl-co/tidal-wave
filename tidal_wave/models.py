@@ -296,9 +296,10 @@ class TracksCreditsResponseJSON(dataclass_wizard.JSONWizard):
         self.composer: Optional[Tuple[str]] = self.get_contributors("Composer")
         self.engineer: Optional[Tuple[str]] = self.get_contributors("Engineer")
         self.lyricist: Optional[Tuple[str]] = self.get_contributors("Lyricist")
-        self.mixer: Optional[Tuple[str]] = self.get_contributors("Mixer")
+        self.mixer: Optional[Tuple[str]] = self.get_contributors("Mix Engineer")
         self.producer: Optional[Tuple[str]] = self.get_contributors("Producer")
         self.remixer: Optional[Tuple[str]] = self.get_contributors("Remixer")
+        self.piano: Optional[Tuple[str]] = self.get_contributors("Piano")
 
 
 @dataclass(frozen=True)
@@ -496,19 +497,11 @@ class PlaylistsEndpointResponseJSON(dataclass_wizard.JSONWizard):
     number_of_tracks: int
     number_of_videos: int
     description: str
-    last_updated: Annotated[
-        datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")
-    ]
     created: Annotated[datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")]
     type: str
     public_playlist: bool
     url: str
     image: str  # UUID v4
-    popularity: int
-    square_image: str  # UUID v4
-    last_item_added_at: Annotated[
-        datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")
-    ]
 
 
 class TidalResource:
