@@ -19,6 +19,11 @@ jobs:
       with:
         python-version: "3.11"
         cache: "pip"  # caching pip dependencies
+
+    - name: Install dependencies
+      run: |
+        python3 -m pip install --upgrade pip setuptools wheel
+        python3 -m pip install build
     
     - name: Build package
       run: python3 -m build
