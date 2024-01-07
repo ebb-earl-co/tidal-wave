@@ -1,4 +1,4 @@
-name: Pyapp Build on Windows
+name: Pyapp Build on macOS
 on:
   release:
     types: ["published"]
