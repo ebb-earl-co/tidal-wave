@@ -26,11 +26,11 @@ jobs:
 
     - name: Rename just-compiled binary
       run: |
-        mv /Users/runner/.cargo-install/pyapp/bin/pyapp "${PYAPP_PROJECT_NAME}_${PYAPP_PROJECT_VERSION}_py311.pyapp"
+        mv /Users/runner/.cargo-install/pyapp/bin/pyapp "/Users/runner/.cargo-install/pyapp/bin/tidal-wave_${PYAPP_PROJECT_VERSION}_py311_macos.pyapp"
 
     - name: Add (upload) artifact to release
       uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ github.token }}
       with:
-        files: "${PYAPP_PROJECT_NAME}_${PYAPP_PROJECT_VERSION}_py311.pyapp"
+        files: "/Users/runner/.cargo-install/pyapp/bin/tidal-wave_${PYAPP_PROJECT_VERSION}_py311_macos.pyapp"
