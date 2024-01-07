@@ -412,7 +412,7 @@ class Track:
                     -map 0:a:0 -map 0:v:0 -c:a copy -c:v copy "{tf.name}" """
                 )
                 subprocess.run(cmd)
-                shutil.copyfile(tf.name, str(track.outfile.absolute()))
+                shutil.copyfile(tf.name, str(self.outfile.absolute()))
         
 
     def get(
