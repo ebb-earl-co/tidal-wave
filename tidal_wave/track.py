@@ -407,13 +407,12 @@ class Track:
                 subprocess.run(cmd)
         elif self.codec == "m4a":
             with temporary_file(suffix=".mka") as tf:
-                shutil.move(str(self.outfile.absolute()), tf.name)
                 cmd: List[str] = shlex.split(
-                    f"""ffmpeg -hide_banner -loglevel quiet -y -i "{tf.name}"
-                    -map 0:a:0 -map 0:v:0 -c:a copy -c:v copy
-                    "{str(self.outfile.absolute())}" """
+                    f"""ffmpeg -hide_banner -loglevel quiet -y -i "{str(self.outfile.absolute())}"
+                    -map 0:a:0 -map 0:v:0 -c:a copy -c:v copy "{tf.name}" """
                 )
                 subprocess.run(cmd)
+                shutil.copyfile(tf.name, str(track.outfile.absolute()))
         
 
     def get(
