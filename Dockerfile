@@ -1,4 +1,9 @@
 # https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
+LABEL org.opencontainers.image.authors "colinho <pypi@colin.technology>"
+LABEL org.opencontainers.image.description "Waving at the TIDAL music service"
+LABEL org.opencontainers.image.documentation "https://github.com/ebb-earl-co/tidal-wave/blob/trunk/README.md"
+LABEL org.opencontainers.image.source "https://github.com/ebb-earl-co/tidal-wave/blob/trunk/Dockerfile"
+
 FROM debian:bookworm-slim as build_image
 RUN export DEBIAN_FRONTEND=noninteractive && apt-get update -qq && apt-get -y install --no-install-recommends \
   autoconf \
