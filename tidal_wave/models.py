@@ -501,7 +501,7 @@ class PlaylistsEndpointResponseJSON(dataclass_wizard.JSONWizard):
     type: str
     public_playlist: bool
     url: str
-    image: str  # UUID v4
+    square_image: str  # UUID v4
 
 
 class TidalResource:
@@ -514,7 +514,7 @@ class TidalResource:
         self.pattern = pattern
         self.url = url
 
-    def match_url(self) -> Optional[int]:
+    def match_url(self) -> Optional[Union[int, str]]:
         _match: re.Match = re.match(self.pattern, self.url, re.IGNORECASE)
         try:
             _id: str = _match.groups()[0]

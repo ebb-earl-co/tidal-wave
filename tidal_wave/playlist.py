@@ -1,12 +1,15 @@
 from dataclasses import dataclass
 import json
 import logging
+import math
 from pathlib import Path
 import shutil
 import sys
 from types import SimpleNamespace
 from typing import Dict, List, Optional, Set, Tuple, Union
 
+import ffmpeg
+import mutagen
 from requests import HTTPError, Session
 
 from .media import AudioFormat
@@ -17,7 +20,7 @@ from .models import (
 )
 from .requesting import request_playlists
 from .track import Track
-from .utils import download_cover_image, TIDAL_API_URL
+from .utils import download_cover_image, temporary_file, TIDAL_API_URL
 from .video import Video
 
 logger = logging.getLogger("__name__")
@@ -69,7 +72,7 @@ class Playlist:
         if not self.cover_path.exists():
             download_cover_image(
                 session=session,
-                cover_uuid=self.metadata.image,
+                cover_uuid=self.metadata.square_image,
                 output_dir=self.playlist_dir,
                 dimension=1080,
             )
@@ -221,6 +224,61 @@ class Playlist:
         else:
             return self.playlist_dir
 
+    def craft_m3u8_text(self):
+        """This method creates a file called playlist.m3u8 in self.playlist_dir
+        that is a standard M3U. Needs to be called after self.flatten_playlist_dir
+        in order to be able to access self.files
+        N.b. the already-written file is temporarily copied to a .mp4 version in a
+        temporary directory because .m4a files cannot be read with mutagen."""
+        m3u_text: str = f"#EXTM3U\n#EXTENC:UTF-8\n#EXTIMG:{str(self.cover_path.absolute())}\n#PLAYLIST:{self.name}\n"
+
+        logger.info(
+            f"Creating .m3u8 playlist file for Playlist with ID '{self.playlist_id}'"
+        )
+        for d in self.files:
+            file: str = next(iter(d.values()))
+            if file is None:
+                continue
+            elif file.endswith(".flac"):
+                m = mutagen.File(file)
+                artist: str = m.get("artist", [""])[0]
+                title: str = m.get("title", [""])[0]
+                extinf: str = (
+                    f"#EXTINF:{math.ceil(m.info.length)},"
+                    f"{artist} - {title}\n{file}\n"
+                )
+                m3u_text += extinf
+            elif file.endswith(".mka"):
+                m = mutagen.File(file)
+                artist: str = m.get("ARTI", [""])[0]
+                title: str = m.get("TITL", [""])[0]
+                extinf: str = (
+                    f"#EXTINF:{math.ceil(m.info.length)},"
+                    f"{artist} - {title}\n{file}\n"
+                )
+                m3u_text += extinf
+            elif file.endswith(".m4a"):
+                # Mutagen cannot read .m4a files, so make a copy with all
+                # of the metadata tags as a .mp4 in a temporary directory
+                with temporary_file(suffix=".mp4") as tf:
+                    ffmpeg.input(file, hide_banner=None, y=None).output(
+                        tf.name,
+                        acodec="copy",
+                        vcodec="copy",
+                        loglevel="quiet",
+                    ).run()
+
+                    m = mutagen.File(tf.name)
+                    artist: str = m.get("\xa9ART", [""])[0]
+                    title: str = m.get("\xa9nam", [""])[0]
+                    extinf: str = (
+                        f"#EXTINF:{math.ceil(m.info.length)},"
+                        f"{artist} - {title}\n{file}\n"
+                    )
+                    m3u_text += extinf
+        else:
+            return m3u_text
+
     def dumps(self):
         return json.dumps(self.files)
 
@@ -251,7 +309,21 @@ class Playlist:
         if _get_items is None:
             logger.critical(f"Could not retrieve playlist with ID '{self.playlist_id}'")
             return
+
         self.flatten_playlist_dir()
+
+        try:
+            m3u8_text: str = self.craft_m3u8_text()
+        except Exception as e:
+            logger.warning(
+                "Unable to create playlist.m3u8 file for "
+                f"playlist with ID '{self.playlist_id}'"
+            )
+            logger.debug(e)
+        else:
+            with open(self.playlist_dir / "playlist.m3u8", "w") as f:
+                f.write(m3u8_text)
+
         logger.info(f"Playlist files written to '{self.playlist_dir}'")
 
 
