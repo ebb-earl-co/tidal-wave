@@ -72,7 +72,7 @@ class Playlist:
         if not self.cover_path.exists():
             download_cover_image(
                 session=session,
-                cover_uuid=self.metadata.image,
+                cover_uuid=self.metadata.square_image,
                 output_dir=self.playlist_dir,
                 dimension=1080,
             )
@@ -231,7 +231,7 @@ class Playlist:
         N.b. the already-written file is temporarily copied to a .mp4 version in a
         temporary directory because .m4a files cannot be read with mutagen."""
         m3u_text: str = (
-            f"#EXTM3U\n#EXTENC:UTF-8\n#EXTIMG:cover.jpeg\n#PLAYLIST:{self.name}\n"
+            f"#EXTM3U\n#EXTENC:UTF-8\n#EXTIMG:{str(self.cover_path.absolute())}\n#PLAYLIST:{self.name}\n"
         )
 
         logger.info(
@@ -241,21 +241,43 @@ class Playlist:
             file: str = next(iter(d.values()))
             if file is None:
                 continue
-            with temporary_file(suffix=".mp4") as tf:
-                ffmpeg.input(file, hide_banner=None, y=None).output(
-                    tf.name,
-                    acodec="copy",
-                    loglevel="quiet",
-                ).run()
-
-                m = mutagen.File(tf.name)
-                artist: str = m.get("\xa9ART", m.get("artist", [""]))[0]
-                title: str = m.get("\xa9nam", m.get("artist", [""]))[0]
+            elif file.endswith(".flac"):
+                m = mutagen.File(file)
+                artist: str = m.get("artist", [""])[0]
+                title: str = m.get("title", [""])[0]
                 extinf: str = (
                     f"#EXTINF:{math.ceil(m.info.length)},"
                     f"{artist} - {title}\n{file}\n"
                 )
                 m3u_text += extinf
+            elif file.endswith(".mka"):
+                m = mutagen.File(file)
+                artist: str = m.get("ARTI", [""])[0]
+                title: str = m.get("TITL", [""])[0]
+                extinf: str = (
+                    f"#EXTINF:{math.ceil(m.info.length)},"
+                    f"{artist} - {title}\n{file}\n"
+                )
+                m3u_text += extinf
+            elif file.endswith(".m4a"):
+                # Mutagen cannot read .m4a files, so make a copy with all
+                # of the metadata tags as a .mp4 in a temporary directory
+                with temporary_file(suffix=".mp4") as tf:
+                    ffmpeg.input(file, hide_banner=None, y=None).output(
+                        tf.name,
+                        acodec="copy",
+                        vcodec="copy",
+                        loglevel="quiet",
+                    ).run()
+
+                    m = mutagen.File(tf.name)
+                    artist: str = m.get("\xa9ART", [""])[0]
+                    title: str = m.get("\xa9nam", [""])[0]
+                    extinf: str = (
+                        f"#EXTINF:{math.ceil(m.info.length)},"
+                        f"{artist} - {title}\n{file}\n"
+                    )
+                    m3u_text += extinf
         else:
             return m3u_text
 

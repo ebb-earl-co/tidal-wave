@@ -501,7 +501,7 @@ class PlaylistsEndpointResponseJSON(dataclass_wizard.JSONWizard):
     type: str
     public_playlist: bool
     url: str
-    image: str  # UUID v4
+    square_image: str  # UUID v4
 
 
 class TidalResource:
