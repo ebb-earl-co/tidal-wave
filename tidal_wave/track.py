@@ -104,6 +104,9 @@ class Track:
             self.codec = "mp3"
 
     def set_album_dir(self, out_dir: Path):
+        """This method sets self.album_dir, based on self.album and
+        out_dir. In particular, self.album_dir is a subdirectory of out_dir
+        based on the name of the album's artist"""
         artist_substring: str = self.album.artist.name.replace("..", "")
         album_substring: str = (
             f"{self.album.name} " f"[{self.album.id}] [{self.album.release_date.year}]"
@@ -115,7 +118,10 @@ class Track:
             volume_substring: str = f"Volume {self.metadata.volume_number}"
             (self.album_dir / volume_substring).mkdir(parents=True, exist_ok=True)
 
-    def set_filename(self, audio_format: AudioFormat, out_dir: Path):
+    def set_filename(self, audio_format: AudioFormat):
+        """This method sets self.filename. It's based on self.metadata
+        as well as audio_format. Additionally, if the available codecs in
+        self.manifest don't match audio_format, warnings are logged"""
         _track_part: str = f"{self.metadata.track_number:02d} - {self.metadata.name}"
         if audio_format == AudioFormat.low:
             track_substring: str = f"{_track_part} [L]"
@@ -170,12 +176,14 @@ class Track:
             self.outfile: Path = (
                 self.album_dir / f"Volume {self.metadata.volume_number}" / self.filename
             )
+            self.absolute_outfile = str(self.outfile.absolute())
         else:
             self.outfile: Path = self.album_dir / self.filename
+            self.absolute_outfile = str(self.outfile.absolute())
 
         if (self.outfile.exists()) and (self.outfile.stat().st_size > 0):
             logger.info(
-                f"Track {str(self.outfile.absolute())} already exists "
+                f"Track {self.absolute_outfile} already exists "
                 "and therefore will not be overwritten"
             )
             return
@@ -183,6 +191,8 @@ class Track:
             return self.outfile
 
     def save_artist_image(self, session: Session):
+        """This method writes a JPEG file with the name of each of
+        self.metadata.artists to self.album_dir"""
         for a in self.metadata.artists:
             track_artist_image: Path = (
                 self.album_dir / f"{a.name.replace('..', '')}.jpg"
@@ -191,6 +201,8 @@ class Track:
                 download_artist_image(session, a, self.album_dir)
 
     def save_artist_bio(self, session: Session):
+        """This method writes a JSON file with the name of each of
+        self.metadata.artists to self.album_dir"""
         for a in self.metadata.artists:
             track_artist_bio_json: Path = self.album_dir / f"{a.name}-bio.json"
             if not track_artist_bio_json.exists():
@@ -205,6 +217,8 @@ class Track:
                     track_artist_bio_json.write_text(artist_bio.to_json())
 
     def save_album_cover(self, session: Session):
+        """This method saves cover.jpg to self.album_dir; the bytes for cover.jpg
+        come from self.album.cover"""
         self.cover_path: Path = self.album_dir / "cover.jpg"
         if (not self.cover_path.exists()) or (not self.album_cover_saved):
             download_cover_image(
@@ -213,68 +227,74 @@ class Track:
         else:
             self.album_cover_saved = True
 
-    def download(self, session: Session, out_dir: Path) -> Optional[Path]:
+    def set_urls(self, session: Session):
+        """This method sets self.urls based on self.manifest"""
         if isinstance(self.manifest, JSONDASHManifest):
-            urls: List[str] = self.manifest.urls
+            self.urls: List[str] = self.manifest.urls
         elif isinstance(self.manifest, XMLDASHManifest):
-            urls: List[str] = self.manifest.build_urls(session=session)
+            self.urls: List[str] = self.manifest.build_urls(session=session)
         self.download_headers: Dict[str, str] = {"Accept": self.manifest.mime_type}
         if session.session_id is not None:
             self.download_headers["sessionId"] = session.session_id
-        self.download_params = {"deviceType": None, "locale": None, "countryCode": None}
-        # self.outfile should already have been setted by set_outfile()
-        logger.info(
-            f"Writing track {self.track_id} to '{str(self.outfile.absolute())}'"
-        )
+        self.download_params = {k: None for k in session.params}
 
-        # NamedTemporaryFile experiences permission error on Windows
+    def download_url(self, session: Session, out_dir: Path) -> Optional[Path]:
+        """This method downloads self.urls[0], for use in situations when
+        the manifest returned by TIDAL API contains one URL. It relies on
+        byte range headers to incrementally get all content from a URL"""
+        logger.info(f"Writing track {self.track_id} to '{self.absolute_outfile}'")
+
         with temporary_file() as ntf:
-            if len(urls) == 1:
-                # Implement HTTP range requests here to mimic official clients
-                range_size: int = 1024 * 1024  # 1 MiB
-                content_length: int = fetch_content_length(session=session, url=urls[0])
-                if content_length == 0:
-                    # move on to the all-at-once flow
-                    pass
-                else:
-                    range_headers: Iterable[str] = http_request_range_headers(
-                        content_length=content_length,
-                        range_size=range_size,
-                        return_tuple=False,
-                    )
-                    for rh in range_headers:
-                        with session.get(
-                            urls[0],
-                            params={k: None for k in session.params},
-                            headers={"Range": rh},
-                        ) as rr:
-                            if not rr.ok:
-                                logger.warning(f"Could not download {self}")
-                                return
-                            else:
-                                ntf.write(rr.content)
+            # Implement HTTP range requests here to mimic official clients
+            range_size: int = 1024 * 1024  # 1 MiB
+            content_length: int = fetch_content_length(
+                session=session, url=self.urls[0]
+            )
+            if content_length == 0:
+                return
+
+            range_headers: Iterable[str] = http_request_range_headers(
+                content_length=content_length,
+                range_size=range_size,
+                return_tuple=False,
+            )
+            for rh in range_headers:
+                with session.get(
+                    self.urls[0], params=self.download_params, headers={"Range": rh}
+                ) as rr:
+                    if not rr.ok:
+                        logger.warning(f"Could not download {self}")
+                        return
                     else:
-                        ntf.seek(0)
+                        ntf.write(rr.content)
+            else:
+                ntf.seek(0)
 
-                    if self.codec == "flac":
-                        # Have to use FFMPEG to re-mux the audio bytes, otherwise
-                        # mutagen chokes on NoFlacHeaderError
-                        ffmpeg.input(ntf.name, hide_banner=None, y=None).output(
-                            str(self.outfile.absolute()),
-                            acodec="copy",
-                            loglevel="quiet",
-                        ).run()
-                    elif self.codec == "m4a":
-                        shutil.copyfile(ntf.name, self.outfile)
-                    elif self.codec == "mka":
-                        shutil.copyfile(ntf.name, self.outfile)
+            if self.codec == "flac":
+                # Have to use FFMPEG to re-mux the audio bytes, otherwise
+                # mutagen chokes on NoFlacHeaderError
+                ffmpeg.input(ntf.name, hide_banner=None, y=None).output(
+                    self.absolute_outfile,
+                    acodec="copy",
+                    loglevel="quiet",
+                ).run()
+            elif self.codec == "m4a":
+                shutil.copyfile(ntf.name, self.outfile)
+            elif self.codec == "mka":
+                shutil.copyfile(ntf.name, self.outfile)
 
-                    logger.info(
-                        f"Track {self.track_id} written to '{str(self.outfile.absolute())}'"
-                    )
-                    return self.outfile
+            logger.info(
+                f"Track {self.track_id} written to '{str(self.outfile.absolute())}'"
+            )
+            return self.outfile
 
-            for u in urls:
+    def download_urls(self, session: Session, out_dir: Path) -> Optional[Path]:
+        """This method writes the contents from self.urls to a temporary
+        directory, then uses FFmpeg to re-mux the data to self.outfile"""
+        logger.info(f"Writing track {self.track_id} to '{self.absolute_outfile}'")
+
+        with temporary_file() as ntf:
+            for u in self.urls:
                 with session.get(
                     url=u, headers=self.download_headers, params=self.download_params
                 ) as resp:
@@ -290,17 +310,29 @@ class Track:
                 # Have to use FFmpeg to re-mux the audio bytes, otherwise
                 # mutagen chokes on NoFlacHeaderError
                 ffmpeg.input(ntf.name, hide_banner=None, y=None).output(
-                    str(self.outfile.absolute()), acodec="copy", loglevel="quiet"
+                    self.absolute_outfile, acodec="copy", loglevel="quiet"
                 ).run()
             elif self.codec == "m4a":
                 shutil.copyfile(ntf.name, self.outfile)
             elif self.codec == "mka":
                 shutil.copyfile(ntf.name, self.outfile)
 
-        logger.info(
-            f"Track {self.track_id} written to '{str(self.outfile.absolute())}'"
-        )
+        logger.info(f"Track {self.track_id} written to '{self.absolute_outfile}'")
         return self.outfile
+
+    def download(self, session: Session, out_dir: Path) -> Optional[Path]:
+        """This method GETs the data from self.urls and writes it
+        to self.outfile."""
+        if len(self.urls) == 1:
+            outfile: Optional[Path] = self.download_url(
+                session=session, out_dir=out_dir
+            )
+        else:
+            outfile: Optional[Path] = self.download_urls(
+                session=session, out_dir=out_dir
+            )
+
+        return outfile
 
     def craft_tags(self):
         """Using the TAG_MAPPING dictionary,
@@ -371,6 +403,7 @@ class Track:
 
             tags["trkn"] = [(self.metadata.track_number, self.album.number_of_tracks)]
             tags["disk"] = [(self.metadata.volume_number, self.album.number_of_volumes)]
+
         self.tags: dict = {k: v for k, v in tags.items() if v is not None}
 
     def set_tags(self):
@@ -404,17 +437,17 @@ class Track:
                     f"""ffmpeg -hide_banner -loglevel quiet -y -i "{tf.name}"
                     -map 0:a:0 -map 0:v:0 -c:a copy -c:v copy
                     -metadata:s:v title='Album cover' -metadata:s:v comment='Cover (front)'
-                    -disposition:v attached_pic "{str(self.outfile.absolute())}" """
+                    -disposition:v attached_pic "{self.absolute_outfile}" """
                 )
                 subprocess.run(cmd)
         elif self.codec == "m4a":
             with temporary_file(suffix=".mka") as tf:
                 cmd: List[str] = shlex.split(
-                    f"""ffmpeg -hide_banner -loglevel quiet -y -i "{str(self.outfile.absolute())}"
+                    f"""ffmpeg -hide_banner -loglevel quiet -y -i "{self.absolute_outfile}"
                     -map 0:a:0 -map 0:v:0 -c:a copy -c:v copy "{tf.name}" """
                 )
                 subprocess.run(cmd)
-                shutil.copyfile(tf.name, str(self.outfile.absolute()))
+                shutil.copyfile(tf.name, self.absolute_outfile)
 
     def get(
         self,
@@ -433,6 +466,16 @@ class Track:
             # self.failed = True
             self.outfile = None
             return
+
+        if "DOLBY_ATMOS" in self.metadata.media_metadata.tags:
+            if audio_format != AudioFormat.dolby_atmos:
+                logger.warning(
+                    f"Track {self.track_id} is only available in Dolby Atmos "
+                    "format. Downloading of track will not continue."
+                )
+                self.outfile = None
+                return
+
 
         if audio_format == AudioFormat.dolby_atmos:
             if "DOLBY_ATMOS" not in self.metadata.media_metadata.tags:
@@ -468,7 +511,6 @@ class Track:
             self.album = album
 
         if self.album is None:
-            # self.failed = True
             self.outfile = None
             return
 
@@ -478,7 +520,7 @@ class Track:
             return
         self.set_manifest()
         self.set_album_dir(out_dir)
-        self.set_filename(audio_format, out_dir)
+        self.set_filename(audio_format)
         outfile: Optional[Path] = self.set_outfile()
         if outfile is None:
             return
@@ -499,6 +541,8 @@ class Track:
             self.save_artist_bio(session)
         except Exception:
             pass
+
+        self.set_urls(session)
 
         if self.download(session, out_dir) is None:
             return

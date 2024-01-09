@@ -647,30 +647,15 @@ def match_tidal_url(input_str: str) -> Optional[TidalResource]:
     neither, otherwise a subclass of TidalResource corresponding to the
     parsed input_str type
     """
-    tidal_resource: Optional[TidalResource] = None
-    try:
-        tidal_resource: TidalTrack = TidalTrack(input_str)
-    except ValueError as v:
-        logger.debug(v)
+    resource_match: Optional[TidalResource] = None
+    tidal_resources: Tuple[TidalResource] = (
+        TidalTrack, TidalAlbum, TidalVideo, TidalPlaylist, TidalMix, TidalArtist
+    )
+    for T in tidal_resources:
         try:
-            tidal_resource: TidalAlbum = TidalAlbum(input_str)
-        except ValueError as ve:
-            logger.debug(ve)
-            try:
-                tidal_resource: TidalVideo = TidalVideo(input_str)
-            except ValueError as ver:
-                logger.debug(ver)
-                try:
-                    tidal_resource: TidalPlaylist = TidalPlaylist(input_str)
-                except ValueError as verr:
-                    logger.debug(verr)
-                    try:
-                        tidal_resource: TidalMix = TidalMix(input_str)
-                    except ValueError as vaerr:
-                        logger.debug(vaerr)
-                        try:
-                            tidal_resource: TidalArtist = TidalArtist(input_str)
-                        except ValueError as valerr:
-                            logger.debug(valerr)
-    finally:
-        return tidal_resource
+            resource_match = T(input_str)
+        except ValueError as v:
+            logger.debug(v)
+            continue
+        else:
+            return resource_match
