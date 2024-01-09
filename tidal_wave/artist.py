@@ -36,6 +36,8 @@ class Artist:
         )
 
     def save_artist_image(self, session: Session):
+        """This method writes the bytes of self.metadata.picture to
+        the file cover.jpg in self.artist_dir"""
         artist_image: Path = self.artist_dir / "cover.jpg"
         if not artist_image.exists():
             download_cover_image(
@@ -43,21 +45,21 @@ class Artist:
             )
 
     def set_albums(self, session: Session):
-        """This function requests from TIDAL API endpoint /artists/albums and
+        """This method requests from TIDAL API endpoint /artists/albums and
         stores the results in self.albums"""
         self.albums: Optional[ArtistsAlbumsResponseJSON] = request_artists_albums(
             session, self.artist_id
         )
 
     def set_audio_works(self, session: Session):
-        """This function requests from TIDAL API endpoint
+        """This method requests from TIDAL API endpoint
         /artists/albums?filter=EPSANDSINGLES and stores the results in self.albums"""
         self.albums: Optional[ArtistsAlbumsResponseJSON] = request_artists_audio_works(
             session, self.artist_id
         )
 
     def set_videos(self, session: Session):
-        """This function requests from TIDAL API endpoint /artists/videos and
+        """This method requests from TIDAL API endpoint /artists/videos and
         stores the results in self.albums"""
         self.videos: Optional[ArtistsVideosResponseJSON] = request_artists_videos(
             session, self.artist_id
@@ -77,6 +79,10 @@ class Artist:
         out_dir: Path,
         include_eps_singles: bool = False,
     ) -> List[Optional[str]]:
+        """This method first fetches the total albums on TIDAL's service
+        corresponding to the artist with ID self.artist_id. Then, each of
+        the albums (and, optionally, EPs and singles) is requested and
+        written to subdirectories of out_dir"""
         if include_eps_singles:
             self.set_audio_works(session)
             logger.info(
@@ -128,6 +134,14 @@ class Artist:
         out_dir: Path,
         include_eps_singles: bool,
     ):
+        """This is the driver method of the class. It executes the other
+        methods in order:
+            1. set_metadata
+            2. set_dir
+            3. save_artist_image
+            4. get_videos
+            5. get_albums
+        """
         self.set_metadata(session)
         self.set_dir(out_dir)
         self.save_artist_image(session)

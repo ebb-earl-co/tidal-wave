@@ -476,7 +476,6 @@ class Track:
                 self.outfile = None
                 return
 
-
         if audio_format == AudioFormat.dolby_atmos:
             if "DOLBY_ATMOS" not in self.metadata.media_metadata.tags:
                 logger.warning(
