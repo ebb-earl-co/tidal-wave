@@ -192,3 +192,20 @@ $ docker run \
     --audio-format hires \
     --include-eps-singles
 ```
+## Development
+The easiest way to start working on development is to fork this project on GitHub, or clone the repository to your local machine and do the pull requesting on GitHub later. In any case, tere will need to be some getting from GitHub first, so, roughly, the process is:
+  1. Get Python 3.8+ on your system
+  2. Use a virtualenv or some other Python environment system (poetry, pipenv, etc.)
+  3. Clone the repository: `$ git clone https://github.com/ebb-earl-co/tidal-wave/git`
+
+    * Obviously replace the URL with your forked version if you've followed that strategy
+  4. Activate the virtual environment and install the required packages (requirements.txt): `(some-virtual-env) $ python3 -m pip install -r requirements.txt`
+
+    * optional packages to follow the coding style and build process; `shiv`, `black`: `(some-virtual-env) $ python3 -m pip install shiv black`
+    * optionally, Rust and cargo in order to build the `pyapp` artifacts
+    * optionally, Docker to build the OCI container artifacts
+  5. From a Python REPL (or, my preferred method, an iPython session), import all the relevant modules, or the targeted ones for development:
+  ```python
+  from tidal_wave import album, artist, dash, hls, login, main, media, mix, models, oauth, playlist, requesting, track, utils, video
+  from tidal_wave.main import *
+  ```
