@@ -73,7 +73,7 @@ class Album:
                 )
 
     def save_cover_image(self, session: Session, out_dir: Path):
-        """This method writes cover.jpg in self.album_dir via the 
+        """This method writes cover.jpg in self.album_dir via the
         utils.download_cover_image() function. If successful,
         then self.album_cover_saved takes the value True"""
         if self.album_dir is None:
@@ -127,7 +127,7 @@ class Album:
     ):
         """This method is the driver method of the class. It calls the
         other methods in order:
-            1. get_metadata()  
+            1. get_metadata()
             2. get_items()
             3. save_cover_image()
             4. get_review()

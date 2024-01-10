@@ -649,7 +649,12 @@ def match_tidal_url(input_str: str) -> Optional[TidalResource]:
     """
     resource_match: Optional[TidalResource] = None
     tidal_resources: Tuple[TidalResource] = (
-        TidalTrack, TidalAlbum, TidalVideo, TidalPlaylist, TidalMix, TidalArtist
+        TidalTrack,
+        TidalAlbum,
+        TidalVideo,
+        TidalPlaylist,
+        TidalMix,
+        TidalArtist,
     )
     for T in tidal_resources:
         try:
