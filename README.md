@@ -74,27 +74,13 @@ Download the Rust-compiled binary from [the Releases](https://github.com/ebb-ear
 $ wget https://github.com/ebb-earl-co/tidal-wave/releases/download/<VERSION>/tidal-wave_<VERSION>.pyapp
 $ chmod +x ./tidal-wave_<VERSION>.pyapp
 ```
-Or, on Windows, once the .exe file is downloaded, you might have to allow a security exception for an unkown developer.
+Or, on Windows, once the .exe file is downloaded, you might have to allow a security exception for an unknown developer.
 
 ### Docker
 Pull the image from GitHub container repo:
 ```bash
 docker pull ghcr.io/ebb-earl-co/tidal-wave:latest
 ```
-### `pyapp` executable
-Download the Rust-compiled binary from [the Releases](https://github.com/ebb-earl-co/tidal-wave/releases/latest), and, on macOS or GNU/Linux, make it executable
-```bash
-$ wget https://github.com/ebb-earl-co/tidal-wave/releases/download/<VERSION>/tidal-wave_<VERSION>.pyapp
-$ chmod +x ./tidal-wave_<VERSION>.pyapp
-```
-Or, on Windows, once the .exe file is downloaded, you might have to allow a security exception for an unkown developer.
-
-### Docker
-Pull the image from GitHub container repo:
-```bash
-docker pull ghcr.io/ebb-earl-co/tidal-wave:latest
-```
-
 ## Quickstart
 Run `python3 tidal-wave --help` to see the options available. Or, if you followed the repository cloning steps above, run `python3 -m tidal_wave --help` from the repository root directory, `tidal-wave`. In either case, you should see something like the following:
 ```bash
@@ -128,7 +114,7 @@ Similarly, all media retrieved is placed in subdirectories of the user's default
  - Even videos are downloaded here (for now) for simplicity
 
 ### Example
- - First, find the URL of the track or album ID desired. Then, simmply pass it as the first argument to `tidal-wave` with no other arguments to: *download the track/album/playlist in Lossless quality to a subdirectory of user's music directory and INFO-level logging.*
+ - First, find the URL of the album/artist/mix/playlist/track/video desired. Then, simply pass it as the first argument to `tidal-wave` with no other arguments to: *download the album/artist/mix/playlist/track in Lossless quality to a subdirectory of user's music directory and INFO-level logging* in the case of audio; or *download the video in 1080p, H.264+AAC quality to a subdirectory of user's music directory with INFO-level logging* in the case of a video URL.
  ```bash
  (.venv) $ tidal-wave https://tidal.com/browse/track/226092704
  ```
@@ -147,19 +133,19 @@ Similarly, all media retrieved is placed in subdirectories of the user's default
  $ ./tidal-wave_<VERSION>.pyz https://tidal.com/browse/video/...
  ```
 
- - To (attempt to) get an entire playlist, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos.
+ - To (attempt to) get a playlist, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos.
  ```bash
- $ ./tidal-wave_<VERSION>.pyapp https://tidal.com/browse/playlist/...
+ > .\tidal-wave_<VERSION>.pyapp.exe https://tidal.com/browse/playlist/...
  ```
 
- - To (attempt to) get an mix, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos.
+ - To (attempt to) get a mix, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos.
  ```bash
  $ ./tidal-wave_<VERSION>.pyapp https://tidal.com/browse/mix/...
  ```
 
- - To (attempt to) get all of an artist's works (albums and videos, **excluding EPs and singles**) in Dolby Atmos format and verbose logging, the following will do that:
+ - To (attempt to) get all of an artist's works (albums and videos, **excluding EPs and singles**) in Sony 360 Reality Audio format and verbose logging, the following will do that:
  ```bash
- (.venv) $ python3 -m tidal_wave https://listen.tidal.com/artist/... --audio-format atmos --loglevel debug
+ (.venv) $ python3 -m tidal_wave https://listen.tidal.com/artist/... --audio-format 360 --loglevel debug
  ```
 
  - To (attempt to) get all of an artist's works (**including EPs and singles**), in HiRes format, the following will do that:
@@ -192,3 +178,20 @@ $ docker run \
     --audio-format hires \
     --include-eps-singles
 ```
+## Development
+The easiest way to start working on development is to fork this project on GitHub, or clone the repository to your local machine and do the pull requesting on GitHub later. In any case, there will need to be some getting from GitHub first, so, roughly, the process is:
+  1. Get Python 3.8+ on your system
+  2. Use a virtualenv or some other Python environment system (poetry, pipenv, etc.)
+  3. Clone the repository: `$ git clone https://github.com/ebb-earl-co/tidal-wave/git`
+
+    * Obviously replace the URL with your forked version if you've followed that strategy
+  4. Activate the virtual environment and install the required packages (requirements.txt): `(some-virtual-env) $ python3 -m pip install -r requirements.txt`
+
+    * optional packages to follow the coding style and build process; `shiv`, `black`: `(some-virtual-env) $ python3 -m pip install shiv black`
+    * optionally, Rust and cargo in order to build the `pyapp` artifacts
+    * optionally, Docker to build the OCI container artifacts
+  5. From a Python REPL (or, my preferred method, an iPython session), import all the relevant modules, or the targeted ones for development:
+  ```python
+  from tidal_wave import album, artist, dash, hls, login, main, media, mix, models, oauth, playlist, requesting, track, utils, video
+  from tidal_wave.main import *
+  ```

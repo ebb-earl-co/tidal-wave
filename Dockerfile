@@ -27,10 +27,10 @@ RUN cd ~/ffmpeg_sources && \
 
 FROM python:3.11-slim as runtime_image
 
-LABEL org.opencontainers.image.authors "colinho <pypi@colin.technology>"
-LABEL org.opencontainers.image.description "Waving at the TIDAL music service"
+LABEL org.opencontainers.image.authors "colinho <github@colin.technology>"
+LABEL org.opencontainers.image.description "Waving at the TIDAL music service with Python"
 LABEL org.opencontainers.image.documentation "https://github.com/ebb-earl-co/tidal-wave/blob/trunk/README.md"
-LABEL org.opencontainers.image.source "https://github.com/ebb-earl-co/tidal-wave/blob/trunk/Dockerfile"
+LABEL org.opencontainers.image.source "https://github.com/ebb-earl-co/tidal-wave"
 
 ENV PIP_DEFAULT_TIMEOUT=100 \
     # Allow statements and log messages to immediately appear

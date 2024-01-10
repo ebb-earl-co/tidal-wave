@@ -26,6 +26,8 @@ class Album:
         self.album_cover_saved: bool = False
 
     def get_items(self, session: Session):
+        """This method populates self.tracks by requesting from
+        TIDAL albums/items endpoint."""
         album_items: AlbumsItemsResponseJSON = request_album_items(
             session=session, identifier=self.album_id
         )
@@ -33,11 +35,16 @@ class Album:
         self.tracks = tuple(_item.item for _item in _items)
 
     def get_metadata(self, session: Session):
+        """This method populates self.metadata by requesting from
+        TIDAL /albums endpoint"""
         self.metadata: AlbumsEndpointResponseJSON = request_albums(
             session=session, identifier=self.album_id
         )
 
     def get_review(self, session: Session):
+        """This method requests the review corresponding to self.album_id
+        in TIDAL. If it exists, it is written to disk as AlbumReview.json
+        in self.album_dir"""
         self.album_review: Optional[AlbumsReviewResponseJSON] = request_album_review(
             session=session, identifier=self.album_id
         )
@@ -47,6 +54,9 @@ class Album:
             )
 
     def set_dir(self, out_dir: Path):
+        """This method populates self.album_dir as a sub-subdirectory of
+        out_dir: its parent directory is the name of the (main) artist of
+        the album"""
         artist_substring: str = self.metadata.artist.name.replace("..", "")
         album_substring: str = (
             f"{self.metadata.name.replace('..', '')} "
@@ -63,6 +73,9 @@ class Album:
                 )
 
     def save_cover_image(self, session: Session, out_dir: Path):
+        """This method writes cover.jpg in self.album_dir via the 
+        utils.download_cover_image() function. If successful,
+        then self.album_cover_saved takes the value True"""
         if self.album_dir is None:
             self.set_dir(out_dir=out_dir)
         self.cover_path: Path = self.album_dir / "cover.jpg"
@@ -78,6 +91,9 @@ class Album:
     def get_tracks(
         self, session: Session, audio_format: AudioFormat, out_dir: Path
     ) -> List[Optional[str]]:
+        """This method uses self.tracks to call track.Track.get() for each
+        track in self.tracks. It uses the result of each of these calls to
+        populate self.track_files"""
         track_files: List[str] = [None] * self.metadata.number_of_tracks
         for i, t in enumerate(self.tracks):  # type(t) is TracksEndpointResponseJSON
             track: Track = Track(track_id=t.id)
@@ -94,9 +110,12 @@ class Album:
             self.track_files = track_files
 
     def dumps(self):
+        """This method returns a JSON-like string of self.track_files"""
         return json.dumps(self.track_files)
 
     def dump(self, fp=sys.stdout):
+        """This method writes to (by default) STDOUT a
+        JSON-like string of self.track_files"""
         json.dump(self.track_files, fp)
 
     def get(
@@ -106,6 +125,14 @@ class Album:
         out_dir: Path,
         metadata: Optional[AlbumsEndpointResponseJSON] = None,
     ):
+        """This method is the driver method of the class. It calls the
+        other methods in order:
+            1. get_metadata()  
+            2. get_items()
+            3. save_cover_image()
+            4. get_review()
+            5. get_tracks()
+        """
         if metadata is None:
             self.get_metadata(session)
         else:
