@@ -114,7 +114,7 @@ Similarly, all media retrieved is placed in subdirectories of the user's default
  - Even videos are downloaded here (for now) for simplicity
 
 ### Example
- - First, find the URL of the track or album ID desired. Then, simmply pass it as the first argument to `tidal-wave` with no other arguments to: *download the track/album/playlist in Lossless quality to a subdirectory of user's music directory and INFO-level logging.*
+ - First, find the URL of the album/artist/mix/playlist/track/video desired. Then, simply pass it as the first argument to `tidal-wave` with no other arguments to: *download the album/artist/mix/playlist/track in Lossless quality to a subdirectory of user's music directory and INFO-level logging* in the case of audio; or *download the video in 1080p, H.264+AAC quality to a subdirectory of user's music directory with INFO-level logging* in the case of a video URL.
  ```bash
  (.venv) $ tidal-wave https://tidal.com/browse/track/226092704
  ```
@@ -133,19 +133,19 @@ Similarly, all media retrieved is placed in subdirectories of the user's default
  $ ./tidal-wave_<VERSION>.pyz https://tidal.com/browse/video/...
  ```
 
- - To (attempt to) get an entire playlist, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos.
+ - To (attempt to) get a playlist, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos.
  ```bash
  > .\tidal-wave_<VERSION>.pyapp.exe https://tidal.com/browse/playlist/...
  ```
 
- - To (attempt to) get an mix, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos.
+ - To (attempt to) get a mix, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos.
  ```bash
  $ ./tidal-wave_<VERSION>.pyapp https://tidal.com/browse/mix/...
  ```
 
- - To (attempt to) get all of an artist's works (albums and videos, **excluding EPs and singles**) in Dolby Atmos format and verbose logging, the following will do that:
+ - To (attempt to) get all of an artist's works (albums and videos, **excluding EPs and singles**) in Sony 360 Reality Audio format and verbose logging, the following will do that:
  ```bash
- (.venv) $ python3 -m tidal_wave https://listen.tidal.com/artist/... --audio-format atmos --loglevel debug
+ (.venv) $ python3 -m tidal_wave https://listen.tidal.com/artist/... --audio-format 360 --loglevel debug
  ```
 
  - To (attempt to) get all of an artist's works (**including EPs and singles**), in HiRes format, the following will do that:
