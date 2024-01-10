@@ -74,27 +74,13 @@ Download the Rust-compiled binary from [the Releases](https://github.com/ebb-ear
 $ wget https://github.com/ebb-earl-co/tidal-wave/releases/download/<VERSION>/tidal-wave_<VERSION>.pyapp
 $ chmod +x ./tidal-wave_<VERSION>.pyapp
 ```
-Or, on Windows, once the .exe file is downloaded, you might have to allow a security exception for an unkown developer.
+Or, on Windows, once the .exe file is downloaded, you might have to allow a security exception for an unknown developer.
 
 ### Docker
 Pull the image from GitHub container repo:
 ```bash
 docker pull ghcr.io/ebb-earl-co/tidal-wave:latest
 ```
-### `pyapp` executable
-Download the Rust-compiled binary from [the Releases](https://github.com/ebb-earl-co/tidal-wave/releases/latest), and, on macOS or GNU/Linux, make it executable
-```bash
-$ wget https://github.com/ebb-earl-co/tidal-wave/releases/download/<VERSION>/tidal-wave_<VERSION>.pyapp
-$ chmod +x ./tidal-wave_<VERSION>.pyapp
-```
-Or, on Windows, once the .exe file is downloaded, you might have to allow a security exception for an unkown developer.
-
-### Docker
-Pull the image from GitHub container repo:
-```bash
-docker pull ghcr.io/ebb-earl-co/tidal-wave:latest
-```
-
 ## Quickstart
 Run `python3 tidal-wave --help` to see the options available. Or, if you followed the repository cloning steps above, run `python3 -m tidal_wave --help` from the repository root directory, `tidal-wave`. In either case, you should see something like the following:
 ```bash
@@ -149,7 +135,7 @@ Similarly, all media retrieved is placed in subdirectories of the user's default
 
  - To (attempt to) get an entire playlist, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos.
  ```bash
- $ ./tidal-wave_<VERSION>.pyapp https://tidal.com/browse/playlist/...
+ > .\tidal-wave_<VERSION>.pyapp.exe https://tidal.com/browse/playlist/...
  ```
 
  - To (attempt to) get an mix, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos.
@@ -193,7 +179,7 @@ $ docker run \
     --include-eps-singles
 ```
 ## Development
-The easiest way to start working on development is to fork this project on GitHub, or clone the repository to your local machine and do the pull requesting on GitHub later. In any case, tere will need to be some getting from GitHub first, so, roughly, the process is:
+The easiest way to start working on development is to fork this project on GitHub, or clone the repository to your local machine and do the pull requesting on GitHub later. In any case, there will need to be some getting from GitHub first, so, roughly, the process is:
   1. Get Python 3.8+ on your system
   2. Use a virtualenv or some other Python environment system (poetry, pipenv, etc.)
   3. Clone the repository: `$ git clone https://github.com/ebb-earl-co/tidal-wave/git`
