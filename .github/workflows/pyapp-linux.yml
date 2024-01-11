@@ -10,7 +10,7 @@ env:
   PYAPP_PYTHON_VERSION: 3.11
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -26,12 +26,17 @@ jobs:
         version: 0.13.0
 
     - name: Rename just-compiled binary
+      shell: bash
       run: |
         mv /home/runner/.cargo-install/pyapp/bin/pyapp /home/runner/.cargo-install/tidal-wave_${{ github.event.release.tag_name }}_py311.pyapp
+
+    - name: Test just-compiled binary
+      run: |
+        /home/runner/.cargo-install/tidal-wave_${{ github.event.release.tag_name }}_py311.pyapp --help
 
     - name: Add (upload) artifact to release
       uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ github.token }}
       with:
-        files: ./tidal-wave_${{ github.event.release.tag_name }}_py311.pyapp
+        files: /home/runner/.cargo-install/tidal-wave_${{ github.event.release.tag_name }}_py311.pyapp
