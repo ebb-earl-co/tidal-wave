@@ -13,10 +13,8 @@ fi
     source ./venv/bin/activate && \
     python3 -m pip install --upgrade pip setuptools wheel && \
     python3 -m pip install -r requirements.txt && \
-    python3 -m pip install build pyinstaller shiv twine && \
+    python3 -m pip install build shiv twine && \
     python3 -m shiv --compressed --reproducible -c tidal-wave -o ~/tools/tidal-wave_${VERSION}.pyz .  && \  # shiv executable
-    PYAPP_PROJECT_NAME=tidal-wave PYAPP_PROJECT_VERSION=${VERSION} cargo install pyapp --root out && \
-    mv out/bin/pyapp ~/tools/tidal-wave_${VERSION}.pyapp && \
     PYAPP_PROJECT_NAME=tidal-wave PYAPP_PROJECT_VERSION=${VERSION} PYAPP_DISTRIBUTION_EMBED=1 PYAPP_PYTHON_VERSION=3.11 cargo install pyapp --root out && \
     mv out/bin/pyapp ~/tools/tidal-wave_${VERSION}_py311.pyapp && \
     rm -r out/
