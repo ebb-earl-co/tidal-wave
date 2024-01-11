@@ -589,7 +589,7 @@ class TidalTrack(TidalResource):
     url: str
 
     def __post_init__(self):
-        self.pattern: str = r"http(?:s)?://(?:listen\.)?tidal\.com/(?:browse/)?(?:album/\d{7,9}/)?track/(\d{7,9})(?:.*?)?"
+        self.pattern: str = r"http(?:s)?://(?:listen\.)?tidal\.com/(?:browse/)?(?:album/\d{5,9}/)?track/(\d{5,9})(?:.*?)?"
         _id = self.match_url()
 
         if _id is None:
@@ -649,7 +649,12 @@ def match_tidal_url(input_str: str) -> Optional[TidalResource]:
     """
     resource_match: Optional[TidalResource] = None
     tidal_resources: Tuple[TidalResource] = (
-        TidalTrack, TidalAlbum, TidalVideo, TidalPlaylist, TidalMix, TidalArtist
+        TidalTrack,
+        TidalAlbum,
+        TidalVideo,
+        TidalPlaylist,
+        TidalMix,
+        TidalArtist,
     )
     for T in tidal_resources:
         try:

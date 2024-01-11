@@ -6,16 +6,19 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     environment:
       name: pypi
       url: https://pypi.org/p/tidal-wave
+
     permissions:
+
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
     - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: "3.11"
         cache: "pip"  # caching pip dependencies
