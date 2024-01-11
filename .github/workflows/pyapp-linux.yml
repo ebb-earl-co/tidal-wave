@@ -6,7 +6,7 @@ on:
 env:
   PYAPP_PROJECT_NAME: "tidal-wave"
   PYAPP_PROJECT_VERSION: ${{ github.event.release.tag_name }}
-  PYAPP_EMBED: 1
+  PYAPP_DISTRIBUTION_EMBED: 1
   PYAPP_PYTHON_VERSION: 3.11
 
 permissions:
