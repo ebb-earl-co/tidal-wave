@@ -6,7 +6,7 @@ on:
 env:
   PYAPP_PROJECT_NAME: "tidal-wave"
   PYAPP_PROJECT_VERSION: ${{ github.event.release.tag_name }}
-  PYAPP_EMBED: 1
+  PYAPP_DISTRIBUTION_EMBED: 1
   PYAPP_PYTHON_VERSION: 3.11
 
 permissions:
@@ -26,16 +26,18 @@ jobs:
         version: 0.13.0
 
     - name: Rename just-compiled binary
+      shell: pwsh
       run: |
-        Move-Item C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe C:\Users\runneradmin\.cargo-install\pyapp\bin\tidal-wave_${{ github.event.release.tag_name }}.pyapp.exe
+        Move-Item C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe C:\Users\runneradmin\.cargo-install\pyapp\bin\tidal-wave_${{ github.event.release.tag_name }}_pyapp.exe
 
     - name: Test just-compiled binary
+      shell: pwsh
       run: |
-        C:\Users\runneradmin\.cargo-install\pyapp\bin\tidal-wave_${{ github.event.release.tag_name }}.pyapp.exe --help
+        & "C:\Users\runneradmin\.cargo-install\pyapp\bin\tidal-wave_${{ github.event.release.tag_name }}_pyapp.exe" --help
 
     - name: Add (upload) artifact to release
       uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ github.token }}
       with:
-        files: C:\Users\runneradmin\.cargo-install\pyapp\bin\tidal-wave_${{ github.event.release.tag_name }}.pyapp.exe
+        files: C:\Users\runneradmin\.cargo-install\pyapp\bin\tidal-wave_${{ github.event.release.tag_name }}_pyapp.exe

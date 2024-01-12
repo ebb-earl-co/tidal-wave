@@ -6,7 +6,7 @@ on:
 env:
   PYAPP_PROJECT_NAME: "tidal-wave"
   PYAPP_PROJECT_VERSION: ${{ github.event.release.tag_name }}
-  PYAPP_EMBED: 1
+  PYAPP_DISTRIBUTION_EMBED: 1
   PYAPP_PYTHON_VERSION: 3.11
 
 permissions:
@@ -31,7 +31,7 @@ jobs:
 
     - name: Test just-compiled binary
       run: |
-        /home/runner/.cargo-install/tidal-wave_${{ github.event.release.tag_name }}_macos.pyapp --help
+        /Users/runner/.cargo-install/pyapp/bin/tidal-wave_${{ github.event.release.tag_name }}_macos.pyapp --help
 
     - name: Add (upload) artifact to release
       uses: softprops/action-gh-release@v1
