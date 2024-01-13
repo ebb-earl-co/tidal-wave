@@ -1,0 +1,81 @@
+# https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
+FROM debian:bookworm-slim as ffmpeg_image
+RUN export DEBIAN_FRONTEND=noninteractive && apt-get update -qq && apt-get -y install --no-install-recommends \
+  autoconf \
+  bzip2 \
+  build-essential \
+  pkg-config \
+  wget \
+  yasm \
+  zlib1g-dev
+RUN mkdir ~/ffmpeg_sources ~/ffmpeg_build ~/bin
+RUN cd ~/ffmpeg_sources && \
+    wget --no-check-certificate -O ffmpeg-snapshot.tar.bz2 https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2 && \
+    tar xjvf ffmpeg-snapshot.tar.bz2 && \
+    cd ffmpeg && \
+    PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
+      --prefix="$HOME/ffmpeg_build" \
+      --pkg-config-flags="--static" \
+      --extra-cflags="-I$HOME/ffmpeg_build/include" \
+      --extra-ldflags="-L$HOME/ffmpeg_build/lib" \
+      --extra-libs="-lpthread -lm" \
+      --ld="g++" \
+      --bindir="$HOME/bin" && \
+    PATH="$HOME/bin:$PATH" make && \
+    make install && \
+    hash -r
+
+
+FROM python:3.11 as python_image
+ARG TIDAL_WAVE_VERSION
+ENV TIDAL_WAVE_VERSION=${TIDAL_WAVE_VERSION}
+ENV REPO_URL=https://github.com/ebb-earl-co/tidal-wave.git
+ENV PIP_DEFAULT_TIMEOUT=100 \
+    # Allow statements and log messages to immediately appear
+    PYTHONUNBUFFERED=1 \
+    # disable a pip version check to reduce run-time & log-spam
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    # cache is useless in docker image, so disable to reduce image size
+    PIP_NO_CACHE_DIR=1
+WORKDIR /app
+RUN git clone --depth 1 --branch ${TIDAL_WAVE_VERSION} ${REPO_URL} && \
+    cd tidal-wave && \
+    python3 -m pip wheel . --wheel-dir /app
+    
+
+FROM rust:1.75.0-slim-bookworm as rust_image
+ARG TIDAL_WAVE_VERSION
+ENV TIDAL_WAVE_VERSION=${TIDAL_WAVE_VERSION}
+WORKDIR /app
+COPY --from=python_image /app/tidal_wave-${TIDAL_WAVE_VERSION}-py3-none-any.whl /app/tidal_wave-${TIDAL_WAVE_VERSION}-py3-none-any.whl
+RUN PYAPP_PROJECT_NAME=tidal-wave \
+    PYAPP_PROJECT_VERSION=${TIDAL_WAVE_VERSION} \
+    PYAPP_PROJECT_PATH=/app/tidal_wave-${TIDAL_WAVE_VERSION}-py3-none-any.whl \
+    PYAPP_DISTRIBUTION_EMBED=1 \
+    PYAPP_PYTHON_VERSION=3.11 \
+    cargo install pyapp --root out/ && \
+    mv out/bin/pyapp /app/tidal-wave_py311.pyapp
+
+
+FROM debian:bookworm-slim as volume_image
+RUN mkdir -p /Music /.config/tidal-wave/
+
+
+FROM gcr.io/distroless/cc-debian12:latest as runtime_image
+
+LABEL org.opencontainers.image.authors "colinho <github@colin.technology>"
+LABEL org.opencontainers.image.description "Waving at the TIDAL music service with Python"
+LABEL org.opencontainers.image.documentation "https://github.com/ebb-earl-co/tidal-wave/blob/trunk/README.md"
+LABEL org.opencontainers.image.source "https://github.com/ebb-earl-co/tidal-wave"
+
+ARG TIDAL_WAVE_VERSION
+ENV TIDAL_WAVE_VERSION=${TIDAL_WAVE_VERSION}
+WORKDIR /app
+USER nonroot
+COPY --from=ffmpeg_image --chown=nonroot:nonroot /root/bin/ffmpeg /usr/bin/ffmpeg
+COPY --from=rust_image --chown=nonroot:nonroot /app/tidal-wave_py311.pyapp /app/tidal-wave_py311.pyapp
+COPY --from=volume_image --chown=nonroot:nonroot /Music /home/nonroot/Music
+COPY --from=volume_image --chown=nonroot:nonroot /.config /home/nonroot/.config
+VOLUME /home/nonroot/.config/tidal-wave /home/nonroot/Music
+ENTRYPOINT ["/app/tidal-wave_py311.pyapp"]
+CMD ["--help"]
