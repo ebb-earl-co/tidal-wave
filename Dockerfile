@@ -21,7 +21,7 @@ RUN cd ~/ffmpeg_sources && \
       --extra-libs="-lpthread -lm" \
       --ld="g++" \
       --bindir="$HOME/bin" && \
-    PATH="$HOME/bin:$PATH" make && \
+    PATH="$HOME/bin:$PATH" make -j$(nproc) && \
     make install && \
     hash -r
 
