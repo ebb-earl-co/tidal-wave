@@ -463,7 +463,6 @@ class Track:
             self.metadata = metadata
 
         if self.metadata is None:
-            # self.failed = True
             self.outfile = None
             return
 

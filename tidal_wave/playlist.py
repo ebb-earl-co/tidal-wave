@@ -39,6 +39,10 @@ class Playlist:
         self.metadata: Optional[PlaylistsEndpointResponseJSON] = request_playlists(
             session=session, identifier=self.playlist_id
         )
+        
+        if self.metadata is None:
+            return
+        
         self.name = (
             self.metadata.title.replace("/", "_")
             .replace("|", "_")
@@ -297,6 +301,11 @@ class Playlist:
           - self.flatten_playlist_dir()
         """
         self.get_metadata(session)
+    
+        if self.metadata is None:
+            self.files = {}
+            return
+        
         self.set_items(session)
         self.set_dir(out_dir)
         self.save_cover_image(session, out_dir)
