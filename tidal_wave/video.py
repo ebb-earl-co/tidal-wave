@@ -203,7 +203,6 @@ class Video:
         else:
             self.metadata = metadata
 
-        # check for 404 error with metadata
         if self.metadata is None:
             return None
 

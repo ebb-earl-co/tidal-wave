@@ -377,8 +377,8 @@ class Track:
 
         if self.codec == "flac":
             # track and disk
-            tags["DISCTOTAL"] = f"{self.metadata.volume_number}"
-            tags["DISC"] = f"{self.album.number_of_volumes}"
+            tags["DISCTOTAL"] = f"{self.album.number_of_volumes}"
+            tags["DISC"] = f"{self.metadata.volume_number}"
             tags["TRACKTOTAL"] = f"{self.album.number_of_tracks}"
             tags["TRACKNUMBER"] = f"{self.metadata.track_number}"
             # instrument-specific
@@ -463,7 +463,6 @@ class Track:
             self.metadata = metadata
 
         if self.metadata is None:
-            # self.failed = True
             self.outfile = None
             return
 

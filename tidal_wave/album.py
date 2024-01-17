@@ -137,6 +137,10 @@ class Album:
             self.get_metadata(session)
         else:
             self.metadata = metadata
+        
+        if self.metadata is None:
+            self.track_files = {}
+            return
 
         self.get_items(session)
         self.save_cover_image(session, out_dir)
