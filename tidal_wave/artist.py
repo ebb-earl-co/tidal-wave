@@ -143,6 +143,10 @@ class Artist:
             5. get_albums
         """
         self.set_metadata(session)
+        
+        if self.metadata is None:
+            return
+        
         self.set_dir(out_dir)
         self.save_artist_image(session)
         self.get_videos(session, out_dir)
