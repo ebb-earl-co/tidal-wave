@@ -19,16 +19,33 @@ fi
     mv out/bin/pyapp ~/tools/tidal-wave_${VERSION}_py311.pyapp && \
     rm -r out/
 
-# Pyinstaller
-# TODO: figure out how to bundle FFmpeg legally;
-# i.e., what are the License ramifications for this project
-python3 -m pyinstaller \
-    --distpath ./.dist/ \
-    --workpath ./.build/ \
-    --onefile \
-    --name tidal-wave_${VERSION} 
-    --paths tidal_wave \
-    --paths ./venv/lib/python${PY3VERSION}/site-packages/ \
-    # --add-data "./ffmpeg/*:./ffmpeg/" \
-    ./pyinstall.py && \
-    rm -r ./.dist/ ./.build/
+# Pyinstaller executable is licensed under LGPL-2.1 as it bundles FFmpeg
+mkdir ~/ffmpeg_sources ~/ffmpeg_build ~/bin && \
+    cd ~/ffmpeg_sources && \
+    curl --output ffmpeg-6.1.1.tar.gz https://ffmpeg.org/releases/ffmpeg-6.1.1.tar.gz && \
+    tar xzf ffmpeg-6.1.1.tar.gz && \
+    cd ffmpeg && \
+    PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
+      --prefix="$HOME/ffmpeg_build" \
+      --pkg-config-flags="--static" \
+      --extra-cflags="-I$HOME/ffmpeg_build/include" \
+      --extra-ldflags="-L$HOME/ffmpeg_build/lib" \
+      --extra-libs="-lpthread -lm" \
+      --ld="g++" \
+      --bindir="$HOME/bin" \
+      && \
+    PATH="$HOME/bin:$PATH" make -j$(nproc) && \
+    make install && \
+    ./venv/bin/pyinstaller \
+        --distpath ~/.dist \
+        --workpath ~/.build \
+        --onefile \
+	--clean \
+	--strip \
+	--noupx \
+        --name tidal-wave_linux \
+        --paths tidal_wave \
+        --add-data "README.md:." \
+        --add-data "$HOME/bin/ffmpeg:." \
+        ./pyinstall.py && \
+    rm -r ./.dist/ ./.build/ ~/bin ~/ffmpeg_build ~/ffmpeg_sources ./ffmpeg
