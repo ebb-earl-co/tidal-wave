@@ -62,7 +62,7 @@ jobs:
           --name tidal-wave_linux \
           --paths tidal_wave \
           --add-data "README.md:." \
-          --add-data "./bin/ffmpeg:." \
+          --add-data "bin/ffmpeg:." \
           ./pyinstall.py 
     
     - name: Test just-compiled binary
