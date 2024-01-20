@@ -68,7 +68,7 @@ jobs:
     
     - name: Test just-compiled binary
       run: |
-        tidal-wave_linux --help
+        ./.dist/tidal-wave_linux --help
 
     - name: Add (upload) artifact to release
       uses: softprops/action-gh-release@v1
@@ -76,4 +76,4 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
       with:
-        files: tidal-wave_linux
+        files: ./.dist/tidal-wave_linux
