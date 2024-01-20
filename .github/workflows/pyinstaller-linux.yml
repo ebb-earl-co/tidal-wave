@@ -14,12 +14,20 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    
+    - uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: autoconf build-essential ca-certificates curl gpg gpg-agent pkg-config yasm zlib1g-dev
+        version: 1.0
 
     - name: Build FFmpeg from source
       run: |
         mkdir ffmpeg_sources ffmpeg_build bin
         cd ffmpeg_sources
         curl --output ffmpeg-6.1.1.tar.gz https://ffmpeg.org/releases/ffmpeg-6.1.1.tar.gz
+        curl --output ffmpeg-6.1.1.tar.gz.asc https://ffmpeg.org/releases/ffmpeg-6.1.1.tar.gz.asc
+        curl -sSL https://ffmpeg.org/ffmpeg-devel.asc | gpg --import -
+        gpg --verify ffmpeg-6.1.1.tar.gz.asc ffmpeg-6.1.1.tar.gz
         tar xzf ffmpeg-6.1.1.tar.gz
         cd ffmpeg-6.1.1
         PATH="bin:$PATH" PKG_CONFIG_PATH="ffmpeg_build/lib/pkgconfig" ./configure \
