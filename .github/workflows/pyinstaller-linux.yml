@@ -35,7 +35,7 @@ jobs:
           --extra-ldflags="-L$HOME/ffmpeg_build/lib" \
           --extra-libs="-lpthread -lm" \
           --ld="g++" \
-          --bindir="$HOME/bin" \
+          --bindir="$HOME/bin"
         PATH="$HOME/bin:$PATH" make -j$(nproc)
         make install
         hash -r
