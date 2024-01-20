@@ -22,23 +22,21 @@ jobs:
 
     - name: Build FFmpeg from source
       run: |
-        mkdir ffmpeg_sources ffmpeg_build bin
-        cd ffmpeg_sources
         curl --output ffmpeg-6.1.1.tar.gz https://ffmpeg.org/releases/ffmpeg-6.1.1.tar.gz
         curl --output ffmpeg-6.1.1.tar.gz.asc https://ffmpeg.org/releases/ffmpeg-6.1.1.tar.gz.asc
         curl -sSL https://ffmpeg.org/ffmpeg-devel.asc | gpg --import -
         gpg --verify ffmpeg-6.1.1.tar.gz.asc ffmpeg-6.1.1.tar.gz
         tar xzf ffmpeg-6.1.1.tar.gz
         cd ffmpeg-6.1.1
-        PATH="bin:$PATH" PKG_CONFIG_PATH="ffmpeg_build/lib/pkgconfig" ./configure \
-          --prefix="ffmpeg_build" \
+        PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
+          --prefix="$HOME/ffmpeg_build" \
           --pkg-config-flags="--static" \
-          --extra-cflags="-Iffmpeg_build/include" \
-          --extra-ldflags="-Lffmpeg_build/lib" \
+          --extra-cflags="-I$HOME/ffmpeg_build/include" \
+          --extra-ldflags="-L$HOME/ffmpeg_build/lib" \
           --extra-libs="-lpthread -lm" \
           --ld="g++" \
-          --bindir="bin"
-        PATH="bin:$PATH" make -j$(nproc)
+          --bindir="$HOME/bin" \
+        PATH="$HOME/bin:$PATH" make -j$(nproc)
         make install
         hash -r
 
@@ -62,7 +60,7 @@ jobs:
           --name tidal-wave_linux \
           --paths tidal_wave \
           --add-data "README.md:." \
-          --add-data "bin/ffmpeg:." \
+          --add-binary "${HOME}/bin/ffmpeg:." \
           ./pyinstall.py 
     
     - name: Test just-compiled binary
@@ -71,6 +69,7 @@ jobs:
 
     - name: Add (upload) artifact to release
       uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
       env:
         GITHUB_TOKEN: ${{ github.token }}
       with:
