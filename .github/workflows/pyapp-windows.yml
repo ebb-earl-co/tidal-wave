@@ -40,4 +40,6 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
       with:
-        files: "C:\Users\runneradmin\.cargo-install\pyapp\bin\tidal-wave_${{ github.event.release.tag_name }}_pyapp.exe"
+        fail_on_unmatched_files: true
+        files: |
+          C:\Users\runneradmin\.cargo-install\pyapp\bin\*.exe
