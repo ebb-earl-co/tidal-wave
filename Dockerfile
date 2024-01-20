@@ -2,17 +2,22 @@
 FROM debian:bookworm-slim as build_image
 RUN export DEBIAN_FRONTEND=noninteractive && apt-get update -qq && apt-get -y install --no-install-recommends \
   autoconf \
-  bzip2 \
   build-essential \
+  ca-certificates \
+  curl \
+  gpg \
+  gpg-agent \
   pkg-config \
-  wget \
   yasm \
   zlib1g-dev
 RUN mkdir ~/ffmpeg_sources ~/ffmpeg_build ~/bin
 RUN cd ~/ffmpeg_sources && \
-    wget --no-check-certificate -O ffmpeg-snapshot.tar.bz2 https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2 && \
-    tar xjvf ffmpeg-snapshot.tar.bz2 && \
-    cd ffmpeg && \
+    curl --output ffmpeg-6.1.1.tar.gz https://ffmpeg.org/releases/ffmpeg-6.1.1.tar.gz && \
+    curl --output ffmpeg-6.1.1.tar.gz.asc https://ffmpeg.org/releases/ffmpeg-6.1.1.tar.gz.asc && \
+    curl -sSL https://ffmpeg.org/ffmpeg-devel.asc | gpg --import - && \
+    gpg --verify ffmpeg-6.1.1.tar.gz.asc ffmpeg-6.1.1.tar.gz && \
+    tar xzf ffmpeg-6.1.1.tar.gz && \
+    cd ffmpeg-6.1.1 && \
     PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
       --prefix="$HOME/ffmpeg_build" \
       --pkg-config-flags="--static" \
@@ -20,7 +25,8 @@ RUN cd ~/ffmpeg_sources && \
       --extra-ldflags="-L$HOME/ffmpeg_build/lib" \
       --extra-libs="-lpthread -lm" \
       --ld="g++" \
-      --bindir="$HOME/bin" && \
+      --bindir="$HOME/bin" \
+      && \
     PATH="$HOME/bin:$PATH" make -j$(nproc) && \
     make install && \
     hash -r
@@ -31,7 +37,7 @@ LABEL org.opencontainers.image.authors "colinho <github@colin.technology>"
 LABEL org.opencontainers.image.description "Waving at the TIDAL music service with Python"
 LABEL org.opencontainers.image.documentation "https://github.com/ebb-earl-co/tidal-wave/blob/trunk/README.md"
 LABEL org.opencontainers.image.source "https://github.com/ebb-earl-co/tidal-wave"
-LABEL org.opencontainers.image.licenses "LGPL-2.1-only AND Apache-2.0"
+LABEL org.opencontainers.image.licenses "LGPL-2.1-only"
 
 ENV PIP_DEFAULT_TIMEOUT=100 \
     # Allow statements and log messages to immediately appear

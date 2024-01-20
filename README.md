@@ -7,7 +7,9 @@
 # tidal-wave
 Waving at the [TIDAL](https://tidal.com) music service. Runs on (at least) Windows, macOS, and GNU/Linux.
 
-This project is inspired by [`qobuz-dl`](https://github.com/vitiko98/qobuz-dl), and, particularly, is a continuation of [`Tidal-Media-Downloader`](https://github.com/yaronzz/Tidal-Media-Downloader). **This project is intended for private use only: it is not intended for distribution of copyrighted content**
+This project is inspired by [`qobuz-dl`](https://github.com/vitiko98/qobuz-dl), and, particularly, is a continuation of [`Tidal-Media-Downloader`](https://github.com/yaronzz/Tidal-Media-Downloader). **This project is intended for private use only: it is not intended for distribution of copyrighted content**.
+
+[_This software uses libraries from the FFmpeg project under the LGPLv2.1_](https://ffmpeg.org/legal.html). This software uses code of [FFmpeg](http://ffmpeg.org) licensed under the [LGPLv2.1](http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) and its source can be downloaded [here](https://github.com/ebb-earl-co/tidal-wave/releases).
 
 ## Features
 * Download [FLAC](https://xiph.org/flac/), [Dolby Atmos](https://www.dolby.com/technologies/dolby-atmos/), [Sony 360 Reality Audio](https://electronics.sony.com/360-reality-audio), or [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) tracks; [AVC/H.264](https://en.wikipedia.org/wiki/Advanced_Video_Coding) (up to 1920x1080) + [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) videos
@@ -22,15 +24,14 @@ This project is inspired by [`qobuz-dl`](https://github.com/vitiko98/qobuz-dl), 
 * Artist's entire works download support (video and audio; albums or albums and EPs and singles)
 
 ## Getting Started
-A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to retrieve HiRes FLAC, Dolby Atmos, and Sony 360 Reality Audio tracks. Simply a [HiFi](https://tidal.com/pricing) plan is sufficient to download in 16-bit, 44.1 kHz (i.e. lossless) or lower quality as well as videos.
+A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to retrieve HiRes FLAC, Dolby Atmos, and Sony 360 Reality Audio tracks. Simply a [HiFi](https://tidal.com/pricing) plan is sufficient to download in 16-bit, 44.1 kHz (i.e., lossless) or lower quality as well as videos.
 
 ### Requirements
- - This is a Python tool, so you will need [Python 3](https://www.python.org/downloads/) on your system: this tool supports Python 3.8 or newer.
-   - *However*, as of version [2023.12.10](https://github.com/ebb-earl-co/tidal-wave/releases/tag/2023.12.10), a [GitHub container](https://github.com/ebb-earl-co/tidal-wave/pkgs/container/tidal-wave) and `pyapp`-compiled binaries are release artifacts that do not require Python installed
  - As resources will be fetched from the World Wide Web, an Internet connection is required
  - The excellent tool [FFmpeg](http://ffmpeg.org/download.html) is necessary for audio file manipulation. It is available from almost every package manager; or static builds are available from [John Van Sickle](https://www.johnvansickle.com/ffmpeg/).
    - For Windows, the [FFmpeg download page](http://ffmpeg.org/download.html#build-windows) lists 2 resources; or [`chocolatey`](https://community.chocolatey.org/packages/ffmpeg) is an option
-   - The Dockerfile [builds FFmpeg](https://github.com/ebb-earl-co/tidal-wave/blob/trunk/Dockerfile#L12) into the image
+ - This is a Python package, so **to use it in the default manner** you will need [Python 3](https://www.python.org/downloads/) on your system: this tool supports Python 3.8 or newer.
+   - *However*, as of version 2023.12.10, an [OCI container image](https://github.com/ebb-earl-co/tidal-wave/pkgs/container/tidal-wave) and [`pyapp`-compiled binaries](https://github.com/ebb-earl-co/tidal-wave/releases/latest) are release artifacts that do not require Python installed
  - Only a handful of Python libraries are dependencies:
    - [`backoff`](https://pypi.org/project/backoff/)
    - [`dataclass-wizard`](https://pypi.org/project/dataclass-wizard/)
@@ -42,7 +43,7 @@ A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to ret
    - [`typer`](https://pypi.org/project/typer/)
 
 ## Installation
-### `pip` install
+### `pip` Install from PyPi
 Install this project with [`pip`](https://pip.pypa.io/en/stable/): either with a virtual environment (preferred) or any other way you desire:
 ```bash
 $ python3 -m pip install tidal-wave
@@ -52,7 +53,7 @@ Optionally, to get the full `typer` experience when using this utility, add `[al
 ```bash
 $ python3 -m pip install tidal-wave[all]
 ```
-### Local `pip` install
+### `pip` Install from the Repository
 Alternatively, you can clone this repository; `cd` into it; and install from there:
 ```bash
 $ git clone https://github.com/ebb-earl-co/tidal-wave.git
@@ -62,7 +63,7 @@ $ source .venv/bin/activate
 $ (.venv) pip install .
 ```
 ### Shiv executable
-As yet another option, if you don't want to mess with `pip`, you can download the `.pyz` artifact in the [releases](https://github.com/ebb-earl-co/tidal-wave/releases) page. It is a binary created using the [`shiv`](https://pypi.org/project/shiv/) project and is used in the following way:
+As yet another option, if you don't want to mess with `pip`, you can download the `.pyz` artifact in the [releases](https://github.com/ebb-earl-co/tidal-wave/releases/latest) page. It is a binary created using the [`shiv`](https://pypi.org/project/shiv/) project and is used in the following way:
 ```bash
 # download the .pyz file of the latest (or your desired) release
 $ wget https://github.com/ebb-earl-co/tidal-wave/releases/download/<VERSION>/tidal-wave_<VERSION>.pyz
@@ -74,7 +75,11 @@ Download the Rust-compiled binary from [the Releases](https://github.com/ebb-ear
 $ wget https://github.com/ebb-earl-co/tidal-wave/releases/download/<VERSION>/tidal-wave_<VERSION>.pyapp
 $ chmod +x ./tidal-wave_<VERSION>.pyapp
 ```
-Or, on Windows, once the .exe file is downloaded, you might have to allow a security exception for an unknown developer.
+Or, on Windows, once the .exe file is downloaded, you might have to allow a security exception for an unknown developer, then:
+```powershell
+Invoke-WebRequest https://github.com/ebb-earl-co/tidal-wave/releases/download/<VERSION>/tidal-wave_<VERSION>_py311_pyapp.exe
+& "tidal-wave_<VERSION>_py311_pyapp.exe" --help
+```
 
 ### Docker
 Pull the image from GitHub container repo:
