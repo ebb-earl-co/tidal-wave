@@ -33,8 +33,6 @@ mkdir ~/ffmpeg_sources ~/ffmpeg_build ~/bin && \
       --extra-libs="-lpthread -lm" \
       --ld="g++" \
       --bindir="$HOME/bin" \
-      --disable-network \
-      --enable-small \
       && \
     PATH="$HOME/bin:$PATH" make -j$(nproc) && \
     make install && \
@@ -43,6 +41,9 @@ mkdir ~/ffmpeg_sources ~/ffmpeg_build ~/bin && \
         --distpath ~/.dist \
         --workpath ~/.build \
         --onefile \
+	--clean \
+	--strip \
+	--noupx \
         --name tidal-wave_linux \
         --paths tidal_wave \
         --add-data "README.md:." \

@@ -56,11 +56,14 @@ jobs:
         pyinstaller \
           --distpath ./.dist \
           --workpath ./.build \
-          --onefile \
           --name tidal-wave_linux \
           --paths tidal_wave \
           --add-data "README.md:." \
           --add-binary "${HOME}/bin/ffmpeg:." \
+          --clean \
+          --noupx \
+          --onefile \
+          --strip \
           ./pyinstall.py 
     
     - name: Test just-compiled binary
