@@ -18,7 +18,7 @@ jobs:
     - name: Build FFmpeg from source
       run: |
         mkdir ffmpeg_sources ffmpeg_build bin
-        cd ffpmeg_sources
+        cd ffmpeg_sources
         curl --output ffmpeg-6.1.1.tar.gz https://ffmpeg.org/releases/ffmpeg-6.1.1.tar.gz
         tar xzf ffmpeg-6.1.1.tar.gz
         cd ffmpeg-6.1.1
