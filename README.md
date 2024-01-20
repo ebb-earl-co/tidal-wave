@@ -32,7 +32,7 @@ A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to ret
  - The excellent tool [FFmpeg](http://ffmpeg.org/download.html) is necessary for audio file manipulation. It is available from almost every package manager; or static builds are available from [John Van Sickle](https://www.johnvansickle.com/ffmpeg/).
    - For Windows, the [FFmpeg download page](http://ffmpeg.org/download.html#build-windows) lists 2 resources; or [`chocolatey`](https://community.chocolatey.org/packages/ffmpeg) is an option
  - This is a Python package, so **to use it in the default manner** you will need [Python 3](https://www.python.org/downloads/) on your system: this tool supports Python 3.8 or newer.
-   - *However*, as of version 2023.12.10, an [OCI container image](https://github.com/ebb-earl-co/tidal-wave/pkgs/container/tidal-wave) and [`pyapp`-compiled binaries](https://github.com/ebb-earl-co/tidal-wave/releases/latest) are release artifacts that do not require Python installed
+   - *However*, as of version 2023.12.10, an [OCI container image](https://github.com/ebb-earl-co/tidal-wave/pkgs/container/tidal-wave) and [`pyapp`-compiled binaries](https://github.com/ebb-earl-co/tidal-wave/releases/latest) are provided for download and use that *do not require Python installed*
  - Only a handful of Python libraries are dependencies:
    - [`backoff`](https://pypi.org/project/backoff/)
    - [`dataclass-wizard`](https://pypi.org/project/dataclass-wizard/)
