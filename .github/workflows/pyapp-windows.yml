@@ -28,7 +28,7 @@ jobs:
     - name: Rename just-compiled binary
       shell: pwsh
       run: |
-        Move-Item C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe C:\Users\runneradmin\.cargo-install\pyapp\bin\tidal-wave_${{ github.event.release.tag_name }}_pyapp.exe
+        Move-Item "C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe" "C:\Users\runneradmin\.cargo-install\pyapp\bin\tidal-wave_${{ github.event.release.tag_name }}_pyapp.exe"
 
     - name: Test just-compiled binary
       shell: pwsh
@@ -40,4 +40,4 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
       with:
-        files: C:\Users\runneradmin\.cargo-install\pyapp\bin\tidal-wave_${{ github.event.release.tag_name }}_pyapp.exe
+        files: "C:\Users\runneradmin\.cargo-install\pyapp\bin\tidal-wave_${{ github.event.release.tag_name }}_pyapp.exe"
