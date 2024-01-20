@@ -36,8 +36,7 @@ mkdir ~/ffmpeg_sources ~/ffmpeg_build ~/bin && \
       && \
     PATH="$HOME/bin:$PATH" make -j$(nproc) && \
     make install && \
-    mv "$HOME/bin/ffmpeg" ./ffmpeg && \
-    pyinstaller \
+    ./venv/bin/pyinstaller \
         --distpath ~/.dist \
         --workpath ~/.build \
         --onefile \
@@ -47,6 +46,6 @@ mkdir ~/ffmpeg_sources ~/ffmpeg_build ~/bin && \
         --name tidal-wave_linux \
         --paths tidal_wave \
         --add-data "README.md:." \
-        --add-data "./ffmpeg:." \
+        --add-data "$HOME/bin/ffmpeg:." \
         ./pyinstall.py && \
     rm -r ./.dist/ ./.build/ ~/bin ~/ffmpeg_build ~/ffmpeg_sources ./ffmpeg
