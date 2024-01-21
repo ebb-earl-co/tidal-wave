@@ -3,21 +3,12 @@ FROM debian:bookworm-slim as build_image
 RUN export DEBIAN_FRONTEND=noninteractive && apt-get update -qq && apt-get -y install --no-install-recommends \
   autoconf \
   build-essential \
-  ca-certificates \
-  curl \
-  gpg \
-  gpg-agent \
   pkg-config \
   yasm \
   zlib1g-dev
-RUN mkdir ~/ffmpeg_sources ~/ffmpeg_build ~/bin
-RUN cd ~/ffmpeg_sources && \
-    curl --output ffmpeg-6.1.1.tar.gz https://ffmpeg.org/releases/ffmpeg-6.1.1.tar.gz && \
-    curl --output ffmpeg-6.1.1.tar.gz.asc https://ffmpeg.org/releases/ffmpeg-6.1.1.tar.gz.asc && \
-    curl -sSL https://ffmpeg.org/ffmpeg-devel.asc | gpg --import - && \
-    gpg --verify ffmpeg-6.1.1.tar.gz.asc ffmpeg-6.1.1.tar.gz && \
-    tar xzf ffmpeg-6.1.1.tar.gz && \
-    cd ffmpeg-6.1.1 && \
+COPY FFmpeg-6.1.1/ ./FFmpeg-6.1.1/
+RUN mkdir ~/ffmpeg_build ~/bin && \
+    cd FFmpeg-6.1.1 && \
     PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
       --prefix="$HOME/ffmpeg_build" \
       --pkg-config-flags="--static" \
@@ -26,6 +17,26 @@ RUN cd ~/ffmpeg_sources && \
       --extra-libs="-lpthread -lm" \
       --ld="g++" \
       --bindir="$HOME/bin" \
+      --disable-doc \
+      --disable-htmlpages \
+      --disable-podpages \
+      --disable-txtpages \
+      --disable-network \
+      --disable-autodetect \
+      --disable-hwaccels \
+      --disable-ffprobe \
+      --disable-ffplay \
+      --disable-encoder=adpcm* \
+      --disable-encoder=av1* \
+      --disable-encoder=hevc* \
+      --disable-encoder=libmp3lame \
+      --disable-encoder=vp* \
+      --disable-decoder=av1* \
+      --disable-decoder=hevc* \
+      --disable-decoder=adpcm* \
+      --disable-decoder=mp3* \
+      --disable-decoder=vp* \
+      --enable-small \
       && \
     PATH="$HOME/bin:$PATH" make -j$(nproc) && \
     make install && \

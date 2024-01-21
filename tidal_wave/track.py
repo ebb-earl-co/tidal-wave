@@ -224,8 +224,6 @@ class Track:
             download_cover_image(
                 session=session, cover_uuid=self.album.cover, output_dir=self.album_dir
             )
-        else:
-            self.album_cover_saved = True
 
     def set_urls(self, session: Session):
         """This method sets self.urls based on self.manifest"""
@@ -412,42 +410,63 @@ class Track:
         self.mutagen = mutagen.File(self.outfile)
         self.mutagen.clear()
         self.mutagen.update(**self.tags)
-        # add album cover
-        if self.codec == "flac":
-            p = mutagen.flac.Picture()
-            p.type = mutagen.id3.PictureType.COVER_FRONT
-            p.desc = "Album Cover"
-            p.width = p.height = 1280
-            p.mime = "image/jpeg"
-            p.data = self.cover_path.read_bytes()
-            self.mutagen.add_picture(p)
-        elif self.codec == "m4a":
-            self.mutagen["covr"] = [
-                MP4Cover(self.cover_path.read_bytes(), imageformat=MP4Cover.FORMAT_JPEG)
-            ]
+        # add album cover if there is one
+        if self.album.cover != "":
+            if self.codec == "flac":
+                p = mutagen.flac.Picture()
+                p.type = mutagen.id3.PictureType.COVER_FRONT
+                p.desc = "Album Cover"
+                p.width = p.height = 1280
+                p.mime = "image/jpeg"
+                p.data = self.cover_path.read_bytes()
+                self.mutagen.add_picture(p)
+            elif self.codec == "m4a":
+                self.mutagen["covr"] = [
+                    MP4Cover(
+                        self.cover_path.read_bytes(), imageformat=MP4Cover.FORMAT_JPEG
+                    )
+                ]
 
         self.mutagen.save()
         # Make sure audio track comes first because of
         # less-sophisticated audio players that only
         # recognize the first stream
         if self.codec == "flac":
-            with temporary_file(suffix=".mka") as tf:
-                shutil.move(str(self.outfile.absolute()), tf.name)
-                cmd: List[str] = shlex.split(
-                    f"""ffmpeg -hide_banner -loglevel quiet -y -i "{tf.name}"
-                    -map 0:a:0 -map 0:v:0 -c:a copy -c:v copy
-                    -metadata:s:v title='Album cover' -metadata:s:v comment='Cover (front)'
-                    -disposition:v attached_pic "{self.absolute_outfile}" """
-                )
-                subprocess.run(cmd)
+            if self.album.cover != "":
+                with temporary_file(suffix=".mka") as tf:
+                    shutil.move(str(self.outfile.absolute()), tf.name)
+                    cmd: List[str] = shlex.split(
+                        f"""ffmpeg -hide_banner -loglevel quiet -y -i "{tf.name}"
+                        -map 0:a:0 -map 0:v:0 -c:a copy -c:v copy
+                        -metadata:s:v title='Album cover' -metadata:s:v comment='Cover (front)'
+                        -disposition:v attached_pic "{self.absolute_outfile}" """
+                    )
+                    subprocess.run(cmd)
+            else:
+                with temporary_file(suffix=".mka") as tf:
+                    shutil.move(str(self.outfile.absolute()), tf.name)
+                    cmd: List[str] = shlex.split(
+                        f"""ffmpeg -hide_banner -loglevel quiet -y -i "{tf.name}"
+                        -map 0:a:0 -c:a copy "{self.absolute_outfile}" """
+                    )
+                    subprocess.run(cmd)
         elif self.codec == "m4a":
-            with temporary_file(suffix=".mka") as tf:
-                cmd: List[str] = shlex.split(
-                    f"""ffmpeg -hide_banner -loglevel quiet -y -i "{self.absolute_outfile}"
-                    -map 0:a:0 -map 0:v:0 -c:a copy -c:v copy "{tf.name}" """
-                )
-                subprocess.run(cmd)
-                shutil.copyfile(tf.name, self.absolute_outfile)
+            if self.album.cover != "":
+                with temporary_file(suffix=".mka") as tf:
+                    cmd: List[str] = shlex.split(
+                        f"""ffmpeg -hide_banner -loglevel quiet -y -i "{self.absolute_outfile}"
+                        -map 0:a:0 -map 0:v:0 -c:a copy -c:v copy "{tf.name}" """
+                    )
+                    subprocess.run(cmd)
+                    shutil.copyfile(tf.name, self.absolute_outfile)
+            else:
+                with temporary_file(suffix=".mka") as tf:
+                    cmd: List[str] = shlex.split(
+                        f"""ffmpeg -hide_banner -loglevel quiet -y -i "{self.absolute_outfile}"
+                        -map 0:a:0-c:a copy "{tf.name}" """
+                    )
+                    subprocess.run(cmd)
+                    shutil.copyfile(tf.name, self.absolute_outfile)
 
     def get(
         self,
@@ -528,7 +547,12 @@ class Track:
         except Exception:
             pass
 
-        self.save_album_cover(session)
+        if self.album.cover != "":
+            self.save_album_cover(session)
+        else:
+            logger.warning(
+                f"No cover image was returned from TIDAL API for album {self.album.id}"
+            )
 
         try:
             self.save_artist_image(session)

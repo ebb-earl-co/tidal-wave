@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import json
+import logging
 from pathlib import Path
 import sys
 from typing import List, Optional
@@ -15,6 +16,8 @@ from .models import (
 from .requesting import request_albums, request_album_items, request_album_review
 from .track import Track
 from .utils import download_cover_image
+
+logger = logging.getLogger("__name__")
 
 
 @dataclass
@@ -137,12 +140,21 @@ class Album:
             self.get_metadata(session)
         else:
             self.metadata = metadata
-        
+
         if self.metadata is None:
             self.track_files = {}
             return
 
         self.get_items(session)
-        self.save_cover_image(session, out_dir)
+        
+        self.set_dir(out_dir)
+
+        if self.metadata.cover != "":  # None was sent from the API
+            self.save_cover_image(session, out_dir)
+        else:
+            logger.warning(
+                f"No cover image was returned from TIDAL API for album {self.album_id}"
+            )
+
         self.get_review(session)
         self.get_tracks(session, audio_format, out_dir)
