@@ -28,12 +28,12 @@ jobs:
     - name: Rename just-compiled binary
       shell: pwsh
       run: |
-        Move-Item "C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe" "C:\Users\runneradmin\.cargo-install\pyapp\bin\tidal-wave_${{ github.event.release.tag_name }}_pyapp.exe"
+        Move-Item "C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe" "C:\Users\runneradmin\.cargo-install\pyapp\bin\tidal-wave_${{ github.event.release.tag_name }}_py311_pyapp.exe"
 
     - name: Test just-compiled binary
       shell: pwsh
       run: |
-        & "C:\Users\runneradmin\.cargo-install\pyapp\bin\tidal-wave_${{ github.event.release.tag_name }}_pyapp.exe" --help
+        & "C:\Users\runneradmin\.cargo-install\pyapp\bin\tidal-wave_${{ github.event.release.tag_name }}_py311_pyapp.exe" --help
 
     - name: Add (upload) artifact to release
       uses: softprops/action-gh-release@v1

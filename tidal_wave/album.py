@@ -146,7 +146,7 @@ class Album:
             return
 
         self.get_items(session)
-        
+
         self.set_dir(out_dir)
 
         if self.metadata.cover != "":  # None was sent from the API
