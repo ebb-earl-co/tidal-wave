@@ -445,7 +445,7 @@ class Track:
         has the audio data as the first (and, potentially, only) stream
         according to FFmpeg."""
         if self.codec == "flac":
-            _cmd: str = f"""ffmpeg -hide_banner -loglevel info -y -i "%s"
+            _cmd: str = f"""ffmpeg -hide_banner -loglevel quiet -y -i "%s"
                 -map 0:a:0 -map 0:v:0 -map_metadata 0 -c:a copy -c:v copy
                 -metadata:s:v title='Album cover' -metadata:s:v comment='Cover (front)'
                 -disposition:v attached_pic "{self.absolute_outfile}" """
@@ -461,7 +461,7 @@ class Track:
                             subprocess.run(cmd)
 
         elif self.codec == "m4a":
-            _cmd: str = f"""ffmpeg -hide_banner -loglevel info -y -i "{self.absolute_outfile}"
+            _cmd: str = f"""ffmpeg -hide_banner -loglevel quiet -y -i "{self.absolute_outfile}"
                 -map 0:a:0 -map 0:v:0 -map_metadata 0 -c:a copy -c:v copy "%s" """
             if self.mutagen.get("covr") is not None:
                 if isinstance(self.mutagen["covr"], list):
