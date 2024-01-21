@@ -294,9 +294,16 @@ class TracksCreditsResponseJSON(dataclass_wizard.JSONWizard):
         """Try to parse the various Contributors to top-level
         attributes of this class"""
         self.composer: Optional[Tuple[str]] = self.get_contributors("Composer")
-        self.engineer: Optional[Tuple[str]] = self.get_contributors("Engineer")
+        self.engineer: Optional[Tuple[str]] = \
+            self.get_contributors("Engineer") or \
+            self.get_contributors("Mastering Engineer") or \
+            self.get_contributors("Immersive Mastering Engineer")
         self.lyricist: Optional[Tuple[str]] = self.get_contributors("Lyricist")
-        self.mixer: Optional[Tuple[str]] = self.get_contributors("Mix Engineer")
+        self.mixer: Optional[Tuple[str]] = \
+            self.get_contributors("Mixer") or \
+            self.get_contributors("Mix Engineer") or \
+            self.get_contributors("Mixing Engineer") or \
+            self.get_contributors("Atmos Mixing Engineer")
         self.producer: Optional[Tuple[str]] = self.get_contributors("Producer")
         self.remixer: Optional[Tuple[str]] = self.get_contributors("Remixer")
         self.piano: Optional[Tuple[str]] = self.get_contributors("Piano")
