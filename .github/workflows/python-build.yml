@@ -36,3 +36,13 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
+
+    - name: Add (upload) artifact to release
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        files: |
+          dist/tidal-wave-${{ github.event.release.tag_name }}.tar.gz
+          dist/tidal_wave-${{ github.event.release.tag_name }}-py3-none-any.whl
+

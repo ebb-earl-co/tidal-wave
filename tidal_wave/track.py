@@ -46,7 +46,6 @@ class Track:
     def __post_init__(self):
         self._has_lyrics: Optional[bool] = None
         self.tags: dict = {}
-        self.album_cover_saved: bool = False
 
     def get_metadata(self, session: Session):
         self.metadata: Optional[TracksEndpointResponseJSON] = request_tracks(
@@ -220,7 +219,7 @@ class Track:
         """This method saves cover.jpg to self.album_dir; the bytes for cover.jpg
         come from self.album.cover"""
         self.cover_path: Path = self.album_dir / "cover.jpg"
-        if (not self.cover_path.exists()) or (not self.album_cover_saved):
+        if not self.cover_path.exists():
             download_cover_image(
                 session=session, cover_uuid=self.album.cover, output_dir=self.album_dir
             )
@@ -333,8 +332,8 @@ class Track:
         return outfile
 
     def craft_tags(self):
-        """Using the TAG_MAPPING dictionary,
-        write the correct values of various metadata tags to the file.
+        """Using the TAG_MAPPING dictionary, write the correct values
+        of various metadata tags to the file.
         E.g. for .flac files, the album's artist is 'ALBUMARTIST',
         but for .m4a files, the album's artist is 'aART'."""
         tags = dict()
@@ -404,29 +403,37 @@ class Track:
 
         self.tags: dict = {k: v for k, v in tags.items() if v is not None}
 
-    def set_tags(self):
-        """Instantiate a mutagen.File instance, add self.tags to it, and
-        save it to disk"""
+    def set_mutagen(self):
+        """This method creates self.mutagen, an instance of mutagen.File, pointing
+        to self.outfile"""
         self.mutagen = mutagen.File(self.outfile)
         self.mutagen.clear()
-        self.mutagen.update(**self.tags)
-        # add album cover if there is one
-        if self.album.cover != "":
-            if self.codec == "flac":
-                p = mutagen.flac.Picture()
-                p.type = mutagen.id3.PictureType.COVER_FRONT
-                p.desc = "Album Cover"
-                p.width = p.height = 1280
-                p.mime = "image/jpeg"
-                p.data = self.cover_path.read_bytes()
-                self.mutagen.add_picture(p)
-            elif self.codec == "m4a":
-                self.mutagen["covr"] = [
-                    MP4Cover(
-                        self.cover_path.read_bytes(), imageformat=MP4Cover.FORMAT_JPEG
-                    )
-                ]
+        self.mutagen.save()
 
+    def set_cover_image_tag(self, dimension: int = 1280):
+        """This method sets the metadata tag 'covr' in the case of .m4a files,
+        and adds a mutagen.flac.Picture() tag to self.mutagen in the case of
+        .flac files. It has been split out from self.set_tags so that it
+        can be executed BEFORE self.reorder_streams(): otherwise, the .m4a
+        metadata tags starting with '----com.apple.iTunes:' are lost"""
+        if self.codec == "flac":
+            p = mutagen.flac.Picture()
+            p.type = mutagen.id3.PictureType.COVER_FRONT
+            p.desc = "Album Cover"
+            p.width = p.height = dimension
+            p.mime = "image/jpeg"
+            p.data = self.cover_path.read_bytes()
+            self.mutagen.add_picture(p)
+        elif self.codec == "m4a":
+            self.mutagen["covr"] = [
+                MP4Cover(self.cover_path.read_bytes(), imageformat=MP4Cover.FORMAT_JPEG)
+            ]
+
+        self.mutagen.save()
+
+    def set_tags(self):
+        """Add self.tags to self.mutagen, and save the changes to disk"""
+        self.mutagen.update(**self.tags)
         self.mutagen.save()
 
     def reorder_streams(self):
@@ -437,25 +444,33 @@ class Track:
         runs an FFmpeg command externally to make sure that self.outfile
         has the audio data as the first (and, potentially, only) stream
         according to FFmpeg."""
-        if self.album.cover != "":
-            if self.codec == "flac":
-                with temporary_file(suffix=".mka") as tf:
-                    shutil.move(self.absolute_outfile, tf.name)
-                    cmd: List[str] = shlex.split(
-                        f"""ffmpeg -hide_banner -loglevel quiet -y -i "{tf.name}"
-                        -map 0:a:0 -map 0:v:0 -c:a copy -c:v copy
-                        -metadata:s:v title='Album cover' -metadata:s:v comment='Cover (front)'
-                        -disposition:v attached_pic "{self.absolute_outfile}" """
-                    )
-                    subprocess.run(cmd)
-            elif self.codec == "m4a":
-                with temporary_file(suffix=".mka") as tf:
-                    cmd: List[str] = shlex.split(
-                        f"""ffmpeg -hide_banner -loglevel quiet -y -i "{self.absolute_outfile}"
-                        -map 0:a:0 -map 0:v:0 -c:a copy -c:v copy "{tf.name}" """
-                    )
-                    subprocess.run(cmd)
-                    shutil.copyfile(tf.name, self.absolute_outfile)
+        if self.codec == "flac":
+            _cmd: str = f"""ffmpeg -hide_banner -loglevel quiet -y -i "%s"
+                -map 0:a:0 -map 0:v:0 -map_metadata 0 -c:a copy -c:v copy
+                -metadata:s:v title='Album cover' -metadata:s:v comment='Cover (front)'
+                -disposition:v attached_pic "{self.absolute_outfile}" """
+            if getattr(self.mutagen, "pictures") is not None:
+                if (
+                    isinstance(self.mutagen.pictures, list)
+                    and len(self.mutagen.pictures) == 1
+                ):
+                    if isinstance(self.mutagen.pictures[0], mutagen.flac.Picture):
+                        with temporary_file(suffix=".flac") as tf:
+                            shutil.move(self.absolute_outfile, tf.name)
+                            cmd: List[str] = shlex.split(_cmd % tf.name)
+                            subprocess.run(cmd)
+
+        elif self.codec == "m4a":
+            _cmd: str = f"""ffmpeg -hide_banner -loglevel quiet -y -i "{self.absolute_outfile}"
+                -map 0:a:0 -map 0:v:0 -map_metadata 0 -c:a copy -c:v copy "%s" """
+            if self.mutagen.get("covr") is not None:
+                if isinstance(self.mutagen["covr"], list):
+                    if len(self.mutagen["covr"]) == 1:
+                        if isinstance(self.mutagen["covr"][0], MP4Cover):
+                            with temporary_file(suffix=".mp4") as tf:
+                                cmd: List[str] = shlex.split(_cmd % tf.name)
+                                subprocess.run(cmd)
+                                shutil.copyfile(tf.name, self.absolute_outfile)
 
     def get(
         self,
@@ -519,29 +534,8 @@ class Track:
         if self.album is None:
             self.outfile = None
             return
-
-        self.get_credits(session)
-        self.get_stream(session, audio_format)
-        if self.stream is None:
-            return
-        self.set_manifest()
-        self.set_album_dir(out_dir)
-        self.set_filename(audio_format)
-        outfile: Optional[Path] = self.set_outfile()
-        if outfile is None:
-            return
-
-        try:
-            self.get_lyrics(session)
-        except Exception:
-            pass
-
-        if self.album.cover != "":
-            self.save_album_cover(session)
         else:
-            logger.warning(
-                f"No cover image was returned from TIDAL API for album {self.album.id}"
-            )
+            self.set_album_dir(out_dir)
 
         try:
             self.save_artist_image(session)
@@ -553,14 +547,43 @@ class Track:
         except Exception:
             pass
 
+        self.get_credits(session)
+        self.get_stream(session, audio_format)
+        if self.stream is None:
+            return
+
+        self.set_manifest()
+        self.set_filename(audio_format)
+        outfile: Optional[Path] = self.set_outfile()
+        if outfile is None:
+            return
+
+        try:
+            self.get_lyrics(session)
+        except Exception:
+            pass
+
         self.set_urls(session)
 
         if self.download(session, out_dir) is None:
             return
 
+        self.set_mutagen()
+
+        if self.album.cover == "":
+            logger.warning(
+                f"No cover image was returned from TIDAL API for album {self.album.id}"
+            )
+        else:
+            self.save_album_cover(session)
+            # Now that album cover has attempted to be saved, try to
+            # add it as metadata tag
+            if self.cover_path.exists() and self.cover_path.stat().st_size > 0:
+                self.set_cover_image_tag()
+
+        self.reorder_streams()
         self.craft_tags()
         self.set_tags()
-        self.reorder_streams()
 
         return self.absolute_outfile
 

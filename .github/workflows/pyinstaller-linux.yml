@@ -14,20 +14,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: true
     
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
-        packages: autoconf build-essential ca-certificates curl gpg gpg-agent pkg-config yasm zlib1g-dev
+        packages: autoconf build-essential pkg-config yasm zlib1g-dev
         version: 1.0
 
-    - name: Build FFmpeg from source
+    - name: Build FFmpeg from source (git submodule)
       run: |
-        curl --output ffmpeg-6.1.1.tar.gz https://ffmpeg.org/releases/ffmpeg-6.1.1.tar.gz
-        curl --output ffmpeg-6.1.1.tar.gz.asc https://ffmpeg.org/releases/ffmpeg-6.1.1.tar.gz.asc
-        curl -sSL https://ffmpeg.org/ffmpeg-devel.asc | gpg --import -
-        gpg --verify ffmpeg-6.1.1.tar.gz.asc ffmpeg-6.1.1.tar.gz
-        tar xzf ffmpeg-6.1.1.tar.gz
-        cd ffmpeg-6.1.1
+        mkdir ~/ffmpeg_build/ ~/bin/
+        cd FFmpeg-6.1.1
         PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
           --prefix="$HOME/ffmpeg_build" \
           --pkg-config-flags="--static" \
@@ -35,7 +33,27 @@ jobs:
           --extra-ldflags="-L$HOME/ffmpeg_build/lib" \
           --extra-libs="-lpthread -lm" \
           --ld="g++" \
-          --bindir="$HOME/bin"
+          --bindir="$HOME/bin" \
+          --disable-doc \
+          --disable-htmlpages \
+          --disable-podpages \
+          --disable-txtpages \
+          --disable-network \
+          --disable-autodetect \
+          --disable-hwaccels \
+          --disable-ffprobe \
+          --disable-ffplay \
+          --disable-encoder=adpcm* \
+          --disable-encoder=av1* \
+          --disable-encoder=hevc* \
+          --disable-encoder=libmp3lame \
+          --disable-encoder=vp* \
+          --disable-decoder=av1* \
+          --disable-decoder=hevc* \
+          --disable-decoder=adpcm* \
+          --disable-decoder=mp3* \
+          --disable-decoder=vp* \
+          --enable-small
         PATH="$HOME/bin:$PATH" make -j$(nproc)
         make install
         hash -r

@@ -20,11 +20,8 @@ fi
     rm -r out/
 
 # Pyinstaller executable is licensed under LGPL-2.1 as it bundles FFmpeg
-mkdir ~/ffmpeg_sources ~/ffmpeg_build ~/bin && \
-    cd ~/ffmpeg_sources && \
-    curl --output ffmpeg-6.1.1.tar.gz https://ffmpeg.org/releases/ffmpeg-6.1.1.tar.gz && \
-    tar xzf ffmpeg-6.1.1.tar.gz && \
-    cd ffmpeg && \
+mkdir ~/ffmpeg_build ~/bin && \
+    cd FFmpeg-6.1.1 && \
     PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
       --prefix="$HOME/ffmpeg_build" \
       --pkg-config-flags="--static" \
@@ -33,6 +30,26 @@ mkdir ~/ffmpeg_sources ~/ffmpeg_build ~/bin && \
       --extra-libs="-lpthread -lm" \
       --ld="g++" \
       --bindir="$HOME/bin" \
+      --disable-doc \
+      --disable-htmlpages \
+      --disable-podpages \
+      --disable-txtpages \
+      --disable-network \
+      --disable-autodetect \
+      --disable-hwaccels \
+      --disable-ffprobe \
+      --disable-ffplay \
+      --disable-encoder=adpcm* \
+      --disable-encoder=av1* \
+      --disable-encoder=hevc* \
+      --disable-encoder=libmp3lame \
+      --disable-encoder=vp* \
+      --disable-decoder=av1* \
+      --disable-decoder=hevc* \
+      --disable-decoder=adpcm* \
+      --disable-decoder=mp3* \
+      --disable-decoder=vp* \
+      --enable-small
       && \
     PATH="$HOME/bin:$PATH" make -j$(nproc) && \
     make install && \
@@ -48,4 +65,4 @@ mkdir ~/ffmpeg_sources ~/ffmpeg_build ~/bin && \
         --add-data "README.md:." \
         --add-data "$HOME/bin/ffmpeg:." \
         ./pyinstall.py && \
-    rm -r ./.dist/ ./.build/ ~/bin ~/ffmpeg_build ~/ffmpeg_sources ./ffmpeg
+    rm -r ./.dist/ ./.build/ ~/bin ~/ffmpeg_build
