@@ -38,10 +38,10 @@ class Mix:
         self.metadata: Optional[PlaylistsEndpointResponseJSON] = request_mixes(
             session=session, mix_id=self.mix_id
         )
-        
+
         if self.metadata is None:
             return
-        
+
         self.name = (
             self.metadata.title.replace("/", "_")
             .replace("|", "_")
@@ -237,11 +237,11 @@ class Mix:
           - self.flatten_playlist_dir()
         """
         self.get_metadata(session)
-        
+
         if self.metadata is None:
             self.files = {}
             return
-        
+
         self.set_items(session)
         self.set_dir(out_dir)
         self.save_cover_image(session, out_dir)

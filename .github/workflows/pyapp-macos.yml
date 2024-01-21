@@ -31,11 +31,11 @@ jobs:
 
     - name: Test just-compiled binary
       run: |
-        /Users/runner/.cargo-install/pyapp/bin/tidal-wave_${{ github.event.release.tag_name }}_macos.pyapp --help
+        /Users/runner/.cargo-install/pyapp/bin/tidal-wave_${{ github.event.release.tag_name }}_py311_macos.pyapp --help
 
     - name: Add (upload) artifact to release
       uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ github.token }}
       with:
-        files: /Users/runner/.cargo-install/pyapp/bin/tidal-wave_${{ github.event.release.tag_name }}_macos.pyapp
+        files: /Users/runner/.cargo-install/pyapp/bin/tidal-wave_${{ github.event.release.tag_name }}_py311_macos.pyapp
