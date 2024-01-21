@@ -428,13 +428,19 @@ class Track:
                 ]
 
         self.mutagen.save()
-        # Make sure audio track comes first because of
-        # less-sophisticated audio players that only
-        # recognize the first stream
-        if self.codec == "flac":
-            if self.album.cover != "":
+
+    def reorder_streams(self):
+        """It is currently not possible to have mutagen set the order of
+        the tracks in the audio file; that is, sometimes the album cover
+        "video" track is reported as the 0th track by FFmpeg. Some audio
+        players cannot decode this as an audio file, so this method
+        runs an FFmpeg command externally to make sure that self.outfile
+        has the audio data as the first (and, potentially, only) stream
+        according to FFmpeg."""
+        if self.album.cover != "":
+            if self.codec == "flac":
                 with temporary_file(suffix=".mka") as tf:
-                    shutil.move(str(self.outfile.absolute()), tf.name)
+                    shutil.move(self.absolute_outfile, tf.name)
                     cmd: List[str] = shlex.split(
                         f"""ffmpeg -hide_banner -loglevel quiet -y -i "{tf.name}"
                         -map 0:a:0 -map 0:v:0 -c:a copy -c:v copy
@@ -442,28 +448,11 @@ class Track:
                         -disposition:v attached_pic "{self.absolute_outfile}" """
                     )
                     subprocess.run(cmd)
-            else:
-                with temporary_file(suffix=".mka") as tf:
-                    shutil.move(str(self.outfile.absolute()), tf.name)
-                    cmd: List[str] = shlex.split(
-                        f"""ffmpeg -hide_banner -loglevel quiet -y -i "{tf.name}"
-                        -map 0:a:0 -c:a copy "{self.absolute_outfile}" """
-                    )
-                    subprocess.run(cmd)
-        elif self.codec == "m4a":
-            if self.album.cover != "":
+            elif self.codec == "m4a":
                 with temporary_file(suffix=".mka") as tf:
                     cmd: List[str] = shlex.split(
                         f"""ffmpeg -hide_banner -loglevel quiet -y -i "{self.absolute_outfile}"
                         -map 0:a:0 -map 0:v:0 -c:a copy -c:v copy "{tf.name}" """
-                    )
-                    subprocess.run(cmd)
-                    shutil.copyfile(tf.name, self.absolute_outfile)
-            else:
-                with temporary_file(suffix=".mka") as tf:
-                    cmd: List[str] = shlex.split(
-                        f"""ffmpeg -hide_banner -loglevel quiet -y -i "{self.absolute_outfile}"
-                        -map 0:a:0-c:a copy "{tf.name}" """
                     )
                     subprocess.run(cmd)
                     shutil.copyfile(tf.name, self.absolute_outfile)
@@ -571,8 +560,9 @@ class Track:
 
         self.craft_tags()
         self.set_tags()
+        self.reorder_streams()
 
-        return str(self.outfile.absolute())
+        return self.absolute_outfile
 
     def dump(self, fp=sys.stdout):
         k: int = int(self.metadata.track_number)
