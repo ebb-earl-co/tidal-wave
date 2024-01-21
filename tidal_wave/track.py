@@ -428,7 +428,7 @@ class Track:
             self.mutagen["covr"] = [
                 MP4Cover(self.cover_path.read_bytes(), imageformat=MP4Cover.FORMAT_JPEG)
             ]
-        
+
         self.mutagen.save()
 
     def set_tags(self):
