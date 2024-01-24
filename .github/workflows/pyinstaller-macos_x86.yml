@@ -1,4 +1,4 @@
-name: Pyinstaller Build on macOS for macOS (x86_64 + arm64)
+name: Pyinstaller Build on macOS for macOS x86_64
 on:
   release:
     types: ["published"]
@@ -38,10 +38,9 @@ jobs:
       run: |
         brew update --preinstall
 
-    - name: Get LGPL-licensed FFmpeg from Homebrew
-      id: brew-install-ffmpeg
-      run: |
-        brew install autoconf pkg-config yasm zlib
+    - name: Get FFmpeg dependencies from Homebrew
+      id: brew-install-ffmpeg-deps
+      run: brew install yasm
 
     - name: Build FFmpeg from source
       run: |
@@ -92,7 +91,7 @@ jobs:
           --distpath ./.dist \
           --workpath ./.build \
           --name tidal-wave_macos \
-          --target-arch=universal2 \
+          --target-arch=x86_64 \
           --paths tidal_wave \
           --add-data "README.md:." \
           --add-binary "${HOME}/bin/ffmpeg:." \
