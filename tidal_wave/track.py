@@ -241,7 +241,7 @@ class Track:
         byte range headers to incrementally get all content from a URL"""
         logger.info(f"Writing track {self.track_id} to '{self.absolute_outfile}'")
 
-        with temporary_file() as ntf:
+        with temporary_file(suffix=".mp4") as ntf:
             # Implement HTTP range requests here to mimic official clients
             range_size: int = 1024 * 1024  # 1 MiB
             content_length: int = fetch_content_length(
@@ -290,7 +290,7 @@ class Track:
         directory, then uses FFmpeg to re-mux the data to self.outfile"""
         logger.info(f"Writing track {self.track_id} to '{self.absolute_outfile}'")
 
-        with temporary_file() as ntf:
+        with temporary_file(suffix=".mp4") as ntf:
             for u in self.urls:
                 with session.get(
                     url=u, headers=self.download_headers, params=self.download_params

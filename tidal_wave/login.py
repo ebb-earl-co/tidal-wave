@@ -146,7 +146,7 @@ def login_android(
     logger.info(f"Loading TIDAL access token from '{str(token_path.absolute())}'")
     _token: Optional[dict] = load_token_from_disk(token_path=token_path)
     access_token: Optional[str] = None if _token is None else _token.get("access_token")
-    device_type: Optional[str] = _token.get("device_type")
+    device_type: Optional[str] = None if _token is None else _token.get("device_type")
 
     if access_token is None:
         logger.warning("Could not load access token from disk")

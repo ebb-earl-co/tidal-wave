@@ -115,7 +115,7 @@ class Video:
             f"Writing video {self.video_id} to '{str(self.outfile.absolute())}'"
         )
 
-        with temporary_file() as ntf:
+        with temporary_file(suffix=".mp4") as ntf:
             for u in self.urls:
                 with session.get(
                     url=u, headers=download_headers, params=download_params
@@ -126,14 +126,17 @@ class Video:
                         ntf.write(download_response.content)
             else:
                 ntf.seek(0)
+            self.outfile.write_bytes(Path(ntf.name).read_bytes())
 
-            # will always be .mp4 because HLS
-            ffmpeg.input(ntf.name, hide_banner=None, y=None).output(
-                str(self.outfile.absolute()),
-                vcodec="copy",
-                acodec="copy",
-                loglevel="quiet",
-            ).run()
+            # Until I can figure out how to re-mux H.264 and AAC without
+            # using libx264, this will not be used. The default mpegts
+            # format from TIDAL *should* work with video players as-is
+            # ffmpeg.input(ntf.name, hide_banner=None, y=None).output(
+            #     str(self.outfile.absolute()),
+            #     vcodec="copy",
+            #     acodec="copy",
+            #     loglevel="quiet",
+            # ).run()
 
         logger.info(
             f"Video {self.video_id} written to '{str(self.outfile.absolute())}'"
@@ -221,8 +224,6 @@ class Video:
         if self.download(session, out_dir) is None:
             return None
 
-        self.craft_tags()
-        self.set_tags()
         return str(self.outfile.absolute())
 
     def dump(self, fp=sys.stdout):
