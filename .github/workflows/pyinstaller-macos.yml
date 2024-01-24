@@ -1,0 +1,115 @@
+name: Pyinstaller Build on macOS for macOS (x86_64 + arm64)
+on:
+  release:
+    types: ["published"]
+  push:
+    branches: ["develop", "trunk"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Set up Homebrew
+      id: set-up-homebrew
+      uses: Homebrew/actions/setup-homebrew@master
+
+    - name: Cache Homebrew Bundler RubyGems
+      id: cache
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.set-up-homebrew.outputs.gems-path }}
+        key: ${{ runner.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
+        restore-keys: ${{ runner.os }}-rubygems-
+
+    - name: Install Homebrew Bundler RubyGems
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: brew install-bundler-gems
+
+    - name: Update Homebrew
+      id: update-homebrew
+      run: |
+        brew update --preinstall
+
+    - name: Get LGPL-licensed FFmpeg from Homebrew
+      id: brew-install-ffmpeg
+      run: |
+        brew install autoconf pkg-config yasm zlib
+
+    - name: Build FFmpeg from source
+      run: |
+        mkdir ~/ffmpeg_build/ ~/bin/
+        cd FFmpeg-6.1.1
+        PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
+          --prefix="$HOME/ffmpeg_build" \
+          --pkg-config-flags="--static" \
+          --ld="g++" \
+          --bindir="$HOME/bin" \
+          --disable-doc \
+          --disable-htmlpages \
+          --disable-podpages \
+          --disable-txtpages \
+          --disable-network \
+          --disable-autodetect \
+          --disable-hwaccels \
+          --disable-ffprobe \
+          --disable-ffplay \
+          --disable-encoder="adpcm*" \
+          --disable-encoder="av1*" \
+          --disable-encoder="hevc*" \
+          --disable-encoder=libmp3lame \
+          --disable-encoder="vp*" \
+          --disable-decoder="av1*" \
+          --disable-decoder="hevc*" \
+          --disable-decoder="adpcm*" \
+          --disable-decoder="mp3*" \
+          --disable-decoder="vp*"
+        PATH="$HOME/bin:$PATH" make -j$(sysctl -n hw.logicalcpu)
+        make install
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: "pip"  # caching pip dependencies
+
+    - name: Install dependencies
+      run: |
+        python3 -m pip install --upgrade pip setuptools wheel
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install pyinstaller rich shellingham
+
+    - name: Create Executable with Pyinstaller
+      run: |
+        pyinstaller \
+          --distpath ./.dist \
+          --workpath ./.build \
+          --name tidal-wave_macos \
+          --target-arch=universal2 \
+          --paths tidal_wave \
+          --add-data "README.md:." \
+          --add-binary "${HOME}/bin/ffmpeg:." \
+          --clean \
+          --noupx \
+          --onefile \
+          --strip \
+          ./pyinstall.py 
+    
+    - name: Test just-compiled binary
+      run: |
+        ./.dist/tidal-wave_macos --help
+
+    - name: Add (upload) artifact to release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        files: ./.dist/tidal-wave_macos

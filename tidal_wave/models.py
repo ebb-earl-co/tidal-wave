@@ -542,7 +542,8 @@ class TidalAlbum(TidalResource):
 
     def __post_init__(self):
         self.pattern: str = (
-            r"http(?:s)?://(?:listen\.)?tidal\.com/(?:browse/)?album/(\d{5,9})(?:.*?)?"
+            r"http(?:s)?://(?:listen\.|www\.)?tidal\.com/"
+            r"(?:browse/)?album/(\d{5,9})(?:.*?)?"
         )
         _id = self.match_url()
 
@@ -562,7 +563,8 @@ class TidalArtist(TidalResource):
 
     def __post_init__(self):
         self.pattern: str = (
-            r"http(?:s)?://(?:listen\.)?tidal\.com/(?:browse/)?artist/(\d{4,9})(?:.*?)?"
+            r"http(?:s)?://(?:listen\.|www\.)?tidal\.com/"
+            r"(?:browse/)?artist/(\d{4,9})(?:.*?)?"
         )
         _id = self.match_url()
 
@@ -579,7 +581,8 @@ class TidalMix(TidalResource):
 
     def __post_init__(self):
         self.pattern: str = (
-            r"http(?:s)?://(?:listen\.)?tidal\.com/(?:browse/)?mix/(\w{30})(?:.*?)?"
+            r"http(?:s)?://(?:listen\.|www\.)?tidal\.com/"
+            r"(?:browse/)?mix/(\w{30})(?:.*?)?"
         )
         _id = self.match_url()
 
@@ -598,7 +601,10 @@ class TidalTrack(TidalResource):
     url: str
 
     def __post_init__(self):
-        self.pattern: str = r"http(?:s)?://(?:listen\.)?tidal\.com/(?:browse/)?(?:album/\d{5,9}/)?track/(\d{5,9})(?:.*?)?"
+        self.pattern: str = (
+            r"http(?:s)?://(?:listen\.|www\.)?tidal\.com/"
+            r"(?:browse/)?(?:album/\d{5,9}/)?track/(\d{5,9})(?:.*?)?"
+        )
         _id = self.match_url()
 
         if _id is None:
@@ -617,7 +623,7 @@ class TidalPlaylist(TidalResource):
 
     def __post_init__(self):
         self.pattern: str = (
-            r"http(?:s)?://(?:listen\.)?tidal\.com/(?:browse/)?playlist/"
+            r"http(?:s)?://(?:listen\.|www\.)?tidal\.com/(?:browse/)?playlist/"
             r"([0-9a-f]{8}\-[0-9a-f]{4}\-4[0-9a-f]{3}\-[89ab][0-9a-f]{3}\-[0-9a-f]{12})(?:.*?)?"
         )
 
@@ -639,7 +645,8 @@ class TidalVideo(TidalResource):
 
     def __post_init__(self):
         self.pattern: str = (
-            r"http(?:s)?://(?:listen\.)?tidal\.com/(?:browse/)?video/(\d{7,9})(?:.*?)?"
+            r"http(?:s)?://(?:listen\.|www\.)?tidal\.com/"
+            r"(?:browse/)?video/(\d{7,9})(?:.*?)?"
         )
         _id = self.match_url()
 
@@ -657,7 +664,14 @@ def match_tidal_url(input_str: str) -> Optional[TidalResource]:
     parsed input_str type
     """
     resource_match: Optional[TidalResource] = None
-    tidal_resources: Tuple[TidalResource] = (
+    tidal_resources: Tuple[
+        TidalResource,
+        TidalResource,
+        TidalResource,
+        TidalResource,
+        TidalResource,
+        TidalResource,
+    ] = (
         TidalTrack,
         TidalAlbum,
         TidalVideo,

@@ -1,12 +1,13 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![PyPI - Version](https://img.shields.io/pypi/v/tidal-wave)](https://pypi.org/project/tidal-wave/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/tidal-wave)](https://pypi.org/project/tidal-wave/)
-![GitHub repo size](https://img.shields.io/github/repo-size/ebb-earl-co/tidal-wave)
 [![Build Python package](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/python-build.yml/badge.svg?branch=trunk&event=release)](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/python-build.yml)
 [![Docker Image CI](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/docker-image.yml/badge.svg?branch=trunk)](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/docker-image.yml)
 
 # tidal-wave
 Waving at the [TIDAL](https://tidal.com) music service. Runs on (at least) Windows, macOS, and GNU/Linux.
+
+>  TIDAL is an artist-first, fan-centered music streaming platform that delivers over 100 million songs in HiFi sound quality to the global music community. © 2024 TIDAL Music AS
 
 This project is inspired by [`qobuz-dl`](https://github.com/vitiko98/qobuz-dl), and, particularly, is a continuation of [`Tidal-Media-Downloader`](https://github.com/yaronzz/Tidal-Media-Downloader). **This project is intended for private use only: it is not intended for distribution of copyrighted content**.
 
@@ -25,14 +26,16 @@ This software uses libraries from the [FFmpeg](http://ffmpeg.org) project under 
 * Artist's entire works download support (video and audio; albums or albums and EPs and singles)
 
 ## Getting Started
-A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to retrieve HiRes FLAC, Dolby Atmos, and Sony 360 Reality Audio tracks. Simply a [HiFi](https://tidal.com/pricing) plan is sufficient to download in 16-bit, 44.1 kHz (i.e., lossless) or lower quality as well as videos.
+A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to retrieve HiRes FLAC, Dolby Atmos, and Sony 360 Reality Audio tracks. Simply a [HiFi](https://tidal.com/pricing) plan is sufficient to download in 16-bit, 44.1 kHz (i.e., lossless) or lower quality as well as videos. More information on sound quality at [TIDAL's site here](https://tidal.com/sound-quality).
 
 ### Requirements
  - As resources will be fetched from the World Wide Web, an Internet connection is required
- - The excellent tool [FFmpeg](http://ffmpeg.org/download.html) is necessary for audio file manipulation. It is available from almost every package manager; or static builds are available from [John Van Sickle](https://www.johnvansickle.com/ffmpeg/).
+ - The excellent tool [FFmpeg](http://ffmpeg.org/download.html) is necessary for audio file manipulation. The [container image](https://github.com/ebb-earl-co/tidal-wave/blob/trunk/Dockerfile) as well as the [`pyinstaller`](https://pyinstaller.org/en/stable/)-created [binary for GNU/Linux](https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_linux) build FFmpeg from source, so separate installation is unnecessary.
+   - Static builds are available from [John Van Sickle](https://www.johnvansickle.com/ffmpeg/) for GNU/Linux, or most package managers feature `ffmpeg`.
+   - For macOS, the [FFmpeg download page](http://ffmpeg.org/download.html#build-mac) links to [this download source](https://evermeet.cx/ffmpeg/), or there is always [Homebrew](https://formulae.brew.sh/formula/ffmpeg)
    - For Windows, the [FFmpeg download page](http://ffmpeg.org/download.html#build-windows) lists 2 resources; or [`chocolatey`](https://community.chocolatey.org/packages/ffmpeg) is an option
  - This is a Python package, so **to use it in the default manner** you will need [Python 3](https://www.python.org/downloads/) on your system: this tool supports Python 3.8 or newer.
-   - *However*, as of version 2023.12.10, an [OCI container image](https://github.com/ebb-earl-co/tidal-wave/pkgs/container/tidal-wave) and [`pyapp`-compiled binaries](https://github.com/ebb-earl-co/tidal-wave/releases/latest) are provided for download and use that *do not require Python installed*
+   - *However*, as of version 2023.12.10, an [OCI container image](https://github.com/ebb-earl-co/tidal-wave/pkgs/container/tidal-wave) and [`pyapp`-compiled binaries](https://github.com/ebb-earl-co/tidal-wave/releases/latest) and [`pyinstaller`](https://pyinstaller.org/en/stable/)-created [binary for GNU/Linux](https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_linux) are provided for download and use that *do not require Python installed*
  - Only a handful of Python libraries are dependencies:
    - [`backoff`](https://pypi.org/project/backoff/)
    - [`dataclass-wizard`](https://pypi.org/project/dataclass-wizard/)
@@ -115,12 +118,11 @@ Usage: tidal-wave [OPTIONS] TIDAL_URL [OUTPUT_DIRECTORY]
 
 Invocation of this tool will store credentials in a particular directory in the user's "home" directory: for Unix-like systems, this will be `/home/${USER}/.config/tidal-wave`: for Windows, it varies: in either OS situation, the exact directory is determined by the `user_config_path()` function of the `platformdirs` package.
 
-Similarly, all media retrieved is placed in subdirectories of the user's default Music directory: for Unix-like systems, this probably is `/home/${USER}/Music`; for Windows it is probably `C:\Users\<USER>\Music`. This directory is determined by `platformdirs.user_music_path()`. 
+Similarly, all media retrieved is placed in subdirectories of the user's default music directory: for Unix-like systems, this probably is `/home/${USER}/Music`; for Windows it is probably `C:\Users\<USER>\Music`. This directory is determined by `platformdirs.user_music_path()`. 
  - If a different path is passed to the second CLI argument, `output_directory`, then all media is written to subdirectories of that directory.
- - Even videos are downloaded here (for now) for simplicity
 
 ### Example
- - First, find the URL of the album/artist/mix/playlist/track/video desired. Then, simply pass it as the first argument to `tidal-wave` with no other arguments to: *download the album/artist/mix/playlist/track in Lossless quality to a subdirectory of user's music directory and INFO-level logging* in the case of audio; or *download the video in 1080p, H.264+AAC quality to a subdirectory of user's music directory with INFO-level logging* in the case of a video URL.
+ - First, find the URL of the album/artist/mix/playlist/track/video desired. Then, simply pass it as the first argument to `tidal-wave` with no other arguments in order to: *download the album/artist/mix/playlist/track in Lossless quality to a subdirectory of user's music directory and INFO-level logging* in the case of audio; *download the video in 1080p, H.264+AAC quality to a subdirectory of user's music directory with INFO-level logging* in the case of a video URL.
  ```bash
  (.venv) $ tidal-wave https://tidal.com/browse/track/226092704
  ```
