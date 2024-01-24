@@ -69,6 +69,7 @@ jobs:
           --enable-muxer=eac3,flac,mjpeg,mpegts,mp4 \
           --enable-protocol=file \
           --enable-small \
+        && \
         PATH="$HOME/bin:$PATH" make -j$(sysctl -n hw.logicalcpu)
         make install
 
