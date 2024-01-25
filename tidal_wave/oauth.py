@@ -155,6 +155,9 @@ class BearerToken:
                 TokenException(f"File '{str(p.absolute())}' does not exist")
             )
             return
+
+        try:
+            data = json.loads(base64.b64decode(token_path_bytes))
         except json.JSONDecodeError:
             logger.exception(
                 TokenException(f"Could not parse JSON data from '{str(p.absolute())}'")
@@ -167,8 +170,6 @@ class BearerToken:
                 )
             )
             return
-        else:
-            data = json.loads(base64.b64decode(token_path_bytes))
 
         data_args = (
             data.get(a)
