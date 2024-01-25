@@ -185,9 +185,7 @@ class Video:
         try:
             self.mutagen = mutagen.File(self.outfile)
         except Exception:
-            logger.warning(
-                f"Unable to write metadata tags to {self.video_id}"
-            )
+            logger.warning(f"Unable to write metadata tags to {self.video_id}")
             return
 
         self.mutagen.clear()

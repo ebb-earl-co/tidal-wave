@@ -130,7 +130,9 @@ def login_fire_tv(
         else:
             logger.info("Successfully refreshed TIDAL access token")
 
-    s: Optional[requests.Session] = validate_token_for_session(bearer_token.access_token)
+    s: Optional[requests.Session] = validate_token_for_session(
+        bearer_token.access_token
+    )
     if s is None:
         logger.critical("Access token is not valid: exiting now.")
     else:
