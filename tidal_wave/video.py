@@ -115,7 +115,7 @@ class Video:
             f"Writing video {self.video_id} to '{str(self.outfile.absolute())}'"
         )
 
-        with temporary_file() as ntf:
+        with temporary_file(suffix=".mp4") as ntf:
             for u in self.urls:
                 with session.get(
                     url=u, headers=download_headers, params=download_params
@@ -126,18 +126,26 @@ class Video:
                         ntf.write(download_response.content)
             else:
                 ntf.seek(0)
+            self.outfile.write_bytes(Path(ntf.name).read_bytes())
 
-            # will always be .mp4 because HLS
-            ffmpeg.input(ntf.name, hide_banner=None, y=None).output(
-                str(self.outfile.absolute()),
-                vcodec="copy",
-                acodec="copy",
-                loglevel="quiet",
-            ).run()
+            if self.outfile.exists() and self.outfile.stat().st_size > 0:
+                logger.info(
+                    f"Video {self.video_id} written to '{str(self.outfile.absolute())}'"
+                )
 
-        logger.info(
-            f"Video {self.video_id} written to '{str(self.outfile.absolute())}'"
-        )
+            try:
+                ffmpeg.input(ntf.name, hide_banner=None, y=None).output(
+                    str(self.outfile.absolute()),
+                    vcodec="copy",
+                    acodec="copy",
+                    loglevel="quiet",
+                ).run()
+            except Exception:
+                logger.warning(
+                    f"Could not convert video {self.video_id} with FFmpeg; "
+                    "metadata will not be written and format will stay as MPEG-TS"
+                )
+
         return self.outfile
 
     def craft_tags(self):
@@ -172,8 +180,14 @@ class Video:
 
     def set_tags(self):
         """Instantiate a mutagen.File instance, add self.tags to it, and
-        save it to disk"""
-        self.mutagen = mutagen.File(self.outfile)
+        save it to disk. If video container is still in MPEG-TS format,
+        this is expected to fail"""
+        try:
+            self.mutagen = mutagen.File(self.outfile)
+        except Exception:
+            logger.warning(f"Unable to write metadata tags to {self.video_id}")
+            return
+
         self.mutagen.clear()
         self.mutagen.update(**self.tags)
         self.mutagen.save()
@@ -221,8 +235,6 @@ class Video:
         if self.download(session, out_dir) is None:
             return None
 
-        self.craft_tags()
-        self.set_tags()
         return str(self.outfile.absolute())
 
     def dump(self, fp=sys.stdout):

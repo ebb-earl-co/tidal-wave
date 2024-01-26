@@ -1,4 +1,4 @@
-name: Pyinstaller Build on Ubuntu for GNU/Linux x86_64
+name: Pyinstaller Build on macOS for macOS x86_64
 on:
   release:
     types: ["published"]
@@ -10,28 +10,45 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    
-    - uses: awalsh128/cache-apt-pkgs-action@latest
-      with:
-        packages: autoconf build-essential pkg-config yasm
-        version: 1.0
 
-    - name: Build FFmpeg from source (git submodule)
+    - name: Set up Homebrew
+      id: set-up-homebrew
+      uses: Homebrew/actions/setup-homebrew@master
+
+    - name: Cache Homebrew Bundler RubyGems
+      id: cache
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.set-up-homebrew.outputs.gems-path }}
+        key: ${{ runner.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
+        restore-keys: ${{ runner.os }}-rubygems-
+
+    - name: Install Homebrew Bundler RubyGems
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: brew install-bundler-gems
+
+    - name: Update Homebrew
+      id: update-homebrew
+      run: |
+        brew update --preinstall
+
+    - name: Get FFmpeg dependencies from Homebrew
+      id: brew-install-ffmpeg-deps
+      run: brew install yasm
+
+    - name: Build FFmpeg from source
       run: |
         mkdir ~/ffmpeg_build/ ~/bin/
         cd FFmpeg-6.1.1
         PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
           --prefix="$HOME/ffmpeg_build" \
           --pkg-config-flags="--static" \
-          --extra-cflags="-I$HOME/ffmpeg_build/include" \
-          --extra-ldflags="-L$HOME/ffmpeg_build/lib" \
-          --extra-libs="-lpthread -lm" \
           --ld="g++" \
           --bindir="$HOME/bin" \
           --disable-everything \
@@ -51,7 +68,7 @@ jobs:
           --enable-muxer=eac3,flac,mjpeg,mpegts,mp4 \
           --enable-protocol=file \
           --enable-small
-        PATH="$HOME/bin:$PATH" make -j$(nproc)
+        PATH="$HOME/bin:$PATH" make -j$(sysctl -n hw.logicalcpu)
         make install
 
     - name: Set up Python
@@ -71,7 +88,8 @@ jobs:
         pyinstaller \
           --distpath ./.dist \
           --workpath ./.build \
-          --name tidal-wave_py311_FFmpeg6.1.1_linux \
+          --name tidal-wave_py311_FFmpeg6.1.1_macos_x86_64 \
+          --target-arch=x86_64 \
           --paths tidal_wave \
           --add-data "README.md:." \
           --add-binary "${HOME}/bin/ffmpeg:." \
@@ -83,7 +101,7 @@ jobs:
     
     - name: Test just-compiled binary
       run: |
-        ./.dist/tidal-wave_py311_FFmpeg6.1.1_linux --help
+        ./.dist/tidal-wave_py311_FFmpeg6.1.1_macos_x86_64 --help
 
     - name: Add (upload) artifact to release
       uses: softprops/action-gh-release@v1
@@ -91,4 +109,4 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
       with:
-        files: ./.dist/tidal-wave_py311_FFmpeg6.1.1_linux
+        files: ./.dist/tidal-wave_py311_FFmpeg6.1.1_macos_x86_64

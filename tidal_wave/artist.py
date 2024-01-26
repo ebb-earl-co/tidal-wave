@@ -40,9 +40,10 @@ class Artist:
         the file cover.jpg in self.artist_dir"""
         artist_image: Path = self.artist_dir / "cover.jpg"
         if not artist_image.exists():
-            download_cover_image(
-                session, self.metadata.picture, self.artist_dir, dimension=750
-            )
+            if self.metadata.picture is not None:
+                download_cover_image(
+                    session, self.metadata.picture, self.artist_dir, dimension=750
+                )
 
     def set_albums(self, session: Session):
         """This method requests from TIDAL API endpoint /artists/albums and

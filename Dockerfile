@@ -4,12 +4,10 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update -qq && apt-get -y in
   autoconf \
   build-essential \
   pkg-config \
-  yasm \
-  zlib1g-dev
+  yasm
 COPY FFmpeg-6.1.1/ ./FFmpeg-6.1.1/
-RUN mkdir ~/ffmpeg_build ~/bin && \
-    cd FFmpeg-6.1.1 && \
-    PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
+WORKDIR FFmpeg-6.1.1
+RUN PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
       --prefix="$HOME/ffmpeg_build" \
       --pkg-config-flags="--static" \
       --extra-cflags="-I$HOME/ffmpeg_build/include" \
@@ -17,6 +15,7 @@ RUN mkdir ~/ffmpeg_build ~/bin && \
       --extra-libs="-lpthread -lm" \
       --ld="g++" \
       --bindir="$HOME/bin" \
+      --disable-everything \
       --disable-doc \
       --disable-htmlpages \
       --disable-podpages \
@@ -26,16 +25,12 @@ RUN mkdir ~/ffmpeg_build ~/bin && \
       --disable-hwaccels \
       --disable-ffprobe \
       --disable-ffplay \
-      --disable-encoder=adpcm* \
-      --disable-encoder=av1* \
-      --disable-encoder=hevc* \
-      --disable-encoder=libmp3lame \
-      --disable-encoder=vp* \
-      --disable-decoder=av1* \
-      --disable-decoder=hevc* \
-      --disable-decoder=adpcm* \
-      --disable-decoder=mp3* \
-      --disable-decoder=vp* \
+      --enable-decoder=flac,mjpeg \
+      --enable-demuxer=aac,eac3,flac,image2,mov,mpegts \
+      --enable-encoder=flac,mjpeg \
+      --enable-filter=copy \
+      --enable-muxer=eac3,flac,mjpeg,mpegts,mp4 \
+      --enable-protocol=file \
       --enable-small \
       && \
     PATH="$HOME/bin:$PATH" make -j$(nproc) && \

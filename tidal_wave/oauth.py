@@ -149,12 +149,15 @@ class BearerToken:
         return a BearerToken instance; else, return None"""
 
         try:
-            data = json.loads(base64.b64decode(p.read_bytes()))
+            token_path_bytes = p.read_bytes()
         except FileNotFoundError:
             logger.exception(
                 TokenException(f"File '{str(p.absolute())}' does not exist")
             )
             return
+
+        try:
+            data = json.loads(base64.b64decode(token_path_bytes))
         except json.JSONDecodeError:
             logger.exception(
                 TokenException(f"Could not parse JSON data from '{str(p.absolute())}'")

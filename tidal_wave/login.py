@@ -43,7 +43,7 @@ class LogLevel(str, Enum):
 
 def load_token_from_disk(
     token_path: Path = TOKEN_DIR_PATH / "android-tidal.token",
-) -> Optional[str]:
+) -> Optional[dict]:
     """Attempt to read `token_path` from disk and decoded its contents
     as JSON"""
     if not token_path.exists():
@@ -60,10 +60,10 @@ def load_token_from_disk(
         logger.warning(f"File '{token_path.absolute()}' cannot be parsed as JSON")
         return
     else:
-        return bearer_token_json.get("access_token")
+        return bearer_token_json
 
 
-def validate_token(
+def validate_token_for_session(
     token: str, headers: Dict[str, str] = COMMON_HEADERS
 ) -> Optional[requests.Session]:
     """Send a GET request to the /sessions endpoint of Tidal's API.
@@ -130,7 +130,9 @@ def login_fire_tv(
         else:
             logger.info("Successfully refreshed TIDAL access token")
 
-    s: Optional[requests.Session] = validate_token(bearer_token.access_token)
+    s: Optional[requests.Session] = validate_token_for_session(
+        bearer_token.access_token
+    )
     if s is None:
         logger.critical("Access token is not valid: exiting now.")
     else:
@@ -144,12 +146,13 @@ def login_android(
     token_path: Path = TOKEN_DIR_PATH / "android-tidal.token",
 ) -> Optional[requests.Session]:
     logger.info(f"Loading TIDAL access token from '{str(token_path.absolute())}'")
-    _token: Optional[str] = load_token_from_disk(token_path=token_path)
-    device_type: Optional[str] = None
+    _token: Optional[dict] = load_token_from_disk(token_path=token_path)
+    access_token: Optional[str] = None if _token is None else _token.get("access_token")
+    device_type: Optional[str] = None if _token is None else _token.get("device_type")
 
-    if _token is None:
+    if access_token is None:
         logger.warning("Could not load access token from disk")
-        _token: str = typer.prompt(
+        access_token: str = typer.prompt(
             "Enter TIDAL access token from an Android (the part after 'Bearer ')"
         )
         dt_input: str = typer.prompt(
@@ -160,7 +163,7 @@ def login_android(
         elif dt_input.lower() == "tablet":
             device_type = "TABLET"
 
-    s: Optional[requests.Session] = validate_token(_token)
+    s: Optional[requests.Session] = validate_token_for_session(access_token)
     if s is None:
         logger.critical("Access token is not valid: exiting now.")
         if token_path.exists():
@@ -177,6 +180,7 @@ def login_android(
             "client_id": s.client_id,
             "client_name": s.client_name,
             "country_code": s.params["countryCode"],
+            "device_type": device_type,
         }
         logger.debug(f"Writing this bearer token to '{str(token_path.absolute())}'")
         token_path.write_bytes(base64.b64encode(bytes(json.dumps(to_write), "UTF-8")))
@@ -186,13 +190,14 @@ def login_android(
 def login_windows(
     token_path: Path = TOKEN_DIR_PATH / "windows-tidal.token",
 ) -> Optional[requests.Session]:
-    _token: Optional[str] = load_token_from_disk(token_path=token_path)
-    if _token is None:
-        _token: str = typer.prompt(
+    _token: Optional[dict] = load_token_from_disk(token_path=token_path)
+    access_token: Optional[str] = _token.get("access_token")
+    if access_token is None:
+        access_token: str = typer.prompt(
             "Enter Tidal API access token (the part after 'Bearer ')"
         )
 
-    s: Optional[requests.Session] = validate_token(_token)
+    s: Optional[requests.Session] = validate_token_for_session(access_token)
     if s is None:
         logger.critical("Access token is not valid: exiting now.")
     else:
