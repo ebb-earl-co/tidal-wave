@@ -68,8 +68,7 @@ jobs:
           --enable-filter=copy \
           --enable-muxer=eac3,flac,mjpeg,mpegts,mp4 \
           --enable-protocol=file \
-          --enable-small \
-        && \
+          --enable-small
         PATH="$HOME/bin:$PATH" make -j$(sysctl -n hw.logicalcpu)
         make install
 
@@ -90,7 +89,7 @@ jobs:
         pyinstaller \
           --distpath ./.dist \
           --workpath ./.build \
-          --name tidal-wave_macos_arm64 \
+          --name=tidal-wave_py311_FFmpeg6.1.1_macos_arm64 \
           --target-arch=arm64 \
           --paths tidal_wave \
           --add-data "README.md:." \
@@ -103,7 +102,7 @@ jobs:
     
     - name: Test just-compiled binary
       run: |
-        ./.dist/tidal-wave_macos_arm64 --help
+        ./.dist/tidal-wave_py311_FFmpeg6.1.1_macos_arm64 --help
 
     - name: Add (upload) artifact to release
       uses: softprops/action-gh-release@v1
@@ -111,4 +110,4 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
       with:
-        files: ./.dist/tidal-wave_macos_arm64
+        files: ./.dist/tidal-wave_py311_FFmpeg6.1.1_macos_arm64
