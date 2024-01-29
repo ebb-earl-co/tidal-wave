@@ -16,7 +16,7 @@ from .models import (
     VideosEndpointResponseJSON,
 )
 from .track import Track
-from .utils import TIDAL_API_URL
+from .utils import replace_illegal_characters, TIDAL_API_URL
 from .video import Video
 
 logger = logging.getLogger("__name__")
@@ -42,13 +42,7 @@ class Mix:
         if self.metadata is None:
             return
 
-        self.name = (
-            self.metadata.title.replace("/", "_")
-            .replace("|", "_")
-            .replace(":", " -")
-            .replace('"', "")
-            .replace("..", "")
-        )
+        self.name = replace_illegal_characters(self.metadata.title)
 
     def set_items(self, session: Session):
         """Uses data from TIDAL API /mixes/items endpoint to

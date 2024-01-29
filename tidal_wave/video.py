@@ -13,7 +13,7 @@ from .models import (
     VideosEndpointStreamResponseJSON,
 )
 from .requesting import request_videos, request_video_contributors, request_video_stream
-from .utils import temporary_file
+from .utils import replace_illegal_characters, temporary_file
 
 import ffmpeg
 import mutagen
@@ -32,10 +32,13 @@ class Video:
         self.codec: str = "mp4"
 
     def get_metadata(self, session: Session):
-        """Request from TIDAL API /videos endpoint"""
+        """Request from TIDAL API /videos endpoint and set self.metadata
+        attribute as None or VideosEndpointResponseJSON instance. Also,
+        sets self.name as a sanitized version of self.metadata.name"""
         self.metadata: Optional[VideosEndpointResponseJSON] = request_videos(
             session, self.video_id
         )
+        self.name = replace_illegal_characters(self.metadata.name)
 
     def get_contributors(self, session: Session):
         """Request from TIDAL API /videos/contributors endpoint"""
@@ -83,7 +86,7 @@ class Video:
         """Set self.filename, which is constructed from self.metadata.name
         and self.stream.video_quality"""
         self.filename: str = (
-            f"{self.metadata.name} [{self.stream.video_quality}].{self.codec}"
+            f"{self.name} [{self.stream.video_quality}].{self.codec}"
         )
 
     def set_outfile(self):
@@ -122,6 +125,7 @@ class Video:
                 ) as download_response:
                     if not download_response.ok:
                         logger.warning(f"Could not download {self}")
+                        return
                     else:
                         ntf.write(download_response.content)
             else:
