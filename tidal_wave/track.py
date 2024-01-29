@@ -163,9 +163,7 @@ class Track:
             self.filename: Optional[str] = f"{track_substring}.{self.codec}"
 
         # for use in playlist file ordering
-        self.trackname: str = re.match(r"(?:\d{2,3} - )(.+?$)", self.filename).groups()[
-            0
-        ]
+        self.trackname = re.match(r"(?:\d{2,3} - )(.+?$)", self.filename).groups()[0]
 
     def set_outfile(self):
         """Uses self.album_dir and self.metadata and self.filename
@@ -179,6 +177,22 @@ class Track:
         else:
             self.outfile: Path = self.album_dir / self.filename
             self.absolute_outfile = str(self.outfile.absolute())
+
+        # Keep absolute_outfile under 260-character limit
+        if len(self.absolute_outfile) >= 260:
+            outfile: str = f"{self.metadata.track_number:02d}.{self.codec}"
+            if len(outfile) >= 260:
+                logger.warning(
+                    f"Unable to fit title of track {self.track_id} "
+                    f"into a valid filename (even '{outfile}'), as "
+                    "total character count exceeds Windows' 260-character "
+                    "limit. Downloading will not continue"
+                )
+                return
+
+            self.outfile: Path = Path(self.absolute_outfile).parent / outfile
+            self.absolute_outfile: str = str(self.outfile.absolute())
+            self.trackname: str = outfile
 
         if (self.outfile.exists()) and (self.outfile.stat().st_size > 0):
             logger.info(
