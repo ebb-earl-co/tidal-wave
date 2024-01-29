@@ -73,7 +73,7 @@ def download_cover_image(
 
 
 def download_artist_image(
-    session, artist, output_dir, dimension = 320
+    session, artist, output_dir, dimension=320
 ) -> Optional[Path]:
     """Given a UUID that corresponds to a (JPEG) image on Tidal's servers,
     download the image file and write it as '{artist name}.jpeg'
