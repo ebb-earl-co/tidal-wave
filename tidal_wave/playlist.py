@@ -24,7 +24,7 @@ from .utils import (
     download_cover_image,
     replace_illegal_characters,
     temporary_file,
-    TIDAL_API_URL
+    TIDAL_API_URL,
 )
 from .video import Video
 

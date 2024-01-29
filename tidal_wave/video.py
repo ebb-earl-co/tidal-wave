@@ -85,9 +85,7 @@ class Video:
     def set_filename(self, out_dir: Path):
         """Set self.filename, which is constructed from self.metadata.name
         and self.stream.video_quality"""
-        self.filename: str = (
-            f"{self.name} [{self.stream.video_quality}].{self.codec}"
-        )
+        self.filename: str = f"{self.name} [{self.stream.video_quality}].{self.codec}"
 
     def set_outfile(self):
         """Uses self.artist_dir and self.metadata and self.filename
