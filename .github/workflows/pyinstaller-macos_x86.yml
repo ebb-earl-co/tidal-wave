@@ -103,10 +103,10 @@ jobs:
       run: |
         ./.dist/tidal-wave_py311_FFmpeg6.1.1_macos_x86_64 --help
 
-    - name: Add (upload) artifact to release
+    - name: Add artifact to release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
       with:
+        token: ${{ github.token }} 
+        fail_on_unmatched_files: true
         files: ./.dist/tidal-wave_py311_FFmpeg6.1.1_macos_x86_64
