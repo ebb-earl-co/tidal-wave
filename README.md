@@ -5,7 +5,7 @@
 [![Docker Image CI](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/docker-image.yml/badge.svg?branch=trunk)](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/docker-image.yml)
 
 # tidal-wave
-Waving at the [TIDAL](https://tidal.com) music service. Runs on (at least) Windows, macOS, and GNU/Linux.
+Waving at the [TIDAL](https://tidal.com) music service with [Python](https://www.python.org/). Runs on (at least) Windows, macOS, and GNU/Linux.
 
 >  TIDAL is an artist-first, fan-centered music streaming platform that delivers over 100 million songs in HiFi sound quality to the global music community. © 2024 TIDAL Music AS
 
@@ -14,19 +14,19 @@ This project is inspired by [`qobuz-dl`](https://github.com/vitiko98/qobuz-dl), 
 This software uses libraries from the [FFmpeg](http://ffmpeg.org) project under the [LGPLv2.1](http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html). FFmpeg is a trademark of [Fabrice Bellard](http://www.bellard.org/), originator of the FFmpeg project. 
 
 ## Features
-* Download [FLAC](https://xiph.org/flac/), [Dolby Atmos](https://www.dolby.com/technologies/dolby-atmos/), [Sony 360 Reality Audio](https://electronics.sony.com/360-reality-audio), or [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) tracks; [AVC/H.264](https://en.wikipedia.org/wiki/Advanced_Video_Coding) (up to 1920x1080) + [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) videos
-* Either a single track or an entire album can be downloaded
-* Album covers and artist images are downloaded by default
+* Retrieve [FLAC](https://xiph.org/flac/), [Dolby Atmos](https://www.dolby.com/technologies/dolby-atmos/), [Sony 360 Reality Audio](https://electronics.sony.com/360-reality-audio), or [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) tracks; [AVC/H.264](https://en.wikipedia.org/wiki/Advanced_Video_Coding) (up to 1920x1080) + [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) videos
+* Either a single track or an entire album can be retrieved
+* Album covers and artist images are retrieved by default
 * Support for albums with multiple discs
 * If available, lyrics are added as metadata to tracks
-* If available, album reviews are downloaded as JSON 
-* Video download support
-* Playlist download support (video or audio or both)
-* Mix download support (video or audio)
-* Artist's entire works download support (video and audio; albums or albums and EPs and singles)
+* If available, album reviews are retrieved as JSON 
+* Video retrieval support
+* Playlist retrieval support (video or audio or both)
+* Mix retrieval support (video or audio)
+* Artist's entire works retrieval support (video and audio; albums or albums and EPs and singles)
 
 ## Getting Started
-A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to retrieve HiRes FLAC, Dolby Atmos, and Sony 360 Reality Audio tracks. Simply a [HiFi](https://tidal.com/pricing) plan is sufficient to download in 16-bit, 44.1 kHz (i.e., lossless) or lower quality as well as videos. More information on sound quality at [TIDAL's site here](https://tidal.com/sound-quality).
+A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to retrieve HiRes FLAC, Dolby Atmos, and Sony 360 Reality Audio tracks. Simply a [HiFi](https://tidal.com/pricing) plan is sufficient to retrieve in 16-bit, 44.1 kHz (i.e., lossless) or lower quality as well as videos. More information on sound quality at [TIDAL's site here](https://tidal.com/sound-quality).
 
 ### Requirements
  - As resources will be fetched from the World Wide Web, an Internet connection is required
@@ -34,7 +34,7 @@ A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to ret
    - Static builds are available from [John Van Sickle](https://www.johnvansickle.com/ffmpeg/) for GNU/Linux, or most package managers feature `ffmpeg`.
    - For macOS, the [FFmpeg download page](http://ffmpeg.org/download.html#build-mac) links to [this download source](https://evermeet.cx/ffmpeg/), or there is always [Homebrew](https://formulae.brew.sh/formula/ffmpeg)
    - For Windows, the [FFmpeg download page](http://ffmpeg.org/download.html#build-windows) lists 2 resources; or [`chocolatey`](https://community.chocolatey.org/packages/ffmpeg) is an option
- - This is a Python package, so **to use it in the default manner** you will need [Python 3](https://www.python.org/downloads/) on your system: this tool supports Python 3.8 or newer.
+ - This is a Python package, so **to use it in the default manner** you will need [Python 3](https://www.python.org/downloads/), version 3.8 or newer, on your system.
    - *However*, as of version 2023.12.10, an [OCI container image](https://github.com/ebb-earl-co/tidal-wave/pkgs/container/tidal-wave); `pyapp`-compiled binaries; and [`pyinstaller`](https://pyinstaller.org/en/stable/)-created binaries for x86\_64 GNU/Linux, Apple Silicon macOS, and x86\_64 macOS are provided for download and use that *do not require Python installed*
  - Only a handful of Python libraries are dependencies:
    - [`backoff`](https://pypi.org/project/backoff/)
@@ -125,7 +125,7 @@ Similarly, all media retrieved is placed in subdirectories of the user's default
  - If a different path is passed to the second CLI argument, `output_directory`, then all media is written to subdirectories of that directory.
 
 ### Example
- - First, find the URL of the album/artist/mix/playlist/track/video desired. Then, simply pass it as the first argument to `tidal-wave` with no other arguments in order to: *download the album/artist/mix/playlist/track in Lossless quality to a subdirectory of user's music directory and INFO-level logging* in the case of audio; *download the video in 1080p, H.264+AAC quality to a subdirectory of user's music directory with INFO-level logging* in the case of a video URL.
+ - First, find the URL of the album/artist/mix/playlist/track/video desired. Then, simply pass it as the first argument to `tidal-wave` with no other arguments in order to: *retrieve the album/artist/mix/playlist/track in Lossless quality to a subdirectory of user's music directory and INFO-level logging* in the case of audio; *retrieve the video in 1080p, H.264+AAC quality to a subdirectory of user's music directory with INFO-level logging* in the case of a video URL.
  ```bash
  (.venv) $ tidal-wave https://tidal.com/browse/track/226092704
  ```
@@ -139,17 +139,17 @@ Similarly, all media retrieved is placed in subdirectories of the user's default
  $ ./tidal-wave.pyz https://tidal.com/browse/album/... --audio-format hires --loglevel warning
  ```
 
- - To (attempt to) get a video, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos.
+ - To (attempt to) get a video, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when retrieving videos.
  ```bash
  $ ./tidal-wave.pyz https://tidal.com/browse/video/...
  ```
 
- - To (attempt to) get a playlist, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos.
+ - To (attempt to) get a playlist, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when retrieving videos.
  ```bash
  > .\tidal-wave_py311_pyapp.exe https://tidal.com/browse/playlist/...
  ```
 
- - To (attempt to) get a mix, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when downloading videos.
+ - To (attempt to) get a mix, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when retrieving videos.
  ```bash
  $ ./tidal-wave_py311.pyapp https://tidal.com/browse/mix/...
  ```

@@ -2,13 +2,10 @@ name: Pyapp Build on macOS for macOS arm64
 on:
   release:
     types: ["published"]
-  push:
-    branches: ["trunk"]
 
 env:
   PYAPP_PROJECT_NAME: "tidal-wave"
-  # PYAPP_PROJECT_VERSION: ${{ github.event.release.tag_name }}
-  PYAPP_PROJECT_VERSION: "2024.1.14"
+  PYAPP_PROJECT_VERSION: ${{ github.event.release.tag_name }}
   PYAPP_DISTRIBUTION_EMBED: 1
   PYAPP_PYTHON_VERSION: 3.11
 
