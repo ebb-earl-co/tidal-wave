@@ -28,17 +28,17 @@ jobs:
     - name: Rename just-compiled binary
       shell: bash
       run: |
-        mv /home/runner/.cargo-install/pyapp/bin/pyapp ${{ GITHUB_WORKSPACE }}/tidal-wave_py311.pyapp
+        mv /home/runner/.cargo-install/pyapp/bin/pyapp ${{ github.workspace }}/tidal-wave_py311.pyapp
 
     - name: Test just-compiled binary
       run: |
-        chmod +x ${{ GITHUB_WORKSPACE }}/tidal-wave_py311.pyapp
-        ${{ GITHUB_WORKSPACE }}/tidal-wave_py311.pyapp --help
+        chmod +x ${{ github.workspace }}/tidal-wave_py311.pyapp
+        ${{ github.workspace }}/tidal-wave_py311.pyapp --help
 
     - name: Add (upload) artifact to release
       uses: softprops/action-gh-release@v1
       with:
         token: ${{ github.token }}
         fail_on_unmatched_files: true
-        files: ${{ GITHUB_WORKSPACE }}/tidal-wave_py311.pyapp
+        files: ${{ github.workspace }}/tidal-wave_py311.pyapp
 

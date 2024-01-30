@@ -36,14 +36,14 @@ jobs:
     - name: Rename just-compiled EXE
       shell: pwsh
       run: |
-        Move-Item "C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe" ${{ GITHUB_WORKSPACE }}\tidal-wave_py311_pyapp.exe
+        Move-Item "C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe" ${{ github.workspace }}\tidal-wave_py311_pyapp.exe
 
     - name: Upload artifact
       id: artifact-upload-step
       uses: actions/upload-artifact@v4
       with:
         name: tidal-wave_${{ github.event.release.tag_name }}_py311_pyapp.exe
-        path: ${{ GITHUB_WORKSPACE }}\tidal-wave_py311_pyapp.exe
+        path: ${{ github.workspace }}\tidal-wave_py311_pyapp.exe
         compression-level: 0
         if-no-files-found: error
         retention-days: 1
@@ -53,5 +53,4 @@ jobs:
       with:
         token: ${{ github.token }}
         fail_on_unmatched_files: true
-        files: ${{ GITHUB_WORKSPACE }}\tidal-wave_py311_pyapp.exe
-
+        files: ${{ github.workspace }}\tidal-wave_py311_pyapp.exe
