@@ -2,12 +2,15 @@ name: Pyapp Build on Windows for 64-bit Windows
 on:
   release:
     types: ["published"]
+  push:
+    branches: ["trunk"]
 
 env:
   PYAPP_PROJECT_NAME: "tidal-wave"
-  PYAPP_PROJECT_VERSION: ${{ github.event.release.tag_name }}
+  # PYAPP_PROJECT_VERSION: ${{ github.event.release.tag_name }}
+  PYAPP_PROJECT_VERSION: "2024.1.14"
   PYAPP_DISTRIBUTION_EMBED: 1
-  PYAPP_PYTHON_VERSION: 3.11
+  PYAPP_PYTHON_VERSION: "3.11"
 
 permissions:
   contents: write
@@ -30,26 +33,24 @@ jobs:
       run: |
         & "C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe" --help
 
+    - name: Rename just-compiled EXE
+      shell: pwsh
+      run: |
+        Move-Item "C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe" ${{ github.workspace }}\tidal-wave_py311_pyapp.exe
+
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
       id: artifact-upload-step
+      uses: actions/upload-artifact@v4
       with:
         name: tidal-wave_${{ github.event.release.tag_name }}_py311_pyapp.exe
-        path: C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe
+        path: ${{ github.workspace }}\tidal-wave_py311_pyapp.exe
         compression-level: 0
         if-no-files-found: error
         retention-days: 1
-
-    - name: Download artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: tidal-wave_${{ github.event.release.tag_name }}_py311_pyapp.exe
-        github-token: ${{ github.token }}
 
     - name: Add artifact to release
       uses: softprops/action-gh-release@v1
       with:
         token: ${{ github.token }}
         fail_on_unmatched_files: true
-        files: |
-          ${{ steps.artifact-upload-step.outputs.download-path }}/tidal-wave_${{ github.event.release.tag_name }}_py311_pyapp.exe
+        files: ${{ github.workspace }}\tidal-wave_py311_pyapp.exe
