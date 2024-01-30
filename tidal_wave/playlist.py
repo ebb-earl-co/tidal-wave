@@ -20,7 +20,12 @@ from .models import (
 )
 from .requesting import request_playlists
 from .track import Track
-from .utils import download_cover_image, temporary_file, TIDAL_API_URL
+from .utils import (
+    download_cover_image,
+    replace_illegal_characters,
+    temporary_file,
+    TIDAL_API_URL,
+)
 from .video import Video
 
 logger = logging.getLogger("__name__")
@@ -43,13 +48,7 @@ class Playlist:
         if self.metadata is None:
             return
 
-        self.name = (
-            self.metadata.title.replace("/", "_")
-            .replace("|", "_")
-            .replace(":", " -")
-            .replace('"', "")
-            .replace("..", "")
-        )
+        self.name = replace_illegal_characters(self.metadata.title)
 
     def set_items(self, session: Session):
         """Uses data from TIDAL API /playlists/items endpoint to

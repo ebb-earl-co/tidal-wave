@@ -1,4 +1,4 @@
-name: Pyapp Build on macOS
+name: Pyapp Build on macOS for macOS x86_64 
 on:
   release:
     types: ["published"]
@@ -27,15 +27,15 @@ jobs:
 
     - name: Rename just-compiled binary
       run: |
-        mv /Users/runner/.cargo-install/pyapp/bin/pyapp /Users/runner/.cargo-install/pyapp/bin/tidal-wave_${{ github.event.release.tag_name }}_py311_macos.pyapp
+        mv /Users/runner/.cargo-install/pyapp/bin/pyapp ${{ github.repository }}/tidal-wave_${{ github.event.release.tag_name }}_py311_macos.pyapp
 
     - name: Test just-compiled binary
       run: |
-        /Users/runner/.cargo-install/pyapp/bin/tidal-wave_${{ github.event.release.tag_name }}_py311_macos.pyapp --help
+        ${{ github.repository }}/tidal-wave_${{ github.event.release.tag_name }}_py311_macos.pyapp --help
 
-    - name: Add (upload) artifact to release
+    - name: Add artifact to release
       uses: softprops/action-gh-release@v1
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
       with:
-        files: /Users/runner/.cargo-install/pyapp/bin/tidal-wave_${{ github.event.release.tag_name }}_py311_macos.pyapp
+        token: ${{ github.token }}
+        fail_on_unmatched_files: true
+        files: ${{ github.repository }}/tidal-wave_${{ github.event.release.tag_name }}_py311_macos.pyapp

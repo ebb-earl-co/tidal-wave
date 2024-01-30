@@ -9,6 +9,8 @@ from typing_extensions import Annotated
 import dataclass_wizard
 from requests.auth import AuthBase
 
+from .utils import replace_illegal_characters
+
 logger = logging.getLogger(__name__)
 IMAGE_URL: str = "https://resources.tidal.com/images/%s.jpg"
 AudioModeType = Literal["DOLBY_ATMOS", "SONY_360RA", "STEREO"]
@@ -135,12 +137,7 @@ class TracksEndpointResponseJSON(dataclass_wizard.JSONWizard):
     album: "TrackAlbum"
 
     def __post_init__(self):
-        name: str = (
-            self.title.replace("/", "_")
-            .replace("|", "_")
-            .replace(":", " -")
-            .replace('"', "")
-        )
+        name: str = replace_illegal_characters(self.title)
         self.name: str = name if self.version is None else f"{name} ({self.version})"
 
 
@@ -170,12 +167,7 @@ class AlbumsEndpointResponseJSON(dataclass_wizard.JSONWizard):
 
     def __post_init__(self):
         self.cover_url: str = IMAGE_URL % f"{self.cover.replace('-', '/')}/1280x1280"
-        self.name: str = (
-            self.title.replace("/", "_")
-            .replace("|", "_")
-            .replace(":", " -")
-            .replace('"', "")
-        )
+        self.name = replace_illegal_characters(self.title)
 
 
 @dataclass(frozen=True)
@@ -421,12 +413,7 @@ class VideosEndpointResponseJSON(dataclass_wizard.JSONWizard):
     artists: List["Artist"]
 
     def __post_init__(self):
-        self.name: str = (
-            self.title.replace("/", "_")
-            .replace("|", "_")
-            .replace(":", " -")
-            .replace('"', "")
-        )
+        self.name = replace_illegal_characters(self.title)
 
 
 @dataclass(frozen=True)

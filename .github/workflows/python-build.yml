@@ -12,8 +12,9 @@ jobs:
       url: https://pypi.org/p/tidal-wave
 
     permissions:
-
+      contents: write
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+
     steps:
     - uses: actions/checkout@v4
 
@@ -37,12 +38,10 @@ jobs:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
 
-    - name: Add (upload) artifact to release
+    - name: Add artifacts to release
       uses: softprops/action-gh-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       with:
+        token: ${{ github.token }}
         files: |
           dist/tidal-wave-${{ github.event.release.tag_name }}.tar.gz
           dist/tidal_wave-${{ github.event.release.tag_name }}-py3-none-any.whl
-

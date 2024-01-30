@@ -6,14 +6,35 @@ from pathlib import Path
 import tempfile
 from typing import Optional, Tuple, Union
 
-from .models import Artist
-
 from requests import Session
 
 TIDAL_API_URL: str = "https://api.tidal.com/v1"
 IMAGE_URL: str = "https://resources.tidal.com/images/%s.jpg"
 
 logger = logging.getLogger(__name__)
+
+
+def replace_illegal_characters(input_str: str) -> str:
+    """Some characters are illegal for use as file names on Windows
+    and on Unix-like systems. This function replaces any of the
+    forbidden characters found in input_str with a replacement;
+    mostly the empty string."""
+    s = (
+        input_str.replace("/", "_")
+        .replace("|", "_")
+        .replace(":", " -")
+        .replace('"', "")
+        .replace(">", "")
+        .replace("<", "")
+        .replace("/", "")
+        .replace("\\", "")
+        .replace("?", "")
+        .replace(" ?", "")
+        .replace("? ", "")
+        .replace("*", "")
+        .replace("\0", "")  # ASCII null character
+    )
+    return s
 
 
 def download_cover_image(
@@ -51,9 +72,7 @@ def download_cover_image(
         return output_file
 
 
-def download_artist_image(
-    session: Session, artist: Artist, output_dir: Path, dimension: int = 320
-) -> Optional[Path]:
+def download_artist_image(session, artist, output_dir, dimension=320) -> Optional[Path]:
     """Given a UUID that corresponds to a (JPEG) image on Tidal's servers,
     download the image file and write it as '{artist name}.jpeg'
     in the directory `output_dir`. Returns path to downloaded file"""
