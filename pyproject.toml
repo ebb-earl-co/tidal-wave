@@ -29,7 +29,7 @@ classifiers=[
 ]
 dependencies = [
     "backoff==2.2.1",
-    "dataclass-wizard==0.22.2",
+    "dataclass-wizard==0.22.3",
     "ffmpeg-python==0.2.0",
     "mutagen==1.47.0",
     "m3u8==4.0.0",
