@@ -98,7 +98,7 @@ jobs:
           --noupx \
           --onefile \
           --strip \
-          ./pyinstall.py 
+          ./pyinstaller.py 
     
     - name: Test just-compiled binary
       run: |
