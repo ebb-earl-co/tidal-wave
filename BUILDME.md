@@ -48,7 +48,7 @@ However, `pyinstaller` wants to package up a single Python script into an easily
     ./pyinstaller.py
   ```
   3. If successfully executed, the binary is located at `./.dist/tidal-wave_py311_linux`. In this situation, without FFmpeg, the binary is essentially the same as the `pyapp`-created binary for GNU/Linux. 
-  4. At the time of writing, there is no GitHub Action automation to build an executable for Windows with `pyinstaller`, as I have not figured out how to compiled FFmpeg from source on Windows, or cross-compile *for* Windows on a nother platform.
+  4. At the time of writing, there is no GitHub Action automation to build an executable for Windows with `pyinstaller`, as I have not figured out how to compiled FFmpeg from source on Windows, or cross-compile *for* Windows on another platform.
 
   The GitHub Actions automations that execute this process are:
   - `.github/workflows/pyinstaller-linux.yml`
@@ -58,7 +58,7 @@ However, `pyinstaller` wants to package up a single Python script into an easily
 # Container Image
 The file `Dockerfile` in the repository root is the template for an OCI container image. As the invocation of the container image is a self-contained runtime, not a single executable, it compiles FFmpeg from source, and passes the `ffmpeg` executable to the standard Python container image which executes `tidal-wave` as a module. This is the Docker [multi-stage build](https://docs.docker.com/build/building/multi-stage/#use-multi-stage-builds) pattern, and is useful to keep the container image size down.
 
-To wit, the container image creates directories that are owned by the user `debian`, creates a Python virtual environment, installs the `tidal-wave` Python dependencies, and executes the command `$ python3 -m tidal_wave ...` depending on arguments passed in with `$ docker run`. 
+To wit, the container image creates directories that are owned by the user `debian`, creates a Python virtual environment, installs the `tidal-wave` Python dependencies, and executes the command `$ python3 -m tidal_wave ...` depending on arguments passed in at runtime.
 
 # FFmpeg
 Ideally, for each release of `tidal-wave`, there will be a binary created and available on the Releases page for each platform. This would entail bundling [FFmpeg](https://ffmpeg.org), a triumphantly successful [FOSS](https://en.wikipedia.org/wiki/Free_and_open-source_software) project. Not only is it instructive to outline here how to compile a (usefully minimal) version of FFmpeg from source, but it is also required by FFmpeg's license: that is, instructions for how one's application that uses FFmpeg's libraries compiles FFmpeg, including disclaimers and links to FFmpeg's source code.
@@ -103,7 +103,7 @@ $ PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./co
 PATH="$HOME/bin:$PATH" make -j$(nproc) && make install
 ```
 
-The resulting binary, `${HOME}/bin/ffmpeg` will be around 2 MB in size. To fulfill the overarching goal of `tidal-wave`, bundling an executable with `pyinstaller` that includes FFmpeg, can be done by pointing to the directory with the newly-created FFmpeg binary:
+The resulting binary, `${HOME}/bin/ffmpeg` will be around 2 MB in size. To fulfill the overarching goal of `tidal-wave`, bundling an executable using `pyinstaller` that includes FFmpeg, can be done by pointing to the directory with the newly-created FFmpeg binary:
 ```bash
 $ ./venv/bin/pyinstaller \
     --distpath ./.dist \
