@@ -35,7 +35,7 @@ A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to ret
    - For macOS, the [FFmpeg download page](http://ffmpeg.org/download.html#build-mac) links to [this download source](https://evermeet.cx/ffmpeg/), or there is always [Homebrew](https://formulae.brew.sh/formula/ffmpeg)
    - For Windows, the [FFmpeg download page](http://ffmpeg.org/download.html#build-windows) lists 2 resources; or [`chocolatey`](https://community.chocolatey.org/packages/ffmpeg) is an option
  - This is a Python package, so **to use it in the default manner** you will need [Python 3](https://www.python.org/downloads/) on your system: this tool supports Python 3.8 or newer.
-   - *However*, as of version 2023.12.10, an [OCI container image](https://github.com/ebb-earl-co/tidal-wave/pkgs/container/tidal-wave); a [`pyapp`-compiled binaries](https://github.com/ebb-earl-co/tidal-wave/releases/latest); and [`pyinstaller`](https://pyinstaller.org/en/stable/)-created binaries for x86\_64 GNU/Linux, Apple Silicon macOS, and x86\_64 macOS are provided for download and use that *do not require Python installed*
+   - *However*, as of version 2023.12.10, an [OCI container image](https://github.com/ebb-earl-co/tidal-wave/pkgs/container/tidal-wave); `pyapp`-compiled binaries; and [`pyinstaller`](https://pyinstaller.org/en/stable/)-created binaries for x86\_64 GNU/Linux, Apple Silicon macOS, and x86\_64 macOS are provided for download and use that *do not require Python installed*
  - Only a handful of Python libraries are dependencies:
    - [`backoff`](https://pypi.org/project/backoff/)
    - [`dataclass-wizard`](https://pypi.org/project/dataclass-wizard/)
@@ -75,13 +75,7 @@ $ chmod +x ./tidal-wave_py311_FFmpeg6.1.1_linux
 $ mv ./tidal-wave_py311_FFmpeg6.1.1_linux ./tidal-wave_linux
 $ ./tidal-wave_linux --help
 ```
-### Shiv executable
-As yet another option, if you don't want to mess with `pip`, you can download the `.pyz` artifact in the [releases](https://github.com/ebb-earl-co/tidal-wave/releases/latest) page. It is a binary created using the [`shiv`](https://pypi.org/project/shiv/) project and is used in the following way:
-```bash
-# download the .pyz file of the latest (or your desired) release
-$ wget https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave.pyz
-$ ./tidal-wave.pyz --help
-```
+
 ### `pyapp` executable
 Download the Rust-compiled binary from [the Releases](https://github.com/ebb-earl-co/tidal-wave/releases/latest), and, on macOS or GNU/Linux, make it executable
 ```bash
