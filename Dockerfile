@@ -1,11 +1,7 @@
 # https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
-FROM debian:bookworm-slim as build_image
-RUN export DEBIAN_FRONTEND=noninteractive && apt-get update -qq && apt-get -y install --no-install-recommends \
-  autoconf \
-  build-essential \
-  pkg-config \
-  yasm
-COPY FFmpeg-6.1.1/ ./FFmpeg-6.1.1/
+FROM docker.io/library/debian:bookworm-slim as build_image
+RUN export DEBIAN_FRONTEND=noninteractive && apt-get update -qq && apt-get -y install --no-install-recommends build-essential pkg-config yasm
+COPY FFmpeg-6.1.1/ FFmpeg-6.1.1/
 WORKDIR FFmpeg-6.1.1
 RUN PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
       --prefix="$HOME/ffmpeg_build" \
@@ -37,7 +33,7 @@ RUN PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./
     make install && \
     hash -r
 
-FROM python:3.11-slim as runtime_image
+FROM docker.io/library/python:3.11-slim as runtime_image
 
 LABEL org.opencontainers.image.authors "colinho <github@colin.technology>"
 LABEL org.opencontainers.image.description "Waving at the TIDAL music service with Python"
@@ -56,11 +52,15 @@ RUN useradd --create-home --shell /bin/bash debian
 COPY --from=build_image --chown=debian:debian /root/bin/ffmpeg /usr/local/bin/ffmpeg
 USER debian
 WORKDIR /home/debian
-COPY --chown=debian:debian requirements.txt .
+COPY --chown=debian:debian pyproject.toml .
+COPY --chown=debian:debian setup.py .
+COPY --chown=debian:debian README.md .
+COPY --chown=debian:debian LICENSE .
 COPY --chown=debian:debian tidal_wave/ ./tidal_wave/
-RUN mkdir -p /home/debian/.config/tidal-wave/ /home/debian/Music/ && \
-    chown -R debian:debian /home/debian/.config/tidal-wave/ /home/debian/Music/ && \
-    pip install --user -r requirements.txt
+RUN pip install --user --upgrade pip setuptools wheel dumb-init && \
+    pip install --user .[all] && \
+    mkdir -p /home/debian/.config/tidal-wave/ /home/debian/Music/ && \
+    chown -R debian:debian /home/debian/.config/tidal-wave/ /home/debian/Music/
+ENV PATH="/home/debian/.local/bin:$PATH"
 VOLUME /home/debian/.config/tidal-wave /home/debian/Music
-ENTRYPOINT ["python3", "-m", "tidal_wave"]
-CMD ["--help"]
+ENTRYPOINT ["dumb-init", "--"]
