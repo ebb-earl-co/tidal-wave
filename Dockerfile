@@ -52,16 +52,13 @@ RUN useradd --create-home --shell /bin/bash debian
 COPY --from=build_image --chown=debian:debian /root/bin/ffmpeg /usr/local/bin/ffmpeg
 USER debian
 WORKDIR /home/debian
-COPY --chown=debian:debian pyproject.toml .
-COPY --chown=debian:debian setup.py .
-COPY --chown=debian:debian README.md .
-COPY --chown=debian:debian LICENSE .
+COPY --chown=debian:debian requirements.txt .
 COPY --chown=debian:debian tidal_wave/ ./tidal_wave/
 RUN pip install --user --upgrade pip setuptools wheel dumb-init && \
-    pip install --user .[all] && \
+    pip install --user -r requirements.txt && \
     mkdir -p /home/debian/.config/tidal-wave/ /home/debian/Music/ && \
     chown -R debian:debian /home/debian/.config/tidal-wave/ /home/debian/Music/
 ENV PATH="/home/debian/.local/bin:$PATH"
 VOLUME /home/debian/.config/tidal-wave /home/debian/Music
-ENTRYPOINT ["dumb-init", "--", "tidal-wave"]
+ENTRYPOINT ["dumb-init", "--", "python3", "-m", "tidal_wave"]
 CMD ["--help"]
