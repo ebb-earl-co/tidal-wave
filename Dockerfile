@@ -63,4 +63,5 @@ RUN pip install --user --upgrade pip setuptools wheel dumb-init && \
     chown -R debian:debian /home/debian/.config/tidal-wave/ /home/debian/Music/
 ENV PATH="/home/debian/.local/bin:$PATH"
 VOLUME /home/debian/.config/tidal-wave /home/debian/Music
-ENTRYPOINT ["dumb-init", "--"]
+ENTRYPOINT ["dumb-init", "--", "tidal-wave"]
+CMD ["--help"]
