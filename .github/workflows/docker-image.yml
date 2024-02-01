@@ -54,4 +54,9 @@ jobs:
         cache-to: type=gha,mode=max
         platforms: linux/amd64, linux/arm64
         tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+        labels: |
+          org.opencontainers.image.authors "colinho <github@colin.technology>"
+          org.opencontainers.image.description "Waving at the TIDAL music service with Python"
+          org.opencontainers.image.documentation "https://github.com/ebb-earl-co/tidal-wave/blob/trunk/README.md"
+          org.opencontainers.image.source "https://github.com/ebb-earl-co/tidal-wave"
+          org.opencontainers.image.licenses "LGPL-2.1-only"
