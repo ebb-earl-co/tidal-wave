@@ -42,9 +42,9 @@ class Video:
 
     def get_contributors(self, session: Session):
         """Request from TIDAL API /videos/contributors endpoint"""
-        self.contributors: Optional[
-            VideosContributorsResponseJSON
-        ] = request_video_contributors(session, self.video_id)
+        self.contributors: Optional[VideosContributorsResponseJSON] = (
+            request_video_contributors(session, self.video_id)
+        )
 
     def get_stream(self, session: Session, video_format=VideoFormat.high):
         """Populates self.stream by requesting from TIDAL API
@@ -142,10 +142,10 @@ class Video:
                     acodec="copy",
                     loglevel="quiet",
                 ).run()
-            except Exception:
+            except ffmpeg.Error:
                 logger.warning(
-                    f"Could not convert video {self.video_id} with FFmpeg; "
-                    "metadata will not be written and format will stay as MPEG-TS"
+                    f"Could not convert video {self.video_id} with FFmpeg: "
+                    "metadata will not be added and format will stay as MPEG-TS"
                 )
 
         return self.outfile

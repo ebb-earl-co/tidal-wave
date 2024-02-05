@@ -54,6 +54,13 @@ def main(
             help="No-op unless passing TIDAL artist. Whether to include artist's EPs and singles with albums",
         ),
     ] = False,
+    no_extra_files: Annotated[
+        bool,
+        typer.Option(
+            "--no-extra-files",
+            help="Whether to not even attempt to retrieve artist bio, artist image, album review, or playlist m3u8",
+        ),
+    ] = False,
 ):
     logging.basicConfig(
         format="%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s",
@@ -80,7 +87,10 @@ def main(
         if isinstance(tidal_resource, TidalTrack):
             track = Track(track_id=tidal_resource.tidal_id)
             track.get(
-                session=session, audio_format=audio_format, out_dir=output_directory
+                session=session,
+                audio_format=audio_format,
+                out_dir=output_directory,
+                no_extra_files=no_extra_files,
             )
 
             if loglevel == LogLevel.debug:
@@ -89,7 +99,10 @@ def main(
         elif isinstance(tidal_resource, TidalAlbum):
             album = Album(album_id=tidal_resource.tidal_id)
             album.get(
-                session=session, audio_format=audio_format, out_dir=output_directory
+                session=session,
+                audio_format=audio_format,
+                out_dir=output_directory,
+                no_extra_files=no_extra_files,
             )
 
             if loglevel == LogLevel.debug:
@@ -102,6 +115,7 @@ def main(
                 audio_format=audio_format,
                 out_dir=output_directory,
                 include_eps_singles=include_eps_singles,
+                no_extra_files=no_extra_files,
             )
             raise typer.Exit(code=0)
         elif isinstance(tidal_resource, TidalVideo):
@@ -114,7 +128,10 @@ def main(
         elif isinstance(tidal_resource, TidalPlaylist):
             playlist = Playlist(playlist_id=tidal_resource.tidal_id)
             playlist.get(
-                session=session, audio_format=audio_format, out_dir=output_directory
+                session=session,
+                audio_format=audio_format,
+                out_dir=output_directory,
+                no_extra_files=no_extra_files,
             )
 
             if loglevel == LogLevel.debug:
@@ -123,7 +140,10 @@ def main(
         elif isinstance(tidal_resource, TidalMix):
             mix = Mix(mix_id=tidal_resource.tidal_id)
             mix.get(
-                session=session, audio_format=audio_format, out_dir=output_directory
+                session=session,
+                audio_format=audio_format,
+                out_dir=output_directory,
+                no_extra_files=no_extra_files,
             )
 
             if loglevel == LogLevel.debug:

@@ -66,7 +66,7 @@ class Artist:
             session, self.artist_id
         )
 
-    def set_dir(self, out_dir: Path):
+    def set_artist_dir(self, out_dir: Path):
         """This method sets self.artist_dir and creates the directory on the file system
         if it does not exist"""
         self.name: str = self.metadata.name.replace("..", "")
@@ -134,23 +134,25 @@ class Artist:
         audio_format: AudioFormat,
         out_dir: Path,
         include_eps_singles: bool,
+        no_extra_files: bool,
     ):
         """This is the driver method of the class. It executes the other
         methods in order:
-            1. set_metadata
-            2. set_dir
-            3. save_artist_image
-            4. get_videos
-            5. get_albums
+            1. set_metadata()
+            2. set_artist_dir()
+            3. get_videos()
+            4. get_albums()
+        Then, if no_extra_files is False, save_artist_image()
         """
         self.set_metadata(session)
-
         if self.metadata is None:
             return
 
-        self.set_dir(out_dir)
-        self.save_artist_image(session)
+        self.set_artist_dir(out_dir)
         self.get_videos(session, out_dir)
         if include_eps_singles:
             self.get_albums(session, audio_format, out_dir, include_eps_singles=True)
         self.get_albums(session, audio_format, out_dir, include_eps_singles=False)
+
+        if not no_extra_files:
+            self.save_artist_image(session)

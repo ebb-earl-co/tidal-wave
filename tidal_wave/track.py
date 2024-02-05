@@ -346,8 +346,8 @@ class Track:
         return outfile
 
     def craft_tags(self):
-        """Using the TAG_MAPPING dictionary, write the correct values
-        of various metadata tags to the file.
+        """Using the TAG_MAPPING dictionary, add the correct values
+        of various metadata tags to the attribute self.tags.
         E.g. for .flac files, the album's artist is 'ALBUMARTIST',
         but for .m4a files, the album's artist is 'aART'."""
         tags = dict()
@@ -428,7 +428,7 @@ class Track:
         """This method sets the metadata tag 'covr' in the case of .m4a files,
         and adds a mutagen.flac.Picture() tag to self.mutagen in the case of
         .flac files. It has been split out from self.set_tags so that it
-        can be executed BEFORE self.reorder_streams(): otherwise, the .m4a
+        can be executed BEFORE self.remux(): otherwise, the .m4a
         metadata tags starting with '----com.apple.iTunes:' are lost"""
         if self.codec == "flac":
             p = mutagen.flac.Picture()
@@ -450,7 +450,7 @@ class Track:
         self.mutagen.update(**self.tags)
         self.mutagen.save()
 
-    def reorder_streams(self):
+    def remux(self):
         """It is currently not possible to have mutagen set the order of
         the tracks in the audio file; that is, sometimes the album cover
         "video" track is reported as the 0th track by FFmpeg. Some audio
@@ -493,7 +493,12 @@ class Track:
         out_dir: Path,
         metadata: Optional[TracksEndpointResponseJSON] = None,
         album: Optional[AlbumsEndpointResponseJSON] = None,
+        no_extra_files: bool = True,
     ) -> Optional[str]:
+        """This is the main driver method of Track. It executes the other
+        methods in order, catching Exceptions and attempting to handle
+        edge cases."""
+
         if metadata is None:
             self.get_metadata(session)
         else:
@@ -551,16 +556,6 @@ class Track:
         else:
             self.set_album_dir(out_dir)
 
-        try:
-            self.save_artist_image(session)
-        except Exception:
-            pass
-
-        try:
-            self.save_artist_bio(session)
-        except Exception:
-            pass
-
         self.get_credits(session)
         self.get_stream(session, audio_format)
         if self.stream is None:
@@ -590,14 +585,28 @@ class Track:
             )
         else:
             self.save_album_cover(session)
-            # Now that album cover has attempted to be saved, try to
-            # add it as metadata tag
             if self.cover_path.exists() and self.cover_path.stat().st_size > 0:
                 self.set_cover_image_tag()
 
-        self.reorder_streams()
+        self.remux()
         self.craft_tags()
         self.set_tags()
+
+        if not no_extra_files:
+            try:
+                self.save_artist_image(session)
+            except Exception:
+                pass
+
+            try:
+                self.save_artist_bio(session)
+            except Exception:
+                pass
+        else:
+            try:
+                self.cover_path.unlink()
+            except FileNotFoundError:
+                pass
 
         return self.absolute_outfile
 

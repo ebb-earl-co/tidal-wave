@@ -96,20 +96,21 @@ docker pull ghcr.io/ebb-earl-co/tidal-wave:latest
 ## Quickstart
 Run `python3 tidal-wave --help` to see the options available. Or, if you followed the repository cloning steps above, run `python3 -m tidal_wave --help` from the repository root directory, `tidal-wave`. In either case, you should see something like the following:
 ```bash
-Usage: tidal-wave [OPTIONS] TIDAL_URL [OUTPUT_DIRECTORY]                                                                                                                                  
-                                                                                                                                                                                            
-╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ *    tidal_url             TEXT                The Tidal album or artist or mix or playlist or track or video to download [default: None] [required]                                     │
-│      output_directory      [OUTPUT_DIRECTORY]  The parent directory under which directory(ies) of files will be written [default: /home/${USER}/music/]                                  │
-╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --audio-format               [360|Atmos|HiRes|MQA|Lossless|High|Low]  [default: Lossless]                                                                                                │
-│ --loglevel                   [DEBUG|INFO|WARNING|ERROR|CRITICAL]      [default: INFO]                                                                                                    │
-│ --include-eps-singles                                                 No-op unless passing TIDAL artist. Whether to include artist's EPs and singles with albums                         │
-│ --install-completion                                                  Install completion for the current shell.                                                                          │
-│ --show-completion                                                     Show completion for the current shell, to copy it or customize the installation.                                   │
-│ --help                                                                Show this message and exit.                                                                                        │
-╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+Usage: python -m tidal_wave [OPTIONS] TIDAL_URL [OUTPUT_DIRECTORY]                                                                                                                                                                  
+                                                                                                                                                                                                                                     
+╭─ Arguments ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ *    tidal_url             TEXT                The Tidal album or artist or mix or playlist or track or video to download [default: None] [required]                                                                              │
+│      output_directory      [OUTPUT_DIRECTORY]  The parent directory under which directory(ies) of files will be written [default: ~/Music]                                                                                        │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --audio-format               [360|Atmos|HiRes|MQA|Lossless|High|Low]  [default: Lossless]                                                                                                                                         │
+│ --loglevel                   [DEBUG|INFO|WARNING|ERROR|CRITICAL]      [default: INFO]                                                                                                                                             │
+│ --include-eps-singles                                                 No-op unless passing TIDAL artist. Whether to include artist's EPs and singles with albums                                                                  │
+│ --no-extra-files                                                      Whether to not even attempt to retrieve artist bio, artist image, album review, or playlist m3u8                                                            │
+│ --install-completion                                                  Install completion for the current shell.                                                                                                                   │
+│ --show-completion                                                     Show completion for the current shell, to copy it or customize the installation.                                                                            │
+│ --help                                                                Show this message and exit.                                                                                                                                 │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
 ## Usage
@@ -129,6 +130,10 @@ Similarly, all media retrieved is placed in subdirectories of the user's default
  ```bash
  (.venv) $ tidal-wave https://tidal.com/browse/track/226092704
  ```
+ - By default, the track(s) and/or video(s) are retrieved, and other files are retrieved as well; such as the artist's bio JSON, the artist's TIDAL image, the playlist's .m3u8 file, the album's review JSON, and a few others. In order **not to retrieve any of those**, pass the `--no-extra-files` flag:
+ ```bash
+ (.venv) $ tidal-wave https://tidal.com/browse/track/226092704 --no-extra-files
+ ```
  - To (attempt to) get a Dolby Atmos track, and you desire to see *all* of the log output, the following will do that
  ```bash
  (.venv) $ tidal-wave https://tidal.com/browse/track/... --audio-format atmos --loglevel debug
@@ -136,12 +141,7 @@ Similarly, all media retrieved is placed in subdirectories of the user's default
  **Keep in mind that authentication from an Android (preferred), iOS, Windows, or macOS device will need to be extracted and passed to this tool in order to access HiRes FLAC and Sony 360 Reality Audio versions of tracks**
  - To (attempt to) get a HiRes FLAC version of an album, and you desire to see only warnings and errors, the following will do that:
  ```bash
- $ ./tidal-wave.pyz https://tidal.com/browse/album/... --audio-format hires --loglevel warning
- ```
-
- - To (attempt to) get a video, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when retrieving videos.
- ```bash
- $ ./tidal-wave.pyz https://tidal.com/browse/video/...
+ $ tidal-wave https://tidal.com/browse/album/... --audio-format hires --loglevel warning
  ```
 
  - To (attempt to) get a playlist, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when retrieving videos.
@@ -188,6 +188,22 @@ $ docker run \
     https://listen.tidal.com/artist/... \
     --audio-format hires \
     --include-eps-singles
+```
+
+Perhaps you don't want a single-shot executable type of Docker invocation, but rather a long-lived container into which one can `docker exec` in order to request media at one's leisure. This is one of the requested features from the GitHub Discussions, in particular for Unraid users. In order to do this, use the following, slightly modified Docker command:
+```bash
+$ mkdir -p ./Music/ ./config/tidal-wave/
+$ docker run \
+    --name tidal-wave \
+    -dit \
+    --volume ./Music:/home/debian/Music \
+    --volume ./config/tidal-wave:/home/debian/.config/tidal-wave \
+    --entrypoint "/bin/bash" \
+    ghcr.io/ebb-earl-co/tidal-wave:latest
+$ docker exec -it tidal-wave python3 -m tidal_wave https://tidal.com/browse/album/...
+$ docker exec -it tidal-wave python3 -m tidal_wave https://tidal.com/browse/mix/...
+$ docker exec -it tidal-wave python3 -m tidal_wave https://tidal.com/browse/playlist/...
+$ docker exec -it tidal-wave python3 -m tidal_wave https://tidal.com/browse/track/...
 ```
 ## Development
 The easiest way to start working on development is to fork this project on GitHub, or clone the repository to your local machine and do the pull requesting on GitHub later. In any case, there will need to be some getting from GitHub first, so, roughly, the process is:
