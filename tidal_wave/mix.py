@@ -33,7 +33,7 @@ class Mix:
         self.mix_dir: Optional[Path] = None
         self.mix_cover_saved: bool = False
 
-    def get_metadata(self, session: Session):
+    def set_metadata(self, session: Session):
         """Request from TIDAL API /playlists endpoint"""
         self.metadata: Optional[PlaylistsEndpointResponseJSON] = request_mixes(
             session=session, mix_id=self.mix_id
@@ -55,7 +55,7 @@ class Mix:
         else:
             self.items: Tuple[Optional[MixItem]] = tuple(mix_items.items)
 
-    def set_dir(self, out_dir: Path):
+    def set_mix_dir(self, out_dir: Path):
         """Populates self.mix_dir based on self.name, self.mix_id"""
         mix_substring: str = f"{self.name} [{self.mix_id}]"
         self.mix_dir: Path = out_dir / "Mixes" / mix_substring
@@ -64,7 +64,7 @@ class Mix:
     def save_cover_image(self, session: Session, out_dir: Path):
         """Requests self.metadata.image and attempts to write it to disk"""
         if self.mix_dir is None:
-            self.set_dir(out_dir=out_dir)
+            self.set_mix_dir(out_dir=out_dir)
         self.cover_path: Path = self.mix_dir / "cover.jpg"
         if not self.cover_path.exists():
             with session.get(
@@ -76,7 +76,9 @@ class Mix:
         else:
             self.mix_cover_saved = True
 
-    def get_items(self, session: Session, audio_format: AudioFormat):
+    def get_items(
+        self, session: Session, audio_format: AudioFormat, no_extra_files: bool
+    ):
         """Using either Track.get() or Video.get(), attempt to request
         the data for each track or video in self.items"""
         if len(self.items) == 0:
@@ -93,6 +95,7 @@ class Mix:
                     audio_format=audio_format,
                     out_dir=self.mix_dir,
                     metadata=item,
+                    no_extra_files=no_extra_files,
                 )
                 tracks_videos[i] = track
             elif isinstance(item, VideosEndpointResponseJSON):
@@ -101,15 +104,16 @@ class Mix:
                     session=session,
                     out_dir=self.mix_dir,
                     metadata=item,
+                    no_extra_files=no_extra_files,
                 )
                 tracks_videos[i] = video
             else:
                 tracks_videos[i] = None
                 continue
         else:
-            self.tracks_videos: Tuple[
-                Tuple[int, Optional[Union[Track, Video]]]
-            ] = tuple(tracks_videos)
+            self.tracks_videos: Tuple[Tuple[int, Optional[Union[Track, Video]]]] = (
+                tuple(tracks_videos)
+            )
         return tracks_videos
 
     def flatten_mix_dir(self):
@@ -220,36 +224,39 @@ class Mix:
     def dump(self, fp=sys.stdout):
         json.dump(self.files, fp)
 
-    def get(self, session: Session, audio_format: AudioFormat, out_dir: Path):
+    def get(
+        self,
+        session: Session,
+        audio_format: AudioFormat,
+        out_dir: Path,
+        no_extra_files: bool,
+    ):
         """The main method of this class, executing a number of other methods
         in a row:
-          - self.get_metadata()
+          - self.set_metadata()
           - self.set_items()
-          - self.set_dir()
+          - self.set_mix_dir()
           - self.save_cover_image()
           - self.get_items()
           - self.flatten_playlist_dir()
         """
-        self.get_metadata(session)
+        self.set_metadata(session)
 
         if self.metadata is None:
             self.files = {}
             return
 
         self.set_items(session)
-        self.set_dir(out_dir)
-        self.save_cover_image(session, out_dir)
-        try:
-            self.save_description()
-        except Exception:
-            pass
+        self.set_mix_dir(out_dir)
 
-        _get_items = self.get_items(session, audio_format)
-        if _get_items is None:
+        if self.get_items(session, audio_format, no_extra_files) is None:
             logger.critical(f"Could not retrieve mix with ID '{self.mix_id}'")
             return
         self.flatten_mix_dir()
         logger.info(f"Mix files written to '{self.mix_dir}'")
+
+        if not no_extra_files:
+            self.save_cover_image(session, out_dir)
 
 
 class TidalMixException(Exception):

@@ -39,7 +39,7 @@ class Playlist:
         self.playlist_dir: Optional[Path] = None
         self.playlist_cover_saved: bool = False
 
-    def get_metadata(self, session: Session):
+    def set_metadata(self, session: Session):
         """Request from TIDAL API /playlists endpoint"""
         self.metadata: Optional[PlaylistsEndpointResponseJSON] = request_playlists(
             session=session, identifier=self.playlist_id
@@ -61,7 +61,7 @@ class Playlist:
         else:
             self.items: Tuple[Optional[PlaylistItem]] = tuple(playlist_items.items)
 
-    def set_dir(self, out_dir: Path):
+    def set_playlist_dir(self, out_dir: Path):
         """Populates self.playlist_dir based on self.name, self.playlist_id"""
         playlist_substring: str = f"{self.name} [{self.playlist_id}]"
         self.playlist_dir: Path = out_dir / "Playlists" / playlist_substring
@@ -70,7 +70,7 @@ class Playlist:
     def save_cover_image(self, session: Session, out_dir: Path):
         """Requests self.metadata.image and attempts to write it to disk"""
         if self.playlist_dir is None:
-            self.set_dir(out_dir=out_dir)
+            self.set_playlist_dir(out_dir=out_dir)
         self.cover_path: Path = self.playlist_dir / "cover.jpg"
         if not self.cover_path.exists():
             download_cover_image(
@@ -84,12 +84,14 @@ class Playlist:
 
     def save_description(self):
         """Requests self.metadata.description and attempts to write it to disk"""
-        description_path: Path = self.playlist_dir / "PlaylistDescription.txt"
+        self.description_path: Path = self.playlist_dir / "PlaylistDescription.txt"
         if self.metadata.description is not None and len(self.metadata.description) > 0:
-            if not description_path.exists():
-                description_path.write_text(f"{self.metadata.description}\n")
+            if not self.description_path.exists():
+                self.description_path.write_text(f"{self.metadata.description}\n")
 
-    def get_items(self, session: Session, audio_format: AudioFormat):
+    def get_items(
+        self, session: Session, audio_format: AudioFormat, no_extra_files: bool
+    ):
         """Using either Track.get() or Video.get(), attempt to request
         the data for each track or video in self.items"""
         if len(self.items) == 0:
@@ -106,6 +108,7 @@ class Playlist:
                     audio_format=audio_format,
                     out_dir=self.playlist_dir,
                     metadata=item,
+                    no_extra_files=no_extra_files,
                 )
                 tracks_videos[i] = track
             elif isinstance(item, VideosEndpointResponseJSON):
@@ -114,15 +117,16 @@ class Playlist:
                     session=session,
                     out_dir=self.playlist_dir,
                     metadata=item,
+                    no_extra_files=no_extra_files,
                 )
                 tracks_videos[i] = video
             else:
                 tracks_videos[i] = None
                 continue
         else:
-            self.tracks_videos: Tuple[
-                Tuple[int, Optional[Union[Track, Video]]]
-            ] = tuple(tracks_videos)
+            self.tracks_videos: Tuple[Tuple[int, Optional[Union[Track, Video]]]] = (
+                tuple(tracks_videos)
+            )
         return tracks_videos
 
     def flatten_playlist_dir(self):
@@ -233,7 +237,9 @@ class Playlist:
         in order to be able to access self.files
         N.b. the already-written file is temporarily copied to a .mp4 version in a
         temporary directory because .m4a files cannot be read with mutagen."""
-        m3u_text: str = f"#EXTM3U\n#EXTENC:UTF-8\n#EXTIMG:{str(self.cover_path.absolute())}\n#PLAYLIST:{self.name}\n"
+        m3u_text: str = (
+            f"#EXTM3U\n#EXTENC:UTF-8\n#EXTIMG:{str(self.cover_path.absolute())}\n#PLAYLIST:{self.name}\n"
+        )
 
         logger.info(
             f"Creating .m3u8 playlist file for Playlist with ID '{self.playlist_id}'"
@@ -288,30 +294,33 @@ class Playlist:
     def dump(self, fp=sys.stdout):
         json.dump(self.files, fp)
 
-    def get(self, session: Session, audio_format: AudioFormat, out_dir: Path):
+    def get(
+        self,
+        session: Session,
+        audio_format: AudioFormat,
+        out_dir: Path,
+        no_extra_files: bool,
+    ):
         """The main method of this class, executing a number of other methods
         in a row:
-          - self.get_metadata()
+          - self.set_metadata()
           - self.set_items()
-          - self.set_dir()
-          - self.save_cover_image()
-          - self.save_description()
+          - self.set_playlist_dir()
           - self.get_items()
           - self.flatten_playlist_dir()
+        Then, if no_extra_files is False,
+          - self.save_cover_image()
+          - self.save_description()
+          - self.craft_m3u8_text()
         """
-        self.get_metadata(session)
+        self.set_metadata(session)
 
         if self.metadata is None:
             self.files = {}
             return
 
         self.set_items(session)
-        self.set_dir(out_dir)
-        self.save_cover_image(session, out_dir)
-        try:
-            self.save_description()
-        except Exception:
-            pass
+        self.set_playlist_dir(out_dir)
 
         _get_items = self.get_items(session, audio_format)
         if _get_items is None:
@@ -319,20 +328,26 @@ class Playlist:
             return
 
         self.flatten_playlist_dir()
-
-        try:
-            m3u8_text: str = self.craft_m3u8_text()
-        except Exception as e:
-            logger.warning(
-                "Unable to create playlist.m3u8 file for "
-                f"playlist with ID '{self.playlist_id}'"
-            )
-            logger.debug(e)
-        else:
-            with open(self.playlist_dir / "playlist.m3u8", "w") as f:
-                f.write(m3u8_text)
-
         logger.info(f"Playlist files written to '{self.playlist_dir}'")
+
+        if not no_extra_files:
+            try:
+                self.save_description()
+            except Exception:
+                pass
+
+            self.save_cover_image(session, out_dir)
+
+            try:
+                m3u8_text: str = self.craft_m3u8_text()
+            except Exception as e:
+                logger.warning(
+                    "Unable to create playlist.m3u8 file for "
+                    f"playlist with ID '{self.playlist_id}'"
+                )
+                logger.debug(e)
+            else:
+                (self.playlist_dir / "playlist.m3u8").write_text(m3u8_text)
 
 
 class TidalPlaylistException(Exception):
@@ -445,9 +460,9 @@ def get_playlist(
         playlists_response: dict = request_playlist_items(
             session=session, playlist_id=playlist_id
         )
-        playlists_items_response_json: Optional[
-            "PlaylistsItemsResponseJSON"
-        ] = playlist_maker(playlists_response=playlists_response)
+        playlists_items_response_json: Optional["PlaylistsItemsResponseJSON"] = (
+            playlist_maker(playlists_response=playlists_response)
+        )
     except Exception as e:
         logger.exception(TidalPlaylistException(e.args[0]))
     finally:
