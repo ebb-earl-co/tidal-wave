@@ -142,10 +142,10 @@ class Video:
                     acodec="copy",
                     loglevel="quiet",
                 ).run()
-            except Exception:
+            except ffmpeg.Error:
                 logger.warning(
-                    f"Could not convert video {self.video_id} with FFmpeg; "
-                    "metadata will not be written and format will stay as MPEG-TS"
+                    f"Could not convert video {self.video_id} with FFmpeg: "
+                    "metadata will not be added and format will stay as MPEG-TS"
                 )
 
         return self.outfile

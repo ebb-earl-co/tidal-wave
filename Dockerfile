@@ -33,7 +33,7 @@ RUN PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./
     make install && \
     hash -r
 
-FROM docker.io/library/python:3.11-slim as runtime_image
+FROM docker.io/library/python:3.11-slim
 
 LABEL org.opencontainers.image.authors "colinho <github@colin.technology>"
 LABEL org.opencontainers.image.description "Waving at the TIDAL music service with Python"
