@@ -34,6 +34,16 @@ jobs:
       run: |
         chmod +x ${{ github.workspace }}/tidal-wave_py311.pyapp
         ${{ github.workspace }}/tidal-wave_py311.pyapp --help
+    
+    - name: Upload artifact
+      id: artifact-upload-step
+      uses: actions/upload-artifact@v4
+      with:
+        name: tidal-wave_${{ github.event.release.tag_name }}_py311.pyapp
+        path: ${{ github.workspace }}/tidal-wave_py311.pyapp
+        compression-level: 0
+        if-no-files-found: error
+        retention-days: 1
 
     - name: Add (upload) artifact to release
       uses: softprops/action-gh-release@v1

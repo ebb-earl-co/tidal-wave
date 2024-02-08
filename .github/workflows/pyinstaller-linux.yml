@@ -20,7 +20,7 @@ jobs:
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
         version: 1.0
-        packages: autoconf build-essential pkg-config yasm
+        packages: build-essential pkg-config yasm
 
     - name: Build FFmpeg from source (git submodule)
       run: |
