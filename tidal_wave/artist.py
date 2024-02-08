@@ -78,7 +78,8 @@ class Artist:
         session: Session,
         audio_format: AudioFormat,
         out_dir: Path,
-        include_eps_singles: bool = False,
+        include_eps_singles: bool,
+        no_extra_files: bool,
     ) -> List[Optional[str]]:
         """This method first fetches the total albums on TIDAL's service
         corresponding to the artist with ID self.artist_id. Then, each of
@@ -105,6 +106,7 @@ class Artist:
                 audio_format=audio_format,
                 out_dir=out_dir,
                 metadata=a,
+                no_extra_files=no_extra_files,
             )
 
     def get_videos(
@@ -151,8 +153,20 @@ class Artist:
         self.set_artist_dir(out_dir)
         self.get_videos(session, out_dir)
         if include_eps_singles:
-            self.get_albums(session, audio_format, out_dir, include_eps_singles=True)
-        self.get_albums(session, audio_format, out_dir, include_eps_singles=False)
+            self.get_albums(
+                session,
+                audio_format,
+                out_dir,
+                include_eps_singles=True,
+                no_extra_files=no_extra_files,
+            )
+        self.get_albums(
+            session,
+            audio_format,
+            out_dir,
+            include_eps_singles=False,
+            no_extra_files=no_extra_files,
+        )
 
         if not no_extra_files:
             self.save_artist_image(session)
