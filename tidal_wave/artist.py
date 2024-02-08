@@ -79,6 +79,7 @@ class Artist:
         audio_format: AudioFormat,
         out_dir: Path,
         include_eps_singles: bool = False,
+        no_extra_files: bool
     ) -> List[Optional[str]]:
         """This method first fetches the total albums on TIDAL's service
         corresponding to the artist with ID self.artist_id. Then, each of
@@ -105,6 +106,7 @@ class Artist:
                 audio_format=audio_format,
                 out_dir=out_dir,
                 metadata=a,
+                no_extra_files=no_extra_files,
             )
 
     def get_videos(
