@@ -153,8 +153,20 @@ class Artist:
         self.set_artist_dir(out_dir)
         self.get_videos(session, out_dir)
         if include_eps_singles:
-            self.get_albums(session, audio_format, out_dir, include_eps_singles=True)
-        self.get_albums(session, audio_format, out_dir, include_eps_singles=False)
+            self.get_albums(
+                session,
+                audio_format,
+                out_dir,
+                include_eps_singles=True,
+                no_extra_files=no_extra_files,
+            )
+        self.get_albums(
+            session,
+            audio_format,
+            out_dir,
+            include_eps_singles=False,
+            no_extra_files=no_extra_files,
+        )
 
         if not no_extra_files:
             self.save_artist_image(session)
