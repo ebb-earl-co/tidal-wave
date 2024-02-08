@@ -35,11 +35,11 @@ RUN PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./
 
 FROM docker.io/library/python:3.11-slim
 
-LABEL org.opencontainers.image.authors "colinho <github@colin.technology>"
-LABEL org.opencontainers.image.description "Waving at the TIDAL music service with Python"
-LABEL org.opencontainers.image.documentation "https://github.com/ebb-earl-co/tidal-wave/blob/trunk/README.md"
-LABEL org.opencontainers.image.source "https://github.com/ebb-earl-co/tidal-wave"
-LABEL org.opencontainers.image.licenses "LGPL-2.1-only"
+LABEL org.opencontainers.image.authors="colinho <github@colin.technology>"
+LABEL org.opencontainers.image.description="Waving at the TIDAL music service with Python"
+LABEL org.opencontainers.image.documentation="https://github.com/ebb-earl-co/tidal-wave/blob/trunk/README.md"
+LABEL org.opencontainers.image.source="https://github.com/ebb-earl-co/tidal-wave"
+LABEL org.opencontainers.image.licenses="LGPL-2.1-only"
 
 ENV PIP_DEFAULT_TIMEOUT=100 \
     # Allow statements and log messages to immediately appear
