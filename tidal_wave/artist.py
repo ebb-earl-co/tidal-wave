@@ -78,8 +78,8 @@ class Artist:
         session: Session,
         audio_format: AudioFormat,
         out_dir: Path,
-        include_eps_singles: bool 
-        no_extra_files: bool
+        include_eps_singles: bool,
+        no_extra_files: bool,
     ) -> List[Optional[str]]:
         """This method first fetches the total albums on TIDAL's service
         corresponding to the artist with ID self.artist_id. Then, each of
