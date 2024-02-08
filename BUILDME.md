@@ -68,7 +68,6 @@ To fulfill these requirements, `tidal-wave`'s home repository on GitHub includes
 Now, FFmpeg has a dizzying array of configuration options because it supports a vast amount of audio and video codecs. It is a very popular library for transcoding multimedia data into all of the formats required and desired in today's cornucopia of video on demand services. However, all that `tidal-wave` uses FFmpeg for is *remuxing* audio and video data. That is, instead of converting the, say, FLAC audio that is retrieved from TIDAL into another format, e.g. MP3, `tidal-wave` simply changes the .mp4 file that is retrieved from TIDAL into a .flac without changing the audio bytes at all. This is called re-muxing, and a good analogy is one of taking a letter out of one envelope and putting it into a differently-sized or differently-stamped envelope: the *contents* of the message are the same (i.e. the audio data), just the *container* (i.e. the file extension and metadata format) has changed. This simplifies the compiling of FFmpeg *significantly*, indeed creating a binary that is **one tenth** the size of the default binary spelled out in FFmpeg's documentation.
 
 Only a few dependencies are necessary, but most important of them is a C/C++ compiler, such as `gcc`. On a Debian-based system, the following APT packages are the only requirements:
- - `autoconf`
  - `build-essential`
  - `pkg-config`
  - `yasm`
