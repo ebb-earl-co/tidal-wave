@@ -73,24 +73,34 @@ class XMLDASHManifest:
             return re.sub(p, str(n), s)
 
         try:
-            _r: str = next(S.r for S in self.segment_timeline.s)
+            _r: Optional[str] = next(S.r for S in self.segment_timeline.s)
         except StopIteration:
             return
         else:
-            r = int(_r)
+            r: Optional[int] = int(_r) if _r is not None else None
 
-        number_range = range(self.startNumber, r + 1)  # include value of `r`
-        urls_list: List[str] = [self.initialization] + [
-            sub_number(i) for i in number_range
-        ]
-        # Now, do the slightly-less-brute-force of adding each incremented value of
-        # `r` that doesn't result in a 500 response to a HEAD request.
-        number: int = r + 1
-        while session.head(url=sub_number(number)).status_code != 500:
-            urls_list.append(sub_number(number))
-            number += 1
+        # New path for when r is None; e.g. TIDAL track 96154223
+        if r is None:
+            urls_list: List[str] = [self.initialization]
+            number: int = 1
+            while session.head(url=sub_number(number)).status_code != 500:
+                urls_list.append(sub_number(number))
+                number += 1
+            else:
+                return urls_list
         else:
-            return urls_list
+            number_range = range(self.startNumber, r + 1)  # include value of `r`
+            urls_list: List[str] = [self.initialization] + [
+                sub_number(i) for i in number_range
+            ]
+            # Add each value of self.initialization with incremented `r`
+            # that doesn't result in a 500 response to a HEAD request.
+            number: int = r + 1
+            while session.head(url=sub_number(number)).status_code != 500:
+                urls_list.append(sub_number(number))
+                number += 1
+            else:
+                return urls_list
 
 
 Manifest = Union[JSONDASHManifest, XMLDASHManifest]
