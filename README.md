@@ -107,6 +107,7 @@ Usage: python -m tidal_wave [OPTIONS] TIDAL_URL [OUTPUT_DIRECTORY]
 │ --loglevel                   [DEBUG|INFO|WARNING|ERROR|CRITICAL]      [default: INFO]                                                                                                                                             │
 │ --include-eps-singles                                                 No-op unless passing TIDAL artist. Whether to include artist's EPs and singles with albums                                                                  │
 │ --no-extra-files                                                      Whether to not even attempt to retrieve artist bio, artist image, album review, or playlist m3u8                                                            │
+│ --no-flatten                                                          Whether to treat playlists or mixes as a list of tracks/videos and, as such, retrieve them independently                                                    │
 │ --install-completion                                                  Install completion for the current shell.                                                                                                                   │
 │ --show-completion                                                     Show completion for the current shell, to copy it or customize the installation.                                                                            │
 │ --help                                                                Show this message and exit.                                                                                                                                 │
@@ -145,8 +146,8 @@ Similarly, all media retrieved is placed in subdirectories of the user's default
  ```
 
  - To (attempt to) get a playlist, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when retrieving videos.
- ```bash
- > .\tidal-wave_py311_pyapp.exe https://tidal.com/browse/playlist/...
+ ```powershell
+ PS C:\Users\User > & tidal-wave_py311_pyapp.exe https://tidal.com/browse/playlist/...
  ```
 
  - To (attempt to) get a mix, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when retrieving videos.
@@ -163,6 +164,26 @@ Similarly, all media retrieved is placed in subdirectories of the user's default
  ```bash
  (.venv) $ tidal-wave https://listen.tidal.com/artist/... --audio-format hires --include-eps-singles
  ```
+#### Playlists and Mixes
+By default, when passed a playlist or mix URL, `tidal-wave` will retrieve all of the tracks and/or videos specified by that URL, and write them to a subdirectory of either `Playlists` or `Mixes`, which itself is a subdirectory of the specified `output_directory`. E.g. `~/Music/Mixes/My Daily Discovery [016dccd302e9ac6132d8334cfbc022]`. In this directory, once all of the tracks and/or videos have been retrieved, they are renamed based on the order in which they appear in the playlist. E.g.
+```bash
+(.venv) $ tidal-wave https://listen.tidal.com/playlist/1b418bb8-90a7-4f87-901d-707993838346
+
+$ ls ~/Music/Playlists/New Arrivals [1b418bb8-90a7-4f87-901d-707993838346]/
+'001 - Dance Alone [CD].flac'
+'002 - Kissing Strangers [CD].flac'
+'003 - Sunday Service [CD].flac'
+```
+If this is not the desired behavior, pass the `--no-flatten` flag. This flag instructs `tidal-wave` to leave the tracks and/or videos in the directory where they would be written if they had been passed to `tidal-wave` independently. E.g.
+```bash
+(.venv) $ tidal-wave https://listen.tidal.com/playlist/1b418bb8-90a7-4f87-901d-707993838346 --no-flatten
+
+$ ls ~/Music/
+'Sia/Dance Alone [343225498] [2024]/01 - Dance Alone [CD].flac'
+'USHER/COMING HOME [339249017] [2024]/05 - Kissing Strangers [CD].flac'
+'Latto/Sunday Service [344275657] [2024]/01 - Sunday Service [CD].flac'
+```
+
 #### Docker example
 The command line options are the same for the Python invocation, but in order to save configuration and audio data, volumes need to be passed. If they are bind mounts to directories, **they must be created before executing `docker run` to avoid permissions issues**! For example,
 ```bash
@@ -220,5 +241,5 @@ The easiest way to start working on development is to fork this project on GitHu
   5. From a Python REPL (or, my preferred method, an iPython session), import all the relevant modules, or the targeted ones for development:
   ```python
   from tidal_wave import album, artist, dash, hls, login, main, media, mix, models, oauth, playlist, requesting, track, utils, video
-  from tidal_wave.main import *
+  from tidal_wave.main import logging, user_music_path, Path
   ```

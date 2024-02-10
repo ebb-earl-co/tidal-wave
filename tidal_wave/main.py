@@ -61,6 +61,13 @@ def main(
             help="Whether to not even attempt to retrieve artist bio, artist image, album review, or playlist m3u8",
         ),
     ] = False,
+    no_flatten: Annotated[
+        bool,
+        typer.Option(
+            "--no-flatten",
+            help="Whether to treat playlists or mixes as a list of tracks/videos and, as such, retrieve them independently",
+        ),
+    ] = False,
 ):
     logging.basicConfig(
         format="%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s",
@@ -127,24 +134,40 @@ def main(
             raise typer.Exit(code=0)
         elif isinstance(tidal_resource, TidalPlaylist):
             playlist = Playlist(playlist_id=tidal_resource.tidal_id)
-            playlist.get(
-                session=session,
-                audio_format=audio_format,
-                out_dir=output_directory,
-                no_extra_files=no_extra_files,
-            )
+            if no_flatten:
+                playlist.get_elements(
+                    session=session,
+                    audio_format=audio_format,
+                    out_dir=output_directory,
+                    no_extra_files=no_extra_files,
+                )
+            else:
+                playlist.get(
+                    session=session,
+                    audio_format=audio_format,
+                    out_dir=output_directory,
+                    no_extra_files=no_extra_files,
+                )
 
             if loglevel == LogLevel.debug:
                 playlist.dump()
             raise typer.Exit(code=0)
         elif isinstance(tidal_resource, TidalMix):
             mix = Mix(mix_id=tidal_resource.tidal_id)
-            mix.get(
-                session=session,
-                audio_format=audio_format,
-                out_dir=output_directory,
-                no_extra_files=no_extra_files,
-            )
+            if no_flatten:
+                mix.get_elements(
+                    session=session,
+                    audio_format=audio_format,
+                    out_dir=output_directory,
+                    no_extra_files=no_extra_files,
+                )
+            else:
+                mix.get(
+                    session=session,
+                    audio_format=audio_format,
+                    out_dir=output_directory,
+                    no_extra_files=no_extra_files,
+                )
 
             if loglevel == LogLevel.debug:
                 mix.dump()
