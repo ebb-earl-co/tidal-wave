@@ -93,7 +93,9 @@ class Playlist:
         self, session: Session, audio_format: AudioFormat, no_extra_files: bool
     ):
         """Using either Track.get() or Video.get(), attempt to request
-        the data for each track or video in self.items"""
+        the data for each track or video in self.items. If no_extra_files
+        is True, do not attempt to retrieve or save any of: playlist
+        description text, playlist m3u8 text, playlist cover image."""
         if len(self.items) == 0:
             return
         tracks_videos: list = [None] * len(self.items)
@@ -322,9 +324,9 @@ class Playlist:
         self.set_items(session)
         self.set_playlist_dir(out_dir)
 
-        _get_items = self.get_items(session, audio_format)
-        if _get_items is None:
+        if self.get_items(session, audio_format, no_extra_files) is None:
             logger.critical(f"Could not retrieve playlist with ID '{self.playlist_id}'")
+            self.files = {}
             return
 
         self.flatten_playlist_dir()
@@ -348,6 +350,54 @@ class Playlist:
                 logger.debug(e)
             else:
                 (self.playlist_dir / "playlist.m3u8").write_text(m3u8_text)
+
+    def get_elements(self, session: Session, audio_format: AudioFormat, out_dir: Path):
+        """The main method of this class when no_flatten is True at
+        the program top level. It executes a number of other methods
+        in a row:
+          - self.set_metadata()
+          - self.set_items()
+        """
+        self.set_metadata(session)
+
+        if self.metadata is None:
+            self.files = {}
+            return
+
+        self.set_items(session)
+        if len(self.items) == 0:
+            self.files = {}
+            return
+        else:
+            files: List[Optional[str]] = [None] * len(self.items)
+
+        for i, item in enumerate(self.items):
+            if item is None:
+                files[i] = None
+                continue
+            elif isinstance(item, TracksEndpointResponseJSON):
+                track: Track = Track(track_id=item.id)
+                track_file: Optional[str] = track.get(
+                    session=session,
+                    audio_format=audio_format,
+                    out_dir=out_dir,
+                    metadata=item,
+                    no_extra_files=True,
+                )
+                files[i] = track_file
+            elif isinstance(item, VideosEndpointResponseJSON):
+                video: Video = Video(video_id=item.id)
+                video_file: Optional[str] = video.get(
+                    session=session,
+                    out_dir=out_dir,
+                    metadata=item,
+                )
+                files[i] = video_file
+            else:
+                files[i] = None
+                continue
+        else:
+            self.files: List[Optional[str]] = files
 
 
 class TidalPlaylistException(Exception):
