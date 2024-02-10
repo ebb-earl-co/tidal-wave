@@ -351,7 +351,13 @@ class Playlist:
             else:
                 (self.playlist_dir / "playlist.m3u8").write_text(m3u8_text)
 
-    def get_elements(self, session: Session, audio_format: AudioFormat, out_dir: Path):
+    def get_elements(
+        self,
+        session: Session,
+        audio_format: AudioFormat,
+        out_dir: Path,
+        no_extra_files: bool,
+    ):
         """The main method of this class when no_flatten is True at
         the program top level. It executes a number of other methods
         in a row:
@@ -382,7 +388,7 @@ class Playlist:
                     audio_format=audio_format,
                     out_dir=out_dir,
                     metadata=item,
-                    no_extra_files=True,
+                    no_extra_files=no_extra_files,
                 )
                 files[i] = track_file
             elif isinstance(item, VideosEndpointResponseJSON):
