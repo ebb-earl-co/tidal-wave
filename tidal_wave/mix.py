@@ -80,9 +80,11 @@ class Mix:
         self, session: Session, audio_format: AudioFormat, no_extra_files: bool
     ):
         """Using either Track.get() or Video.get(), attempt to request
-        the data for each track or video in self.items"""
+        the data for each track or video in self.items."""
         if len(self.items) == 0:
+            self.files = {}
             return
+
         tracks_videos: list = [None] * len(self.items)
         for i, item in enumerate(self.items):
             if item is None:
@@ -104,7 +106,6 @@ class Mix:
                     session=session,
                     out_dir=self.mix_dir,
                     metadata=item,
-                    no_extra_files=no_extra_files,
                 )
                 tracks_videos[i] = video
             else:
@@ -236,12 +237,12 @@ class Mix:
           - self.set_metadata()
           - self.set_items()
           - self.set_mix_dir()
-          - self.save_cover_image()
           - self.get_items()
           - self.flatten_playlist_dir()
+        Then, if no_extra_files is False,
+          - self.save_cover_image()
         """
         self.set_metadata(session)
-
         if self.metadata is None:
             self.files = {}
             return
@@ -251,12 +252,66 @@ class Mix:
 
         if self.get_items(session, audio_format, no_extra_files) is None:
             logger.critical(f"Could not retrieve mix with ID '{self.mix_id}'")
+            self.files = {}
             return
+
         self.flatten_mix_dir()
         logger.info(f"Mix files written to '{self.mix_dir}'")
 
         if not no_extra_files:
             self.save_cover_image(session, out_dir)
+
+    def get_elements(
+        self,
+        session: Session,
+        audio_format: AudioFormat,
+        out_dir: Path,
+        no_extra_files: bool,
+    ):
+        """The main method of this class, executing a number of other methods
+        in a row:
+          - self.set_metadata()
+          - self.set_items()
+        """
+        self.set_metadata(session)
+        if self.metadata is None:
+            self.files = {}
+            return
+
+        self.set_items(session)
+        if len(self.items) == 0:
+            self.files = {}
+            return
+        else:
+            files: List[Optional[str]] = [None] * len(self.items)
+
+        for i, item in enumerate(self.items):
+            if item is None:
+                files[i] = None
+                continue
+            elif isinstance(item, TracksEndpointResponseJSON):
+                track: Track = Track(track_id=item.id)
+                track_file: Optional[str] = track.get(
+                    session=session,
+                    audio_format=audio_format,
+                    out_dir=out_dir,
+                    metadata=item,
+                    no_extra_files=no_extra_files,
+                )
+                files[i] = track_file
+            elif isinstance(item, VideosEndpointResponseJSON):
+                video: Video = Video(video_id=item.id)
+                video_file: Optional[str] = video.get(
+                    session=session,
+                    out_dir=self.mix_dir,
+                    metadata=item,
+                )
+                files[i] = video_file
+            else:
+                files[i] = None
+                continue
+        else:
+            self.files: List[Optional[str]] = files
 
 
 class TidalMixException(Exception):

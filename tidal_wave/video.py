@@ -233,6 +233,8 @@ class Video:
         outfile: Optional[Path] = self.set_outfile()
         if outfile is None:
             return None
+        else:
+            self.absolute_outfile = str(self.outfile.absolute())
 
         if self.download(session, out_dir) is None:
             return None
@@ -240,7 +242,7 @@ class Video:
         return str(self.outfile.absolute())
 
     def dump(self, fp=sys.stdout):
-        json.dump({self.metadata.title: str(self.outfile.absolute())}, fp)
+        json.dump({self.metadata.title: self.absolute_outfile}, fp)
 
     def dumps(self) -> str:
-        return json.dumps({self.metadata.title: str(self.outfile.absolute())})
+        return json.dumps({self.metadata.title: self.absolute_outfile})

@@ -20,8 +20,8 @@ class S:
     r: Optional[str] = field(default=None)
 
     def __post_init__(self):
-        self.d = int(self.d) if self.d is not None else None
-        self.r = int(self.r) if self.r is not None else None
+        self.d: Optional[int] = int(self.d) if self.d is not None else None
+        self.r: Optional[int] = int(self.r) if self.r is not None else None
 
 
 @dataclass(frozen=True)
@@ -51,21 +51,28 @@ class XMLDASHManifest:
     segment_timeline: Optional["SegmentTimeline"] = field(default=None, repr=False)
 
     def __post_init__(self):
-        self.bandwidth = int(self.bandwidth) if self.bandwidth is not None else None
-        self.audio_sampling_rate = (
+        self.bandwidth: Optional[int] = (
+            int(self.bandwidth) if self.bandwidth is not None else None
+        )
+        self.audio_sampling_rate: Optional[int] = (
             int(self.audio_sampling_rate)
             if self.audio_sampling_rate is not None
             else None
         )
-        self.timescale = int(self.timescale) if self.timescale is not None else None
-        self.startNumber = (
+        self.timescale: Optional[int] = (
+            int(self.timescale) if self.timescale is not None else None
+        )
+        self.startNumber: Optional[int] = (
             int(self.start_number) if self.start_number is not None else None
         )
 
     def build_urls(self, session: Session) -> Optional[List[str]]:
-        """Parse the MPEG-DASH manifest in the way that it was *supposed* to
-        be parsed, with a few network calls because we aren't actually THAT
-        clever."""
+        """Parse the MPEG-DASH manifest into a list of URLs. In
+        particular, look for a special value, r, in self.segment_timeline.s.
+        If there is no such value, set r=1. In both cases, start substituting
+        r into the special substring, '$Number$', in self.initialization.
+        Continue incrementing r and substituting until the resulting string
+        returns a 500 error to a HEAD request."""
         if len(self.segment_timeline.s) == 0:
             return
 
@@ -73,11 +80,9 @@ class XMLDASHManifest:
             return re.sub(p, str(n), s)
 
         try:
-            _r: Optional[str] = next(S.r for S in self.segment_timeline.s)
+            r: Optional[int] = next(S.r for S in self.segment_timeline.s)
         except StopIteration:
-            return
-        else:
-            r: Optional[int] = int(_r) if _r is not None else None
+            r = None
 
         # New path for when r is None; e.g. TIDAL track 96154223
         if r is None:
@@ -93,8 +98,6 @@ class XMLDASHManifest:
             urls_list: List[str] = [self.initialization] + [
                 sub_number(i) for i in number_range
             ]
-            # Add each value of self.initialization with incremented `r`
-            # that doesn't result in a 500 response to a HEAD request.
             number: int = r + 1
             while session.head(url=sub_number(number)).status_code != 500:
                 urls_list.append(sub_number(number))
