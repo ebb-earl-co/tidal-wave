@@ -173,6 +173,7 @@ def login_android(
         if device_type is not None:
             s.params["deviceType"] = device_type
 
+        s.params["platform"] = "ANDROID"
         s.headers["User-Agent"] = "TIDAL_ANDROID/1136 okhttp 4.3.0"
         to_write: dict = {
             "access_token": s.auth.token,
@@ -230,7 +231,7 @@ def login(
     Returns a tuple of a requests.Session object, if no error, and the
     AudioFormat instance passed in; or (None, "") in the event of error.
     """
-    android_formats: Set[AudioFormat] = {
+    high_quality_formats: Set[AudioFormat] = {
         AudioFormat.sony_360_reality_audio,
         AudioFormat.hi_res,
     }
@@ -243,7 +244,10 @@ def login(
     }
     if audio_format in fire_tv_formats:
         return (login_fire_tv(), audio_format)
-    elif audio_format in android_formats:
+    elif audio_format in high_quality_formats:
+        if (TOKEN_DIR_PATH / "android-tidal.token").exists():
+            return (login_android(), audio_format)
+
         options: set = {"android", "a", "windows", "w"}
         _input: str = ""
         while _input not in options:

@@ -319,7 +319,10 @@ class TidalMixException(Exception):
 
 
 def request_mixes(session: Session, mix_id: str) -> Optional[SimpleNamespace]:
-    """Request from TIDAL API /pages/mix endpoint."""
+    """Request from TIDAL API /pages/mix endpoint. If an error occurs from
+    session.get(), None is returned. Otherwise, a typing.SimpleNamespace
+    object is returned with some metadata to do with the mix: title,
+    description, URL to cover image."""
     url: str = f"{TIDAL_API_URL}/pages/mix?mixId={mix_id}"
     kwargs: dict = {"url": url}
     kwargs["params"] = {"deviceType": "PHONE"}
@@ -354,7 +357,9 @@ def request_mixes(session: Session, mix_id: str) -> Optional[SimpleNamespace]:
 
 
 def request_mix_items(session: Session, mix_id: str) -> Optional[Dict]:
-    """Request from TIDAL API /mixes/items endpoint."""
+    """Request from TIDAL API /mixes/items endpoint. If error arises when
+    requesting with 'session'.get(), None is returned. Otherwise, the
+    dict object returned by requests.Response.json() is returned."""
     url: str = f"{TIDAL_API_URL}/mixes/{mix_id}/items"
     kwargs: dict = {"url": url}
     kwargs["params"] = {"limit": 100}

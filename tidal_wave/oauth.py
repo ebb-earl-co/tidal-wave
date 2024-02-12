@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 import sys
 import time
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Tuple, Union
 
 import dataclass_wizard
 from platformdirs import user_config_path
@@ -171,7 +171,7 @@ class BearerToken:
             )
             return
 
-        data_args = (
+        data_args: Tuple[str, str, datetime, str, int, str] = (
             data.get(a)
             for a in (
                 "access_token",

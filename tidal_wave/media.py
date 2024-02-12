@@ -12,23 +12,6 @@ class AudioFormat(str, Enum):
     low = "Low"
 
 
-class VideoFormat(str, Enum):
-    high = "HIGH"
-    medium = "MEDIUM"
-    low = "LOW"
-    audio_only = "AUDIO_ONLY"
-
-
-af_aq: Dict[AudioFormat, str] = {
-    AudioFormat.sony_360_reality_audio: "LOW",
-    AudioFormat.dolby_atmos: "LOW",
-    AudioFormat.hi_res: "HI_RES",
-    AudioFormat.mqa: "HI_RES",
-    AudioFormat.lossless: "LOSSLESS",
-    AudioFormat.high: "HIGH",
-    AudioFormat.low: "LOW",
-}
-
 TAG_MAPPING: Dict[str, Dict[str, str]] = {
     "album": {"flac": "ALBUM", "m4a": "\xa9alb"},
     "album_artist": {"flac": "ALBUMARTIST", "m4a": "aART"},

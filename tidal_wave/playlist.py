@@ -42,7 +42,7 @@ class Playlist:
     def set_metadata(self, session: Session):
         """Request from TIDAL API /playlists endpoint"""
         self.metadata: Optional[PlaylistsEndpointResponseJSON] = request_playlists(
-            session=session, identifier=self.playlist_id
+            session=session, playlist_id=self.playlist_id
         )
 
         if self.metadata is None:
@@ -291,9 +291,19 @@ class Playlist:
             return m3u_text
 
     def dumps(self):
+        """This method emulates the stdlib json.dumps(). In particular,
+        it returns the JSON-formatted string of the self.files attribute,
+        which is an array of objects with one key each: the index in the
+        playlist of the track or video, and the absolute file path to the
+        track or video"""
         return json.dumps(self.files)
 
     def dump(self, fp=sys.stdout):
+        """This method emulates the stdlib json.dump(). In particular,
+        it sends to 'fp' the JSON-formatted string of the self.files attribute,
+        which is an array of objects with one key each: the index in the
+        playlist of the track or video, and the absolute file path to the
+        track or video"""
         json.dump(self.files, fp)
 
     def get(
@@ -337,6 +347,11 @@ class Playlist:
                 self.save_description()
             except Exception:
                 pass
+            else:
+                logger.info(
+                    "Playlist description written to "
+                    f"{self.playlist_dir / 'PlaylistDescription.txt'}"
+                )
 
             self.save_cover_image(session, out_dir)
 
@@ -350,6 +365,10 @@ class Playlist:
                 logger.debug(e)
             else:
                 (self.playlist_dir / "playlist.m3u8").write_text(m3u8_text)
+                logger.info(
+                    "Playlist M3U file written to "
+                    f"{self.playlist_dir / 'playlist.m3u8'}"
+                )
 
     def get_elements(
         self,
@@ -375,11 +394,11 @@ class Playlist:
             self.files = {}
             return
         else:
-            files: List[Optional[str]] = [None] * len(self.items)
+            files: List[Dict[int, Optional[str]]] = [None] * len(self.items)
 
         for i, item in enumerate(self.items):
             if item is None:
-                files[i] = None
+                files[i] = {i: None}
                 continue
             elif isinstance(item, TracksEndpointResponseJSON):
                 track: Track = Track(track_id=item.id)
@@ -390,7 +409,7 @@ class Playlist:
                     metadata=item,
                     no_extra_files=no_extra_files,
                 )
-                files[i] = track_file
+                files[i] = {i: track_file}
             elif isinstance(item, VideosEndpointResponseJSON):
                 video: Video = Video(video_id=item.id)
                 video_file: Optional[str] = video.get(
@@ -398,12 +417,12 @@ class Playlist:
                     out_dir=out_dir,
                     metadata=item,
                 )
-                files[i] = video_file
+                files[i] = {i: video_file}
             else:
-                files[i] = None
+                files[i] = {i: None}
                 continue
         else:
-            self.files: List[Optional[str]] = files
+            self.files: List[Dict[int, Optional[str]]] = files
 
 
 class TidalPlaylistException(Exception):
@@ -411,7 +430,10 @@ class TidalPlaylistException(Exception):
 
 
 def request_playlist_items(session: Session, playlist_id: str) -> Optional[dict]:
-    """Request from TIDAL API /playlists/items endpoint."""
+    """Request from TIDAL API /playlists/items endpoint. If requests.HTTPError
+    arises, warning is logged; upon this or any other exception, None is returned.
+    If no exception arises from 'session'.get(), the requests.Response.json()
+    object is returned."""
     url: str = f"{TIDAL_API_URL}/playlists/{playlist_id}/items"
     kwargs: dict = {"url": url}
     kwargs["params"] = {"limit": 100}

@@ -3,6 +3,7 @@ import logging
 from typing import Callable, Iterable, Iterator, Optional, Tuple, Union
 
 from .models import (
+    AlbumsCreditsResponseJSON,
     AlbumsEndpointResponseJSON,
     AlbumsItemsResponseJSON,
     AlbumsReviewResponseJSON,
@@ -29,6 +30,7 @@ from requests import HTTPError, Response, Session
 logger: logging.Logger = logging.getLogger(__name__)
 
 ResponseJSON = Union[
+    AlbumsCreditsResponseJSON,
     AlbumsEndpointResponseJSON,
     AlbumsItemsResponseJSON,
     AlbumsReviewResponseJSON,
@@ -129,24 +131,24 @@ def requester_maker(
 
 
 def request_albums(
-    session: Session, identifier: int
+    session: Session, album_id: int
 ) -> Optional[AlbumsEndpointResponseJSON]:
     return requester_maker(
         session=session,
         endpoint="albums",
-        identifier=identifier,
+        identifier=album_id,
         headers={"Accept": "application/json"},
         subclass=AlbumsEndpointResponseJSON,
     )
 
 
 def request_album_items(
-    session: Session, identifier: int
+    session: Session, album_id: int
 ) -> Optional[AlbumsItemsResponseJSON]:
     return requester_maker(
         session=session,
         endpoint="albums",
-        identifier=identifier,
+        identifier=album_id,
         headers={"Accept": "application/json"},
         parameters={"limit": 100},
         url_end="/items",
@@ -155,12 +157,12 @@ def request_album_items(
 
 
 def request_album_review(
-    session: Session, identifier: int
+    session: Session, album_id: int
 ) -> Optional[AlbumsReviewResponseJSON]:
     return requester_maker(
         session=session,
         endpoint="albums",
-        identifier=identifier,
+        identifier=album_id,
         headers={"Accept": "application/json"},
         url_end="/review",
         subclass=AlbumsReviewResponseJSON,
@@ -168,12 +170,12 @@ def request_album_review(
 
 
 def request_artist_bio(
-    session: Session, identifier: int
+    session: Session, artist_id: int
 ) -> Optional[ArtistsBioResponseJSON]:
     return requester_maker(
         session=session,
         endpoint="artists",
-        identifier=identifier,
+        identifier=artist_id,
         headers={"Accept": "application/json"},
         url_end="/bio",
         subclass=ArtistsBioResponseJSON,
@@ -181,24 +183,24 @@ def request_artist_bio(
 
 
 def request_artists(
-    session: Session, identifier: int
+    session: Session, artist_id: int
 ) -> Optional[ArtistsEndpointResponseJSON]:
     return requester_maker(
         session=session,
         endpoint="artists",
-        identifier=identifier,
+        identifier=artist_id,
         headers={"Accept": "application/json"},
         subclass=ArtistsEndpointResponseJSON,
     )
 
 
 def request_artists_albums(
-    session: Session, identifier: int
+    session: Session, artist_id: int
 ) -> Optional[ArtistsAlbumsResponseJSON]:
     return requester_maker(
         session=session,
         endpoint="artists",
-        identifier=identifier,
+        identifier=artist_id,
         headers={"Accept": "application/json"},
         url_end="/albums",
         subclass=ArtistsAlbumsResponseJSON,
@@ -206,12 +208,12 @@ def request_artists_albums(
 
 
 def request_artists_audio_works(
-    session: Session, identifier: int
+    session: Session, artist_id: int
 ) -> Optional[ArtistsAlbumsResponseJSON]:
     return requester_maker(
         session=session,
         endpoint="artists",
-        identifier=identifier,
+        identifier=artist_id,
         headers={"Accept": "application/json"},
         parameters={"filter": "EPSANDSINGLES"},
         url_end="/albums",
@@ -220,12 +222,12 @@ def request_artists_audio_works(
 
 
 def request_artists_videos(
-    session: Session, identifier: int
+    session: Session, artist_id: int
 ) -> Optional[ArtistsVideosResponseJSON]:
     return requester_maker(
         session=session,
         endpoint="artists",
-        identifier=identifier,
+        identifier=artist_id,
         headers={"Accept": "application/json"},
         url_end="/videos",
         subclass=ArtistsVideosResponseJSON,
@@ -233,12 +235,12 @@ def request_artists_videos(
 
 
 def request_tracks(
-    session: Session, identifier: int
+    session: Session, track_id: int
 ) -> Optional[TracksEndpointResponseJSON]:
     return requester_maker(
         session=session,
         endpoint="tracks",
-        identifier=identifier,
+        identifier=track_id,
         headers={"Accept": "application/json"},
         subclass=TracksEndpointResponseJSON,
     )
@@ -248,12 +250,12 @@ def request_tracks(
 # it's just an array of JSON objects, so we have to pass a flag to mark
 # that the logic common to the rest of the functions is slightly different here.
 def request_credits(
-    session: Session, identifier: int
+    session: Session, track_id: int
 ) -> Optional[TracksCreditsResponseJSON]:
     return requester_maker(
         session=session,
         endpoint="tracks",
-        identifier=identifier,
+        identifier=track_id,
         headers={"Accept": "application/json"},
         parameters={"includeContributors": True},
         url_end="/credits",
@@ -262,13 +264,31 @@ def request_credits(
     )
 
 
+# This one's special, because its JSON response isn't proper JSON:
+# it's just an array of JSON objects, so we have to pass a flag to mark
+# that the logic common to the rest of the functions is slightly different here.
+def request_albums_credits(
+    session: Session, album_id: int
+) -> Optional[AlbumsCreditsResponseJSON]:
+    return requester_maker(
+        session=session,
+        endpoint="albums",
+        identifier=album_id,
+        headers={"Accept": "application/json"},
+        parameters={"includeContributors": True, "limit": 50},
+        url_end="/credits",
+        subclass=AlbumsCreditsResponseJSON,
+        credits_flag=True,
+    )
+
+
 def request_lyrics(
-    session: Session, identifier: int
+    session: Session, track_id: int
 ) -> Optional[TracksLyricsResponseJSON]:
     return requester_maker(
         session=session,
         endpoint="tracks",
-        identifier=identifier,
+        identifier=track_id,
         headers={"Accept": "application/json"},
         url_end="/lyrics",
         subclass=TracksLyricsResponseJSON,
@@ -277,8 +297,6 @@ def request_lyrics(
 
 # One more layer of currying here, as the parameters argument
 # is dependent on a runtime variable.
-
-
 def request_stream(
     session: Session, track_id: int, audio_quality: str
 ) -> Optional[TracksEndpointStreamResponseJSON]:
@@ -300,24 +318,24 @@ def request_stream(
 
 
 def request_videos(
-    session: Session, identifier: int
+    session: Session, video_id: int
 ) -> Optional[VideosEndpointResponseJSON]:
     return requester_maker(
         session=session,
         endpoint="videos",
-        identifier=identifier,
+        identifier=video_id,
         headers={"Accept": "application/json"},
         subclass=VideosEndpointResponseJSON,
     )
 
 
 def request_video_contributors(
-    session: Session, identifier: int
+    session: Session, video_id: int
 ) -> Optional[VideosContributorsResponseJSON]:
     return requester_maker(
         session=session,
         endpoint="videos",
-        identifier=identifier,
+        identifier=video_id,
         headers={"Accept": "application/json"},
         parameters={"limit": 100},
         url_end="/contributors",
@@ -346,12 +364,12 @@ def request_video_stream(
 
 
 def request_playlists(
-    session: Session, identifier: int
+    session: Session, playlist_id: int
 ) -> Optional[PlaylistsEndpointResponseJSON]:
     return requester_maker(
         session=session,
         endpoint="playlists",
-        identifier=identifier,
+        identifier=playlist_id,
         headers={"Accept": "application/json"},
         subclass=PlaylistsEndpointResponseJSON,
     )
@@ -419,7 +437,7 @@ def fetch_content_length(session: Session, url: str) -> int:
     """Attempt to get the amount of bytes pointed to by `url`. If
     the HEAD request from the requests.Session object, `session`,
     encounters an HTTP request; or if the server does not support
-    HTTP range requests; or if the server does not response with a
+    HTTP range requests; or if the server does not respond with a
     Content-Length header, return 0"""
     session_params: dict = session.params
     # Unset params to avoid 403 response

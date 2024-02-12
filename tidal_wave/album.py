@@ -3,17 +3,24 @@ import json
 import logging
 from pathlib import Path
 import sys
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from requests import Session
 
 from .media import AudioFormat
 from .models import (
+    AlbumsCreditsResponseJSON,
     AlbumsEndpointResponseJSON,
     AlbumsItemsResponseJSON,
     AlbumsReviewResponseJSON,
+    TracksEndpointResponseJSON,
 )
-from .requesting import request_albums, request_album_items, request_album_review
+from .requesting import (
+    request_albums,
+    request_albums_credits,
+    request_album_items,
+    request_album_review,
+)
 from .track import Track
 from .utils import download_cover_image
 
@@ -32,16 +39,18 @@ class Album:
         """This method populates self.tracks by requesting from
         TIDAL albums/items endpoint."""
         album_items: AlbumsItemsResponseJSON = request_album_items(
-            session=session, identifier=self.album_id
+            session=session, album_id=self.album_id
         )
         _items = album_items.items if album_items is not None else ()
-        self.tracks = tuple(_item.item for _item in _items)
+        self.tracks: Tuple[TracksEndpointResponseJSON] = tuple(
+            _item.item for _item in _items
+        )
 
     def set_metadata(self, session: Session):
         """This method sets self.metadata by requesting from
         TIDAL /albums endpoint"""
         self.metadata: AlbumsEndpointResponseJSON = request_albums(
-            session=session, identifier=self.album_id
+            session=session, album_id=self.album_id
         )
 
     def set_album_review(self, session: Session):
@@ -49,12 +58,24 @@ class Album:
         in TIDAL. If it exists, it is written to disk as AlbumReview.json
         in self.album_dir"""
         self.album_review: Optional[AlbumsReviewResponseJSON] = request_album_review(
-            session=session, identifier=self.album_id
+            session=session, album_id=self.album_id
         )
         if self.album_review is not None:
             (self.album_dir / "AlbumReview.json").write_text(
                 self.album_review.to_json()
             )
+
+    def set_album_credits(self, session: Session):
+        """This method requests the album's top-level credits (separate from
+        each track's credits) and writes them to AlbumCredits.json in
+        self.album_dir"""
+        self.album_credits: Optional[AlbumsCreditsResponseJSON] = (
+            request_albums_credits(session=session, album_id=self.album_id)
+        )
+        if self.album_credits is not None:
+            f: str = str((self.album_dir / "AlbumCredits.json").absolute())
+            with open(f, "w") as fp:
+                json.dump(obj=self.album_credits.credit, fp=fp)
 
     def set_album_dir(self, out_dir: Path):
         """This method populates self.album_dir as a sub-subdirectory of
@@ -164,6 +185,7 @@ class Album:
 
         if not no_extra_files:
             self.set_album_review(session)
+            self.set_album_credits(session)
         else:
             try:
                 self.cover_path.unlink()

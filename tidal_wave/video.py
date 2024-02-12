@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 import json
 import logging
 from pathlib import Path
@@ -6,7 +7,7 @@ import sys
 from typing import Dict, List, Optional
 
 from .hls import playlister, variant_streams, TidalM3U8Exception
-from .media import TAG_MAPPING, VideoFormat
+from .media import TAG_MAPPING
 from .models import (
     VideosContributorsResponseJSON,
     VideosEndpointResponseJSON,
@@ -23,6 +24,13 @@ from requests import Session
 logger = logging.getLogger("__name__")
 
 
+class VideoFormat(str, Enum):
+    high = "HIGH"
+    medium = "MEDIUM"
+    low = "LOW"
+    audio_only = "AUDIO_ONLY"
+
+
 @dataclass
 class Video:
     video_id: int
@@ -36,21 +44,21 @@ class Video:
         attribute as None or VideosEndpointResponseJSON instance. Also,
         sets self.name as a sanitized version of self.metadata.name"""
         self.metadata: Optional[VideosEndpointResponseJSON] = request_videos(
-            session, self.video_id
+            session=session, video_id=self.video_id
         )
         self.name = replace_illegal_characters(self.metadata.name)
 
     def get_contributors(self, session: Session):
         """Request from TIDAL API /videos/contributors endpoint"""
         self.contributors: Optional[VideosContributorsResponseJSON] = (
-            request_video_contributors(session, self.video_id)
+            request_video_contributors(session=session, video_id=self.video_id)
         )
 
     def get_stream(self, session: Session, video_format=VideoFormat.high):
         """Populates self.stream by requesting from TIDAL API
         /videos/playbackinfopostpaywall endpoint"""
         self.stream: Optional[VideosEndpointStreamResponseJSON] = request_video_stream(
-            session, self.video_id, video_format.value
+            session=session, video_id=self.video_id, video_quality=video_format.value
         )
 
     def get_m3u8(self, session: Session):
@@ -242,7 +250,13 @@ class Video:
         return str(self.outfile.absolute())
 
     def dump(self, fp=sys.stdout):
+        """This method emulates stdlib json.dump(). In particular,
+        it sends to 'fp' the JSON-formatted dict
+        {self.metadata.title: self.absolute_outfile}"""
         json.dump({self.metadata.title: self.absolute_outfile}, fp)
 
     def dumps(self) -> str:
+        """This method emulates stdlib json.dumps(). In particular,
+        it returns the JSON-formatted str from the dict
+        {self.metadata.title: self.absolute_outfile}"""
         return json.dumps({self.metadata.title: self.absolute_outfile})

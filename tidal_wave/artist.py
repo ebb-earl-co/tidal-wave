@@ -32,7 +32,7 @@ class Artist:
         """This function requests from TIDAL API endpoint /artists and
         stores the results in self.metadata"""
         self.metadata: Optional[ArtistsEndpointResponseJSON] = request_artists(
-            session, self.artist_id
+            session=session, artist_id=self.artist_id
         )
 
     def save_artist_image(self, session: Session):
@@ -49,21 +49,21 @@ class Artist:
         """This method requests from TIDAL API endpoint /artists/albums and
         stores the results in self.albums"""
         self.albums: Optional[ArtistsAlbumsResponseJSON] = request_artists_albums(
-            session, self.artist_id
+            session=session, artist_id=self.artist_id
         )
 
     def set_audio_works(self, session: Session):
         """This method requests from TIDAL API endpoint
         /artists/albums?filter=EPSANDSINGLES and stores the results in self.albums"""
         self.albums: Optional[ArtistsAlbumsResponseJSON] = request_artists_audio_works(
-            session, self.artist_id
+            session=session, artist_id=self.artist_id
         )
 
     def set_videos(self, session: Session):
         """This method requests from TIDAL API endpoint /artists/videos and
         stores the results in self.albums"""
         self.videos: Optional[ArtistsVideosResponseJSON] = request_artists_videos(
-            session, self.artist_id
+            session=session, artist_id=self.artist_id
         )
 
     def set_artist_dir(self, out_dir: Path):
