@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 import logging
 import re
-from typing import List, Literal, Optional, Tuple, Union
+from typing import Dict, List, Literal, Optional, Tuple, Union
 from typing_extensions import Annotated
 
 import dataclass_wizard

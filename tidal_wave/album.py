@@ -39,7 +39,7 @@ class Album:
         """This method populates self.tracks by requesting from
         TIDAL albums/items endpoint."""
         album_items: AlbumsItemsResponseJSON = request_album_items(
-            session=session, identifier=self.album_id
+            session=session, album_id=self.album_id
         )
         _items = album_items.items if album_items is not None else ()
         self.tracks: Tuple[TracksEndpointResponseJSON] = tuple(
@@ -50,7 +50,7 @@ class Album:
         """This method sets self.metadata by requesting from
         TIDAL /albums endpoint"""
         self.metadata: AlbumsEndpointResponseJSON = request_albums(
-            session=session, identifier=self.album_id
+            session=session, album_id=self.album_id
         )
 
     def set_album_review(self, session: Session):
@@ -58,7 +58,7 @@ class Album:
         in TIDAL. If it exists, it is written to disk as AlbumReview.json
         in self.album_dir"""
         self.album_review: Optional[AlbumsReviewResponseJSON] = request_album_review(
-            session=session, identifier=self.album_id
+            session=session, album_id=self.album_id
         )
         if self.album_review is not None:
             (self.album_dir / "AlbumReview.json").write_text(

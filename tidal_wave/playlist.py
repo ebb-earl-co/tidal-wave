@@ -42,7 +42,7 @@ class Playlist:
     def set_metadata(self, session: Session):
         """Request from TIDAL API /playlists endpoint"""
         self.metadata: Optional[PlaylistsEndpointResponseJSON] = request_playlists(
-            session=session, identifier=self.playlist_id
+            session=session, playlist_id=self.playlist_id
         )
 
         if self.metadata is None:

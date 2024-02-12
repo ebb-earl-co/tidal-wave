@@ -62,7 +62,7 @@ class Track:
         Otherwise, self.metadata is set to the response of request_tracks(),
         a TracksEndpointResponseJSON instance."""
         self.metadata: Optional[TracksEndpointResponseJSON] = request_tracks(
-            session, self.track_id
+            session=session, track_id=self.track_id
         )
 
     def get_album(self, session: Session):
@@ -71,7 +71,7 @@ class Track:
         Otherwise, self.album is set to the response of request_albums(),
         an AlbumsEndpointResponseJSON instance."""
         self.album: Optional[AlbumsEndpointResponseJSON] = request_albums(
-            session, self.metadata.album.id
+            session=session, album_id=self.metadata.album.id
         )
 
     def set_credits(self, session: Session):
@@ -80,7 +80,7 @@ class Track:
         Otherwise, self.credits is set to the response of request_credits(),
         a TracksCreditsResponseJSON instance."""
         self.credits: Optional[TracksCreditsResponseJSON] = request_credits(
-            session, self.track_id
+            session=session, track_id=self.track_id
         )
 
     def get_lyrics(self, session: Session):
@@ -91,7 +91,7 @@ class Track:
         TracksLyricsResponseJSON."""
         if self._has_lyrics is None:
             self.lyrics: Optional[TracksLyricsResponseJSON] = request_lyrics(
-                session, self.track_id
+                session=session, track_id=self.track_id
             )
             if self.lyrics is None:
                 self._has_lyrics = False
@@ -248,7 +248,7 @@ class Track:
             track_artist_bio_json: Path = self.album_dir / f"{a.name}-bio.json"
             if not track_artist_bio_json.exists():
                 artist_bio: Optional[ArtistsBioResponseJSON] = request_artist_bio(
-                    session, a.id
+                    session=session, artist_id=a.id
                 )
                 if artist_bio is not None:
                     logger.info(
