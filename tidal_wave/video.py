@@ -247,7 +247,10 @@ class Video:
         if self.download(session, out_dir) is None:
             return None
 
-        return str(self.outfile.absolute())
+        self.craft_tags()
+        self.set_tags()
+
+        return self.absolute_outfile
 
     def dump(self, fp=sys.stdout):
         """This method emulates stdlib json.dump(). In particular,

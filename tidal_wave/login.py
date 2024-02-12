@@ -169,7 +169,7 @@ def login_android(
         if token_path.exists():
             token_path.unlink()
     else:
-        logger.info(f"Access token is valid: saving to {str(token_path.absolute())}")
+        logger.info(f"Access token is valid: saving to '{str(token_path.absolute())}'")
         if device_type is not None:
             s.params["deviceType"] = device_type
 
