@@ -9,12 +9,18 @@ from requests import Session
 
 from .media import AudioFormat
 from .models import (
+    AlbumsCreditsResponseJSON,
     AlbumsEndpointResponseJSON,
     AlbumsItemsResponseJSON,
     AlbumsReviewResponseJSON,
     TracksEndpointResponseJSON,
 )
-from .requesting import request_albums, request_album_items, request_album_review
+from .requesting import (
+    request_albums,
+    request_albums_credits,
+    request_album_items,
+    request_album_review,
+)
 from .track import Track
 from .utils import download_cover_image
 
@@ -58,6 +64,18 @@ class Album:
             (self.album_dir / "AlbumReview.json").write_text(
                 self.album_review.to_json()
             )
+
+    def set_album_credits(self, session: Session):
+        """This method requests the album's top-level credits (separate from
+        each track's credits) and writes them to AlbumCredits.json in
+        self.album_dir"""
+        self.album_credits: Optional[AlbumsCreditsResponseJSON] = (
+            request_albums_credits(session=session, album_id=self.album_id)
+        )
+        if self.album_credits is not None:
+            f: str = str((self.album_dir / "AlbumCredits.json").absolute())
+            with open(f, "w") as fp:
+                json.dump(obj=self.album_credits.credit, fp=fp)
 
     def set_album_dir(self, out_dir: Path):
         """This method populates self.album_dir as a sub-subdirectory of
@@ -167,6 +185,7 @@ class Album:
 
         if not no_extra_files:
             self.set_album_review(session)
+            self.set_album_credits(session)
         else:
             try:
                 self.cover_path.unlink()

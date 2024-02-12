@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 import json
 import logging
 from pathlib import Path
@@ -6,7 +7,7 @@ import sys
 from typing import Dict, List, Optional
 
 from .hls import playlister, variant_streams, TidalM3U8Exception
-from .media import TAG_MAPPING, VideoFormat
+from .media import TAG_MAPPING
 from .models import (
     VideosContributorsResponseJSON,
     VideosEndpointResponseJSON,

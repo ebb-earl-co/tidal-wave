@@ -172,6 +172,65 @@ class AlbumsEndpointResponseJSON(dataclass_wizard.JSONWizard):
         self.name = replace_illegal_characters(self.title)
 
 
+@dataclass
+class AlbumsCreditsResponseJSON(dataclass_wizard.JSONWizard):
+    """The response from the TIDAL API endpoint /albums/<ID>/credits
+    is modeled by this class."""
+
+    credits: List["Credit"]
+
+    def get_credit(self, type_: str) -> Optional["Credit"]:
+        """Given a contributor type (e.g. Producer, Engineer),
+        go through the `credits` attribute, returning the `Credit` object
+        for the given contributor type if it exists"""
+        _credit = None
+        try:
+            _credit = next(c for c in self.credits if c.type == type_)
+        except StopIteration:
+            logger.debug(f"There are no credits of type {type_} for this album")
+        finally:
+            return _credit
+
+    def get_contributors(self, type_: str) -> Optional[List[str]]:
+        """Given a contributor type (e.g. Producer, Engineer),
+        go through the `credits` attribute: for each Credit
+        object in `self.credits`, if there is a Credit with
+        `type` attribute matching `type_` argument, then return
+        the `name` attribute for each Contributor object in
+        `Credit.contributors`"""
+        _credit: Optional["Credit"] = self.get_credit(type_)
+        if _credit is not None:
+            return [c.name for c in _credit.contributors]
+        else:
+            return
+
+    def __post_init__(self):
+        """Try to parse the various Contributors into a dict
+        that will be JSON-format amenable"""
+
+        _credit: Dict[str, Union[str, List[str]]] = {
+            c: self.get_contributors(c)
+            for c in (
+                "Cover Design",
+                "Creative Director",
+                "Design",
+                "Engineer",
+                "Group Member",
+                "Layout",
+                "Mastering",
+                "Mixing",
+                "Photography",
+                "Primary Artist",
+                "Producer",
+                "Record Label",
+            )
+        }
+
+        self.credit: Dict[str, Union[str, List[str]]] = {
+            k: v for k, v in _credit.items() if v is not None
+        }
+
+
 @dataclass(frozen=True)
 class SubscriptionEndpointResponseJSONSubscription:
     type: str

@@ -74,7 +74,7 @@ class Track:
             session, self.metadata.album.id
         )
 
-    def get_credits(self, session: Session):
+    def set_credits(self, session: Session):
         """This method executes request_credits, passing in 'session' and
         self.track_id. If an error occurs, self.credits is set to None.
         Otherwise, self.credits is set to the response of request_credits(),
@@ -593,6 +593,17 @@ class Track:
         self.set_filename(audio_format)
         outfile: Optional[Path] = self.set_outfile()
         if outfile is None:
+            if not no_extra_files:
+                try:
+                    self.save_artist_image(session)
+                except Exception:
+                    pass
+
+                try:
+                    self.save_artist_bio(session)
+                except Exception:
+                    pass
+
             return
 
         try:

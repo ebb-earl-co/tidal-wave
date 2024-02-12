@@ -3,6 +3,7 @@ import logging
 from typing import Callable, Iterable, Iterator, Optional, Tuple, Union
 
 from .models import (
+    AlbumsCreditsResponseJSON,
     AlbumsEndpointResponseJSON,
     AlbumsItemsResponseJSON,
     AlbumsReviewResponseJSON,
@@ -29,6 +30,7 @@ from requests import HTTPError, Response, Session
 logger: logging.Logger = logging.getLogger(__name__)
 
 ResponseJSON = Union[
+    AlbumsCreditsResponseJSON,
     AlbumsEndpointResponseJSON,
     AlbumsItemsResponseJSON,
     AlbumsReviewResponseJSON,
@@ -258,6 +260,24 @@ def request_credits(
         parameters={"includeContributors": True},
         url_end="/credits",
         subclass=TracksCreditsResponseJSON,
+        credits_flag=True,
+    )
+
+
+# This one's special, because its JSON response isn't proper JSON:
+# it's just an array of JSON objects, so we have to pass a flag to mark
+# that the logic common to the rest of the functions is slightly different here.
+def request_albums_credits(
+    session: Session, album_id: int
+) -> Optional[AlbumsCreditsResponseJSON]:
+    return requester_maker(
+        session=session,
+        endpoint="albums",
+        identifier=album_id,
+        headers={"Accept": "application/json"},
+        parameters={"includeContributors": True, "limit": 50},
+        url_end="/credits",
+        subclass=AlbumsCreditsResponseJSON,
         credits_flag=True,
     )
 
