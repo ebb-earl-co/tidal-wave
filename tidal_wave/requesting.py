@@ -227,7 +227,7 @@ def request_artists_videos(
     return requester_maker(
         session=session,
         endpoint="artists",
-        artist_id=identifier,
+        identifier=artist_id,
         headers={"Accept": "application/json"},
         url_end="/videos",
         subclass=ArtistsVideosResponseJSON,

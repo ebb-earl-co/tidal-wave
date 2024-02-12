@@ -250,7 +250,13 @@ class Video:
         return str(self.outfile.absolute())
 
     def dump(self, fp=sys.stdout):
+        """This method emulates stdlib json.dump(). In particular,
+        it sends to 'fp' the JSON-formatted dict
+        {self.metadata.title: self.absolute_outfile}"""
         json.dump({self.metadata.title: self.absolute_outfile}, fp)
 
     def dumps(self) -> str:
+        """This method emulates stdlib json.dumps(). In particular,
+        it returns the JSON-formatted str from the dict
+        {self.metadata.title: self.absolute_outfile}"""
         return json.dumps({self.metadata.title: self.absolute_outfile})
