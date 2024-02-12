@@ -3,7 +3,7 @@ import json
 import logging
 from pathlib import Path
 import sys
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from requests import Session
 
@@ -12,6 +12,7 @@ from .models import (
     AlbumsEndpointResponseJSON,
     AlbumsItemsResponseJSON,
     AlbumsReviewResponseJSON,
+    TracksEndpointResponseJSON,
 )
 from .requesting import request_albums, request_album_items, request_album_review
 from .track import Track
@@ -35,7 +36,9 @@ class Album:
             session=session, identifier=self.album_id
         )
         _items = album_items.items if album_items is not None else ()
-        self.tracks = tuple(_item.item for _item in _items)
+        self.tracks: Tuple[TracksEndpointResponseJSON] = tuple(
+            _item.item for _item in _items
+        )
 
     def set_metadata(self, session: Session):
         """This method sets self.metadata by requesting from

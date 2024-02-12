@@ -15,7 +15,7 @@ import ffmpeg
 from requests import Session
 
 from .dash import manifester, JSONDASHManifest, Manifest, XMLDASHManifest
-from .media import af_aq, AudioFormat, TAG_MAPPING
+from .media import AudioFormat, TAG_MAPPING
 from .models import (
     AlbumsEndpointResponseJSON,
     ArtistsBioResponseJSON,
@@ -46,23 +46,49 @@ class Track:
     def __post_init__(self):
         self._has_lyrics: Optional[bool] = None
         self.tags: dict = {}
+        self.af_aq: Dict[AudioFormat, str] = {
+            AudioFormat.sony_360_reality_audio: "LOW",
+            AudioFormat.dolby_atmos: "LOW",
+            AudioFormat.hi_res: "HI_RES",
+            AudioFormat.mqa: "HI_RES",
+            AudioFormat.lossless: "LOSSLESS",
+            AudioFormat.high: "HIGH",
+            AudioFormat.low: "LOW",
+        }
 
-    def get_metadata(self, session: Session):
+    def set_metadata(self, session: Session):
+        """This method executes request_tracks, passing in 'session' and
+        self.track_id. If an error occurs, self.metadata is set to None.
+        Otherwise, self.metadata is set to the response of request_tracks(),
+        a TracksEndpointResponseJSON instance."""
         self.metadata: Optional[TracksEndpointResponseJSON] = request_tracks(
             session, self.track_id
         )
 
     def get_album(self, session: Session):
+        """This method executes request_albums, passing in 'session' and
+        self.metadata.album.id. If an error occurs, self.album is set to None.
+        Otherwise, self.album is set to the response of request_albums(),
+        an AlbumsEndpointResponseJSON instance."""
         self.album: Optional[AlbumsEndpointResponseJSON] = request_albums(
             session, self.metadata.album.id
         )
 
     def get_credits(self, session: Session):
+        """This method executes request_credits, passing in 'session' and
+        self.track_id. If an error occurs, self.credits is set to None.
+        Otherwise, self.credits is set to the response of request_credits(),
+        a TracksCreditsResponseJSON instance."""
         self.credits: Optional[TracksCreditsResponseJSON] = request_credits(
             session, self.track_id
         )
 
     def get_lyrics(self, session: Session):
+        """This method executes request_lyrics, passing in 'session' and
+        self.track_id. If an error occurs, self.lyrics is set to None
+        and self._has_lyrics is set to False. Otherwise, self.lyrics is
+        set to the response of request_lyrics(), an instance of
+        TracksLyricsResponseJSON."""
         if self._has_lyrics is None:
             self.lyrics: Optional[TracksLyricsResponseJSON] = request_lyrics(
                 session, self.track_id
@@ -74,9 +100,10 @@ class Track:
         else:
             return self.lyrics
 
-    def get_stream(self, session: Session, audio_format: AudioFormat):
-        """Populates self.stream, self.manifest"""
-        aq: Optional[str] = af_aq.get(audio_format)
+    def set_stream(self, session: Session, audio_format: AudioFormat):
+        """This method populates self.stream, which is either None
+        (in the event of request error) or TracksEndpointStreamResponseJSON"""
+        aq: Optional[str] = self.af_aq.get(audio_format)
         self.stream: Optional[TracksEndpointStreamResponseJSON] = request_stream(
             session, self.track_id, aq
         )
@@ -118,7 +145,7 @@ class Track:
             (self.album_dir / volume_substring).mkdir(parents=True, exist_ok=True)
 
     def set_filename(self, audio_format: AudioFormat):
-        """This method sets self.filename. It's based on self.metadata
+        """This method sets self.filename, which is based on self.metadata
         as well as audio_format. Additionally, if the available codecs in
         self.manifest don't match audio_format, warnings are logged"""
         _track_part: str = f"{self.metadata.track_number:02d} - {self.metadata.name}"
@@ -146,7 +173,8 @@ class Track:
                     "Even though HiRes audio format was requested, this track is only "
                     "available in MQA format. TIDAL regards this as 'HiRes' even though "
                     "it is probably only lossless; i.e. 16-bit 44.1 kHz quality. "
-                    "Downloading of track will continue, but it will be marked as MQA."
+                    "Downloading of track will continue, but it will be marked as "
+                    "MQA ([Q])."
                 )
                 self.filename: Optional[str] = f"{_track_part} [Q].{self.codec}"
             elif (self.stream.bit_depth == 16) and (self.stream.sample_rate == 44100):
@@ -500,7 +528,7 @@ class Track:
         edge cases."""
 
         if metadata is None:
-            self.get_metadata(session)
+            self.set_metadata(session)
         else:
             self.metadata = metadata
 
@@ -556,8 +584,8 @@ class Track:
         else:
             self.set_album_dir(out_dir)
 
-        self.get_credits(session)
-        self.get_stream(session, audio_format)
+        self.set_credits(session)
+        self.set_stream(session, audio_format)
         if self.stream is None:
             return
 
@@ -611,23 +639,30 @@ class Track:
         return self.absolute_outfile
 
     def dump(self, fp=sys.stdout):
+        """This method emulates stdlib json.dump() in that it sends to 'fp'
+        a JSON-like object: particularly,
+        {self.metadata.track_number: self.absolute_outfile}"""
         k: int = int(self.metadata.track_number)
         if self.outfile is None:
             v: Optional[str] = None
         elif not isinstance(self.outfile, Path):
             v: Optional[str] = None
         else:
-            v: Optional[str] = str(self.outfile.absolute())
+            v: Optional[str] = self.absolute_outfile
         json.dump({k: v}, fp)
         return None
 
     def dumps(self) -> str:
+        """This method emulates stdlib json.dumps(). It creates a
+        JSON-formatted string from the dict
+        {self.metadata.track_number: self.absolute_outfile}
+        """
         k: int = int(self.metadata.track_number)
         if self.outfile is None:
             v: Optional[str] = None
         elif not isinstance(self.outfile, Path):
             v: Optional[str] = None
         else:
-            v: Optional[str] = str(self.outfile.absolute())
+            v: Optional[str] = self.absolute_outfile
         json.dumps({k: v})
         return None

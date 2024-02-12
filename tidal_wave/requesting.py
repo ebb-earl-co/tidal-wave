@@ -277,8 +277,6 @@ def request_lyrics(
 
 # One more layer of currying here, as the parameters argument
 # is dependent on a runtime variable.
-
-
 def request_stream(
     session: Session, track_id: int, audio_quality: str
 ) -> Optional[TracksEndpointStreamResponseJSON]:
@@ -419,7 +417,7 @@ def fetch_content_length(session: Session, url: str) -> int:
     """Attempt to get the amount of bytes pointed to by `url`. If
     the HEAD request from the requests.Session object, `session`,
     encounters an HTTP request; or if the server does not support
-    HTTP range requests; or if the server does not response with a
+    HTTP range requests; or if the server does not respond with a
     Content-Length header, return 0"""
     session_params: dict = session.params
     # Unset params to avoid 403 response

@@ -23,6 +23,13 @@ from requests import Session
 logger = logging.getLogger("__name__")
 
 
+class VideoFormat(str, Enum):
+    high = "HIGH"
+    medium = "MEDIUM"
+    low = "LOW"
+    audio_only = "AUDIO_ONLY"
+
+
 @dataclass
 class Video:
     video_id: int

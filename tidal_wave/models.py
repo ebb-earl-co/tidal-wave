@@ -112,7 +112,7 @@ class TrackAlbum:
 
 @dataclass
 class TracksEndpointResponseJSON(dataclass_wizard.JSONWizard):
-    """Response from the TIDAL API, tracks/{TRACKID} endpoint.If the params and
+    """Response from the TIDAL API, tracks/{TRACKID} endpoint. If the params and
     headers are correctly specified, the API returns metadata of the available
     version of the audio track, including audio quality, track title, ISRC,
     track artists, album, track number, duration, etc."""
@@ -143,8 +143,10 @@ class TracksEndpointResponseJSON(dataclass_wizard.JSONWizard):
 
 @dataclass
 class AlbumsEndpointResponseJSON(dataclass_wizard.JSONWizard):
-    """This dataclass is the `dataclass-wizard`-generated class that represents
-    the JSON response from https://api.tidal.com/v1/albums/<ALBUMID>"""
+    """This class represents the JSON response from the TIDAL API
+    /albums/<ALBUMID> endpoint. If the params and headers are correctly
+    specified, the response should contain metadata about the album;
+    e.g. title, number of tracks, copyright, date of release, etc."""
 
     id: int = field(repr=False)
     title: str
