@@ -133,8 +133,8 @@ def manifester(tesrj: TracksEndpointStreamResponseJSON) -> Manifest:
                     )
                 else:
                     return manifest
-        elif tesrj.audio_mode == "STEREO" and tesrj.audio_quality == "HI_RES":
-            # Dealing with MQA here
+        elif tesrj.audio_mode == "STEREO":
+            # Dealing with MQA here or any quality responding to Windows access token
             try:
                 manifest: Manifest = dataclass_wizard.fromdict(
                     JSONDASHManifest, json.loads(tesrj.manifest_bytes)
@@ -174,8 +174,8 @@ def manifester(tesrj: TracksEndpointStreamResponseJSON) -> Manifest:
                     return manifest
         else:
             raise TidalManifestException(
-                "Expected a manifest for Dolby Atmos, MQA, or Sony 360 Reality Audio "
-                f"for track {tesrj.track_id}"
+                "Expected a manifest of Dolby Atmos, MQA, Sony 360 Reality Audio, "
+                f"or encrypted-for-Windows-client audio for track {tesrj.track_id}"
             )
     elif tesrj.manifest_mime_type == "application/dash+xml":
         try:
