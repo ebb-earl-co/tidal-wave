@@ -192,7 +192,7 @@ def login_windows(
     token_path: Path = TOKEN_DIR_PATH / "windows-tidal.token",
 ) -> Optional[requests.Session]:
     _token: Optional[dict] = load_token_from_disk(token_path=token_path)
-    access_token: Optional[str] = _token.get("access_token")
+    access_token: Optional[str] = None if _token is None else _token.get("access_token")
     if access_token is None:
         access_token: str = typer.prompt(
             "Enter Tidal API access token (the part after 'Bearer ')"
@@ -203,7 +203,7 @@ def login_windows(
         logger.critical("Access token is not valid: exiting now.")
     else:
         logger.debug(f"Writing this access token to '{str(token_path.absolute())}'")
-        s.headers["User-Agent"] = "TIDAL_NATIVE_PLAYER/WIN/3.1.2.195"
+        s.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) TIDAL/2.36.2 Chrome/116.0.5845.228 Electron/26.6.1 Safari/537.36"
         s.params["deviceType"] = "DESKTOP"
         to_write: dict = {
             "access_token": s.auth.token,
