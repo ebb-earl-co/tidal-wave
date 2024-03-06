@@ -145,8 +145,8 @@ def decrypt_manifest_key_id(manifest_key_id: str) -> Tuple[bytes, bytes]:
     manifest_key_bytes: bytes = base64.b64decode(manifest_key_id)
 
     # Get the IV from the first 16 bytes of the manifest's keyId
-    iv: bytes = security_token[:16]
-    encrypted_manifest_key_bytes: bytes = security_token[16:]
+    iv: bytes = manifest_key_bytes[:16]
+    encrypted_manifest_key_bytes: bytes = manifest_key_bytes[16:]
 
     decryptor = AES.new(master_key_bytes, AES.MODE_CBC, iv)
     decrypted_manifest_key_bytes: bytes = decryptor.decrypt(
