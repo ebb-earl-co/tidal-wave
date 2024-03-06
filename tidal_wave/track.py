@@ -14,7 +14,13 @@ from mutagen.mp4 import MP4Cover
 import ffmpeg
 from requests import Session
 
-from .dash import manifester, JSONDASHManifest, Manifest, XMLDASHManifest
+from .dash import (
+    manifester,
+    JSONDASHManifest,
+    Manifest,
+    TidalManifestException,
+    XMLDASHManifest,
+)
 from .media import AudioFormat, TAG_MAPPING
 from .models import (
     AlbumsEndpointResponseJSON,
@@ -110,7 +116,14 @@ class Track:
 
     def set_manifest(self):
         """This method sets self.manifest and self.codec"""
-        self.manifest: Manifest = manifester(self.stream)
+        try:
+            self.manifest: Manifest = manifester(self.stream)
+        except TidalManifestException as tme:
+            logger.critical(tme.args[0])
+            self.manifest = None
+            self.codec = None
+            return
+
         # https://dashif.org/codecs/audio/
         if self.manifest.codecs == "flac":
             self.codec = "flac"
@@ -590,6 +603,9 @@ class Track:
             return
 
         self.set_manifest()
+        if self.manifest is None:
+            return
+
         self.set_filename(audio_format)
         outfile: Optional[Path] = self.set_outfile()
         if outfile is None:
