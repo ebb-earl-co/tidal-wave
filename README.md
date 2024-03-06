@@ -43,6 +43,7 @@ A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to ret
    - [`mutagen`](https://pypi.org/project/mutagen/)
    - [`m3u8`](https://pypi.org/project/m3u8/)
    - [`platformdirs`](https://pypi.org/project/platformdirs/)
+   - [`pycryptodome`](https://pypi.org/project/pycryptodome/)
    - [`requests`](https://pypi.org/project/requests/)
    - [`typer`](https://pypi.org/project/typer/)
 
@@ -235,7 +236,7 @@ The easiest way to start working on development is to fork this project on GitHu
     * Obviously replace the URL with your forked version if you've followed that strategy
   4. Activate the virtual environment and install the required packages (requirements.txt): `(some-virtual-env) $ python3 -m pip install -r requirements.txt`
 
-    * optional packages to follow the coding style and build process; `shiv`, `black`: `(some-virtual-env) $ python3 -m pip install shiv black`
+    * optional packages to follow the coding style and build process; `pyinstaller`, `black`: `(some-virtual-env) $ python3 -m pip install black pyinstaller`
     * optionally, Rust and cargo in order to build the `pyapp` artifacts
     * optionally, Docker to build the OCI container artifacts
   5. From a Python REPL (or, my preferred method, an iPython session), import all the relevant modules, or the targeted ones for development:
