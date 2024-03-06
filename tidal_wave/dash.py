@@ -46,9 +46,7 @@ class JSONDASHManifest:
         self.nonce: Optional[bytes] = None
         if self.encryption_type == "OLD_AES":
             if len(self.key_id) > 0:
-                logger.debug(
-                    f"Attempting to create decryption key for DASH manifest from TIDAL"
-                )
+                logger.debug("Attempting to create decryption key from DASH manifest")
                 try:
                     self.key, self.nonce = decrypt_manifest_key_id(self.key_id)
                 except Exception as e:
