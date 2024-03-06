@@ -7,12 +7,14 @@ import shlex
 import shutil
 import subprocess
 import sys
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List, Optional, Union
 
 import mutagen
 from mutagen.mp4 import MP4Cover
 import ffmpeg
 from requests import Session
+from Crypto.Cipher import AES
+from Crypto.Util import Counter
 
 from .dash import (
     manifester,
@@ -295,21 +297,19 @@ class Track:
         the manifest returned by TIDAL API contains one URL. It relies on
         byte range headers to incrementally get all content from a URL"""
         logger.info(f"Writing track {self.track_id} to '{self.absolute_outfile}'")
+        # Implement HTTP range requests here to mimic official clients
+        range_size: int = 1024 * 1024  # 1 MiB
+        content_length: int = fetch_content_length(session=session, url=self.urls[0])
+        if content_length == 0:
+            return
+
+        range_headers: Iterable[str] = http_request_range_headers(
+            content_length=content_length,
+            range_size=range_size,
+            return_tuple=False,
+        )
 
         with temporary_file(suffix=".mp4") as ntf:
-            # Implement HTTP range requests here to mimic official clients
-            range_size: int = 1024 * 1024  # 1 MiB
-            content_length: int = fetch_content_length(
-                session=session, url=self.urls[0]
-            )
-            if content_length == 0:
-                return
-
-            range_headers: Iterable[str] = http_request_range_headers(
-                content_length=content_length,
-                range_size=range_size,
-                return_tuple=False,
-            )
             for rh in range_headers:
                 with session.get(
                     self.urls[0], params=self.download_params, headers={"Range": rh}
@@ -319,26 +319,74 @@ class Track:
                         return
                     else:
                         ntf.write(rr.content)
+                        logger.debug(
+                            f"Wrote {rh} of track {self.track_id} to '{ntf.name}'"
+                        )
             else:
                 ntf.seek(0)
+                logger.debug(f"Finished writing track {self.track_id} to '{ntf.name}'")
 
-            if self.codec == "flac":
-                # Have to use FFMPEG to re-mux the audio bytes, otherwise
-                # mutagen chokes on NoFlacHeaderError
-                ffmpeg.input(ntf.name, hide_banner=None, y=None).output(
-                    self.absolute_outfile,
-                    acodec="copy",
-                    loglevel="quiet",
-                ).run()
-            elif self.codec == "m4a":
-                shutil.copyfile(ntf.name, self.outfile)
-            elif self.codec == "mka":
-                shutil.copyfile(ntf.name, self.outfile)
+            if (self.manifest.key is not None) and (self.manifest.nonce is not None):
+                logger.info(
+                    f"Audio data for track {self.track_id} is encrypted. "
+                    "Attempting to decrypt now"
+                )
+                counter: Dict[str, Union[int, bytes, bool]] = Counter.new(
+                    64, prefix=self.manifest.nonce, initial_value=0
+                )
+                decryptor = AES.new(self.manifest.key, AES.MODE_CTR, counter=counter)
 
-            logger.info(
-                f"Track {self.track_id} written to '{str(self.outfile.absolute())}'"
-            )
-            return self.outfile
+                # decrypt and write to new temporary file
+                with temporary_file(suffix=".mp4") as f_decrypted:
+                    audio_bytes: bytes = decryptor.decrypt(ntf.read())
+                    f_decrypted.write(audio_bytes)
+                    logger.info(
+                        f"Audio data for track {self.track_id} has been decrypted."
+                    )
+
+                    if self.codec == "flac":
+                        # Have to use FFMPEG to re-mux the audio bytes, otherwise
+                        # mutagen chokes on NoFlacHeaderError
+                        logger.debug(
+                            f"Using FFmpeg to remux '{f_decrypted.name}', "
+                            f"writing to '{self.absolute_outfile}'"
+                        )
+                        ffmpeg.input(f_decrypted.name, hide_banner=None, y=None).output(
+                            self.absolute_outfile,
+                            acodec="copy",
+                            loglevel="quiet",
+                        ).run()
+                    elif self.codec == "m4a":
+                        shutil.copyfile(f_decrypted.name, self.outfile)
+                    elif self.codec == "mka":
+                        shutil.copyfile(f_decrypted.name, self.outfile)
+
+                    logger.info(
+                        f"Track {self.track_id} written to '{self.absolute_outfile}'"
+                    )
+                    return self.outfile
+            else:
+                if self.codec == "flac":
+                    # Have to use FFMPEG to re-mux the audio bytes, otherwise
+                    # mutagen chokes on NoFlacHeaderError
+                    logger.debug(
+                        f"Using FFmpeg to remux '{ntf.name}', "
+                        f"writing to '{self.absolute_outfile}'"
+                    )
+                    ffmpeg.input(ntf.name, hide_banner=None, y=None).output(
+                        self.absolute_outfile,
+                        acodec="copy",
+                        loglevel="quiet",
+                    ).run()
+                elif self.codec == "m4a":
+                    shutil.copyfile(ntf.name, self.outfile)
+                elif self.codec == "mka":
+                    shutil.copyfile(ntf.name, self.outfile)
+
+                logger.info(
+                    f"Track {self.track_id} written to '{str(self.outfile.absolute())}'"
+                )
+                return self.outfile
 
     def download_urls(self, session: Session, out_dir: Path) -> Optional[Path]:
         """This method writes the contents from self.urls to a temporary
@@ -355,22 +403,70 @@ class Track:
                         return
                     else:
                         ntf.write(resp.content)
+                        logger.debug(
+                            f"Wrote {len(resp.content):_} bytes of track {self.track_id} to '{ntf.name}'"
+                        )
             else:
                 ntf.seek(0)
 
-            if self.codec == "flac":
-                # Have to use FFmpeg to re-mux the audio bytes, otherwise
-                # mutagen chokes on NoFlacHeaderError
-                ffmpeg.input(ntf.name, hide_banner=None, y=None).output(
-                    self.absolute_outfile, acodec="copy", loglevel="quiet"
-                ).run()
-            elif self.codec == "m4a":
-                shutil.copyfile(ntf.name, self.outfile)
-            elif self.codec == "mka":
-                shutil.copyfile(ntf.name, self.outfile)
+            if (self.manifest.key is not None) and (self.manifest.nonce is not None):
+                logger.info(
+                    f"Audio data for track {self.track_id} is encrypted. "
+                    "Attempting to decrypt now"
+                )
+                counter: Dict[str, Union[int, bytes, bool]] = Counter.new(
+                    64, prefix=self.manifest.nonce, initial_value=0
+                )
+                decryptor = AES.new(self.manifest.key, AES.MODE_CTR, counter=counter)
+                # decrypt and write to new temporary file
+                with temporary_file(suffix=".mp4") as f_decrypted:
+                    audio_bytes: bytes = decryptor.decrypt(ntf.read())
+                    f_decrypted.write(audio_bytes)
+                    logger.info(
+                        f"Audio data for track {self.track_id} has been decrypted."
+                    )
 
-        logger.info(f"Track {self.track_id} written to '{self.absolute_outfile}'")
-        return self.outfile
+                    if self.codec == "flac":
+                        # Have to use FFMPEG to re-mux the audio bytes, otherwise
+                        # mutagen chokes on NoFlacHeaderError
+                        logger.debug(
+                            f"Using FFmpeg to remux '{f_decrypted.name}', "
+                            f"writing to '{self.absolute_outfile}'"
+                        )
+                        ffmpeg.input(f_decrypted.name, hide_banner=None, y=None).output(
+                            self.absolute_outfile,
+                            acodec="copy",
+                            loglevel="quiet",
+                        ).run()
+                    elif self.codec == "m4a":
+                        shutil.copyfile(f_decrypted.name, self.outfile)
+                    elif self.codec == "mka":
+                        shutil.copyfile(f_decrypted.name, self.outfile)
+
+                    logger.info(
+                        f"Track {self.track_id} written to '{self.absolute_outfile}'"
+                    )
+                    return self.outfile
+            else:
+                if self.codec == "flac":
+                    # Have to use FFmpeg to re-mux the audio bytes, otherwise
+                    # mutagen chokes on NoFlacHeaderError
+                    logger.debug(
+                        f"Using FFmpeg to remux '{ntf.name}', "
+                        f"writing to '{self.absolute_outfile}'"
+                    )
+                    ffmpeg.input(ntf.name, hide_banner=None, y=None).output(
+                        self.absolute_outfile, acodec="copy", loglevel="quiet"
+                    ).run()
+                elif self.codec == "m4a":
+                    shutil.copyfile(ntf.name, self.outfile)
+                elif self.codec == "mka":
+                    shutil.copyfile(ntf.name, self.outfile)
+
+                logger.info(
+                    f"Track {self.track_id} written to '{self.absolute_outfile}'"
+                )
+                return self.outfile
 
     def download(self, session: Session, out_dir: Path) -> Optional[Path]:
         """This method GETs the data from self.urls and writes it

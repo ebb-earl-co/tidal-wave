@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 import json
+import logging
 import re
 from typing import List, Optional, Tuple, Union
 from xml.etree import ElementTree as ET
@@ -8,6 +9,9 @@ import dataclass_wizard
 from requests import Session
 
 from .models import TracksEndpointStreamResponseJSON
+from .utils import decrypt_manifest_key_id
+
+logger = logging.getLogger("__name__")
 
 
 class TidalManifestException(Exception):
@@ -37,6 +41,19 @@ class JSONDASHManifest:
     key_id: Optional[str] = field(default=None)
     urls: Optional[List[str]] = field(repr=False, default=None)
 
+    def __post_init__(self):
+        self.key: Optional[bytes] = None
+        self.nonce: Optional[bytes] = None
+        if self.encryption_type == "OLD_AES":
+            if len(self.key_id) > 0:
+                logger.debug(
+                    f"Attempting to create decryption key for DASH manifest from TIDAL"
+                )
+                try:
+                    self.key, self.nonce = decrypt_manifest_key_id(self.key_id)
+                except Exception as e:
+                    logger.exception(e)
+
 
 @dataclass
 class XMLDASHManifest:
@@ -52,6 +69,10 @@ class XMLDASHManifest:
     segment_timeline: Optional["SegmentTimeline"] = field(default=None, repr=False)
 
     def __post_init__(self):
+        # Initialize key and nonce even though they won't be used in
+        # this manifest class
+        self.key, self.nonce = None, None
+
         self.bandwidth: Optional[int] = (
             int(self.bandwidth) if self.bandwidth is not None else None
         )
@@ -134,10 +155,19 @@ def manifester(tesrj: TracksEndpointStreamResponseJSON) -> Manifest:
 
         if manifest.encryption_type == "NONE":
             return manifest
+        elif manifest.encryption_type == "OLD_AES":
+            if (manifest.key is not None) and (manifest.nonce is not None):
+                return manifest
+            else:
+                raise TidalManifestException(
+                    f"Audio data for track {tesrj.track_id}, audio mode "
+                    f"{tesrj.audio_mode} could not be decrypted"
+                )
         else:
             raise TidalManifestException(
-                f"Manifest for track {tesrj.track_id}, audio mode "
-                f"{tesrj.audio_mode} is encrypted"
+                f"Audio data for track {tesrj.track_id}, audio mode "
+                f"{tesrj.audio_mode} is incorrigibly encrypted with "
+                f"encryption type '{manifest.encryption_type}'"
             )
     elif tesrj.manifest_mime_type == "application/dash+xml":
         try:
