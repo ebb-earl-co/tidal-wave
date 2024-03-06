@@ -1,3 +1,4 @@
+import base64
 from contextlib import contextmanager
 from io import BytesIO
 import logging
@@ -6,6 +7,8 @@ from pathlib import Path
 import tempfile
 from typing import Optional, Tuple, Union
 
+from Crypto.Cipher import AES
+from Crypto.Util import Counter
 from requests import Session
 
 TIDAL_API_URL: str = "https://api.tidal.com/v1"
@@ -79,7 +82,7 @@ def download_artist_image(session, artist, output_dir, dimension=320) -> Optiona
     _url: str = artist.picture_url(dimension)
     if _url is None:
         logger.info(
-            f"Cannot download image for artist '{artist}', "
+            f"Cannot download image for artist '{artist.name}', "
             "as Tidal supplied no URL for this artist's image."
         )
         return
@@ -88,7 +91,7 @@ def download_artist_image(session, artist, output_dir, dimension=320) -> Optiona
         if not r.ok:
             logger.warning(
                 "Could not retrieve data from Tidal resources/images URL "
-                f"for artist {artist} due to error code: {r.status_code}"
+                f"for artist {artist.name} due to error code: {r.status_code}"
             )
             logger.debug(r.reason)
             return
@@ -125,3 +128,30 @@ def temporary_file(suffix: str = ".mka"):
     finally:
         tf.close()
         os.unlink(tf.name)
+
+
+def decrypt_manifest_key_id(manifest_key_id: str) -> Tuple[bytes, bytes]:
+    """Given a 'keyId' value from the TIDAL API manifest response, use the
+    master_key gleaned from previous projects and decrypt the audio bytes.
+    This will work if the manifest specifies encryption type 'OLD_AES'.
+    Returns a tuple of bytes, representing the key and nonce to use to
+    decrypt the audio data."""
+
+    # https://github.com/yaronzz/Tidal-Media-Downloader/blob/master/TIDALDL-PY/tidal_dl/decryption.py#L25
+    master_key: str = "UIlTTEMmmLfGowo/UC60x2H45W6MdGgTRfo/umg4754="
+
+    # Decode the base64 strings to ascii strings
+    master_key_bytes: bytes = base64.b64decode(master_key)
+    manifest_key_bytes: bytes = base64.b64decode(manifest_key_id)
+
+    # Get the IV from the first 16 bytes of the manifest's keyId
+    iv: bytes = manifest_key_bytes[:16]
+    encrypted_manifest_key_bytes: bytes = manifest_key_bytes[16:]
+
+    decryptor = AES.new(master_key_bytes, AES.MODE_CBC, iv)
+    decrypted_manifest_key_bytes: bytes = decryptor.decrypt(
+        encrypted_manifest_key_bytes
+    )
+
+    key, nonce = decrypted_manifest_key_bytes[:16], decrypted_manifest_key_bytes[16:24]
+    return key, nonce

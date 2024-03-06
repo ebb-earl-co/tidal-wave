@@ -13,83 +13,83 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    
-    - uses: awalsh128/cache-apt-pkgs-action@latest
-      with:
-        version: 1.0
-        packages: build-essential pkg-config yasm
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
 
-    - name: Build FFmpeg from source (git submodule)
-      run: |
-        mkdir ~/ffmpeg_build/ ~/bin/
-        cd FFmpeg-6.1.1
-        PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
-          --prefix="$HOME/ffmpeg_build" \
-          --pkg-config-flags="--static" \
-          --extra-cflags="-I$HOME/ffmpeg_build/include" \
-          --extra-ldflags="-L$HOME/ffmpeg_build/lib" \
-          --extra-libs="-lpthread -lm" \
-          --ld="g++" \
-          --bindir="$HOME/bin" \
-          --disable-everything \
-          --disable-doc \
-          --disable-htmlpages \
-          --disable-podpages \
-          --disable-txtpages \
-          --disable-network \
-          --disable-autodetect \
-          --disable-hwaccels \
-          --disable-ffprobe \
-          --disable-ffplay \
-          --enable-decoder=flac,mjpeg \
-          --enable-demuxer=aac,eac3,flac,image2,mov,mpegts \
-          --enable-encoder=flac,mjpeg \
-          --enable-filter=copy \
-          --enable-muxer=eac3,flac,mjpeg,mpegts,mp4 \
-          --enable-protocol=file \
-          --enable-small
-        PATH="$HOME/bin:$PATH" make -j$(nproc)
-        make install
+      - uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          version: 1.0
+          packages: build-essential pkg-config yasm
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
-        cache: "pip"  # caching pip dependencies
+      - name: Build FFmpeg from source (git submodule)
+        run: |
+          mkdir -p ~/ffmpeg_build/ ~/bin/
+          cd FFmpeg-6.1.1
+          PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
+            --prefix="$HOME/ffmpeg_build" \
+            --pkg-config-flags="--static" \
+            --extra-cflags="-I$HOME/ffmpeg_build/include" \
+            --extra-ldflags="-L$HOME/ffmpeg_build/lib" \
+            --extra-libs="-lpthread -lm" \
+            --ld="g++" \
+            --bindir="$HOME/bin" \
+            --disable-everything \
+            --disable-doc \
+            --disable-htmlpages \
+            --disable-podpages \
+            --disable-txtpages \
+            --disable-network \
+            --disable-autodetect \
+            --disable-hwaccels \
+            --disable-ffprobe \
+            --disable-ffplay \
+            --enable-decoder=flac,mjpeg \
+            --enable-demuxer=aac,eac3,flac,image2,mov,mpegts \
+            --enable-encoder=flac,mjpeg \
+            --enable-filter=copy \
+            --enable-muxer=eac3,flac,mjpeg,mpegts,mp4 \
+            --enable-protocol=file \
+            --enable-small
+          PATH="$HOME/bin:$PATH" make -j$(nproc)
+          make install
 
-    - name: Install dependencies
-      run: |
-        python3 -m pip install --upgrade pip setuptools wheel
-        python3 -m pip install -r requirements.txt
-        python3 -m pip install pyinstaller rich shellingham
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip" # caching pip dependencies
 
-    - name: Create Executable with Pyinstaller
-      run: |
-        pyinstaller \
-          --distpath ./.dist \
-          --workpath ./.build \
-          --name tidal-wave_py311_FFmpeg6.1.1_linux \
-          --paths tidal_wave \
-          --add-data "README.md:." \
-          --add-binary "${HOME}/bin/ffmpeg:." \
-          --clean \
-          --noupx \
-          --onefile \
-          --strip \
-          ./pyinstaller.py 
-    
-    - name: Test just-compiled binary
-      run: |
-        chmod +x ./.dist/tidal-wave_py311_FFmpeg6.1.1_linux
-        ./.dist/tidal-wave_py311_FFmpeg6.1.1_linux --help
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip setuptools wheel
+          python3 -m pip install -r requirements.txt
+          python3 -m pip install pyinstaller rich shellingham
 
-    - name: Add artifact to release
-      uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
-      with:
-        token: ${{ github.token }}
-        fail_on_unmatched_files: true
-        files: ./.dist/tidal-wave_py311_FFmpeg6.1.1_linux
+      - name: Create Executable with Pyinstaller
+        run: |
+          pyinstaller \
+            --distpath ./.dist \
+            --workpath ./.build \
+            --name tidal-wave_py311_FFmpeg6.1.1_linux \
+            --paths tidal_wave \
+            --add-data "README.md:." \
+            --add-binary "${HOME}/bin/ffmpeg:." \
+            --clean \
+            --noupx \
+            --onefile \
+            --strip \
+            ./pyinstaller.py
+
+      - name: Test just-compiled binary
+        run: |
+          chmod +x ./.dist/tidal-wave_py311_FFmpeg6.1.1_linux
+          ./.dist/tidal-wave_py311_FFmpeg6.1.1_linux --help
+
+      - name: Add artifact to release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          token: ${{ github.token }}
+          fail_on_unmatched_files: true
+          files: ./.dist/tidal-wave_py311_FFmpeg6.1.1_linux

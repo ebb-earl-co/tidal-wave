@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 import json
+import logging
 import re
 from typing import List, Optional, Tuple, Union
 from xml.etree import ElementTree as ET
@@ -8,6 +9,9 @@ import dataclass_wizard
 from requests import Session
 
 from .models import TracksEndpointStreamResponseJSON
+from .utils import decrypt_manifest_key_id
+
+logger = logging.getLogger("__name__")
 
 
 class TidalManifestException(Exception):
@@ -34,7 +38,19 @@ class JSONDASHManifest:
     mime_type: Optional[str] = field(default=None)
     codecs: Optional[str] = field(default=None)
     encryption_type: Optional[str] = field(default=None)
+    key_id: Optional[str] = field(default=None)
     urls: Optional[List[str]] = field(repr=False, default=None)
+
+    def __post_init__(self):
+        self.key: Optional[bytes] = None
+        self.nonce: Optional[bytes] = None
+        if self.encryption_type == "OLD_AES":
+            if len(self.key_id) > 0:
+                logger.debug("Attempting to create decryption key from DASH manifest")
+                try:
+                    self.key, self.nonce = decrypt_manifest_key_id(self.key_id)
+                except Exception as e:
+                    logger.exception(e)
 
 
 @dataclass
@@ -51,6 +67,10 @@ class XMLDASHManifest:
     segment_timeline: Optional["SegmentTimeline"] = field(default=None, repr=False)
 
     def __post_init__(self):
+        # Initialize key and nonce even though they won't be used in
+        # this manifest class
+        self.key, self.nonce = None, None
+
         self.bandwidth: Optional[int] = (
             int(self.bandwidth) if self.bandwidth is not None else None
         )
@@ -114,68 +134,38 @@ def manifester(tesrj: TracksEndpointStreamResponseJSON) -> Manifest:
     the attributes of `tesrj`. Will raise TidalManifestException upon
     error"""
     if tesrj.manifest_mime_type == "application/vnd.tidal.bts":
-        if tesrj.audio_mode == "DOLBY_ATMOS":
-            try:
-                manifest: Manifest = dataclass_wizard.fromdict(
-                    JSONDASHManifest, json.loads(tesrj.manifest_bytes)
-                )
-            except json.decoder.JSONDecodeError:
-                raise TidalManifestException(
-                    f"Cannot parse manifest with type '{tesrj.manifest_mime_type}' as JSON"
-                )
-            except dataclass_wizard.errors.ParseError as pe:
-                raise TidalManifestException(pe.message.split("\n")[0])
-            else:
-                if manifest.encryption_type != "NONE":
-                    raise TidalManifestException(
-                        f"Manifest for track {tesrj.track_id}, audio mode "
-                        f"{tesrj.audio_mode} is encrypted"
-                    )
-                else:
-                    return manifest
-        elif tesrj.audio_mode == "STEREO":
-            # Dealing with MQA here or any quality responding to Windows access token
-            try:
-                manifest: Manifest = dataclass_wizard.fromdict(
-                    JSONDASHManifest, json.loads(tesrj.manifest_bytes)
-                )
-            except json.decoder.JSONDecodeError:
-                raise TidalManifestException(
-                    f"Cannot parse manifest with type '{tesrj.manifest_mime_type}' as JSON"
-                )
-            except dataclass_wizard.errors.ParseError as pe:
-                raise TidalManifestException(pe.message.split("\n")[0])
-            else:
-                if manifest.encryption_type != "NONE":
-                    raise TidalManifestException(
-                        f"Manifest for track {tesrj.track_id}, audio mode "
-                        f"{tesrj.audio_mode} is encrypted"
-                    )
-                else:
-                    return manifest
-        elif tesrj.audio_mode == "SONY_360RA":
-            try:
-                manifest: Manifest = dataclass_wizard.fromdict(
-                    JSONDASHManifest, json.loads(tesrj.manifest_bytes)
-                )
-            except json.decoder.JSONDecodeError:
-                raise TidalManifestException(
-                    f"Cannot parse manifest with type '{tesrj.manifest_mime_type}' as JSON"
-                )
-            except dataclass_wizard.errors.ParseError as pe:
-                raise TidalManifestException(pe.message.split("\n")[0])
-            else:
-                if manifest.encryption_type != "NONE":
-                    raise TidalManifestException(
-                        f"Manifest for track {tesrj.track_id}, audio mode "
-                        f"{tesrj.audio_mode} is encrypted"
-                    )
-                else:
-                    return manifest
-        else:
+        if tesrj.audio_mode not in {"DOLBY_ATMOS", "SONY_360RA", "STEREO"}:
             raise TidalManifestException(
                 "Expected a manifest of Dolby Atmos, MQA, Sony 360 Reality Audio, "
                 f"or encrypted-for-Windows-client audio for track {tesrj.track_id}"
+            )
+
+        try:
+            manifest: Manifest = dataclass_wizard.fromdict(
+                JSONDASHManifest, json.loads(tesrj.manifest_bytes)
+            )
+        except json.decoder.JSONDecodeError:
+            raise TidalManifestException(
+                f"Cannot parse manifest with type '{tesrj.manifest_mime_type}' as JSON"
+            )
+        except dataclass_wizard.errors.ParseError as pe:
+            raise TidalManifestException(pe.message.split("\n")[0])
+
+        if manifest.encryption_type == "NONE":
+            return manifest
+        elif manifest.encryption_type == "OLD_AES":
+            if (manifest.key is not None) and (manifest.nonce is not None):
+                return manifest
+            else:
+                raise TidalManifestException(
+                    f"Audio data for track {tesrj.track_id}, audio mode "
+                    f"{tesrj.audio_mode} could not be decrypted"
+                )
+        else:
+            raise TidalManifestException(
+                f"Audio data for track {tesrj.track_id}, audio mode "
+                f"{tesrj.audio_mode} is incorrigibly encrypted with "
+                f"encryption type '{manifest.encryption_type}'"
             )
     elif tesrj.manifest_mime_type == "application/dash+xml":
         try:

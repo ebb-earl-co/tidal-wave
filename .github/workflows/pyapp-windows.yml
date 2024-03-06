@@ -17,37 +17,37 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install pyapp from crates.io (also builds executable)
-      uses: baptiste0928/cargo-install@v3
-      with:
-        crate: pyapp
-        version: 0.14.0
+      - name: Install pyapp from crates.io (also builds executable)
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: pyapp
+          version: 0.15.1
 
-    - name: Test just-compiled binary
-      shell: pwsh
-      run: |
-        & "C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe" --help
+      - name: Test just-compiled binary
+        shell: pwsh
+        run: |
+          & "C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe" --help
 
-    - name: Rename just-compiled EXE
-      shell: pwsh
-      run: |
-        Move-Item "C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe" ${{ github.workspace }}\tidal-wave_py311_pyapp.exe
+      - name: Rename just-compiled EXE
+        shell: pwsh
+        run: |
+          Move-Item "C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe" ${{ github.workspace }}\tidal-wave_py311_pyapp.exe
 
-    - name: Upload artifact
-      id: artifact-upload-step
-      uses: actions/upload-artifact@v4
-      with:
-        name: tidal-wave_${{ github.event.release.tag_name }}_py311_pyapp.exe
-        path: ${{ github.workspace }}\tidal-wave_py311_pyapp.exe
-        compression-level: 0
-        if-no-files-found: error
-        retention-days: 1
+      - name: Upload artifact
+        id: artifact-upload-step
+        uses: actions/upload-artifact@v4
+        with:
+          name: tidal-wave_${{ github.event.release.tag_name }}_py311_pyapp.exe
+          path: ${{ github.workspace }}\tidal-wave_py311_pyapp.exe
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 1
 
-    - name: Add artifact to release
-      uses: softprops/action-gh-release@v1
-      with:
-        token: ${{ github.token }}
-        fail_on_unmatched_files: true
-        files: ${{ github.workspace }}\tidal-wave_py311_pyapp.exe
+      - name: Add artifact to release
+        uses: softprops/action-gh-release@v1
+        with:
+          token: ${{ github.token }}
+          fail_on_unmatched_files: true
+          files: ${{ github.workspace }}\tidal-wave_py311_pyapp.exe
