@@ -8,7 +8,6 @@ import tempfile
 from typing import Optional, Tuple, Union
 
 from Crypto.Cipher import AES
-from Crypto.Util import Counter
 from requests import Session
 
 TIDAL_API_URL: str = "https://api.tidal.com/v1"

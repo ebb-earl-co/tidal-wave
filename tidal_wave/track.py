@@ -338,7 +338,9 @@ class Track:
 
                 # decrypt and write to new temporary file
                 with temporary_file(suffix=".mp4") as f_decrypted:
-                    audio_bytes: bytes = decryptor.decrypt(ntf.read())
+                    # I hope that it doesn't come back to bite me, reading the bytes
+                    # from a file with an open 'wb' file descriptor context manager
+                    audio_bytes: bytes = decryptor.decrypt(Path(ntf.name).read_bytes())
                     f_decrypted.write(audio_bytes)
                     logger.info(
                         f"Audio data for track {self.track_id} has been decrypted."
@@ -420,7 +422,9 @@ class Track:
                 decryptor = AES.new(self.manifest.key, AES.MODE_CTR, counter=counter)
                 # decrypt and write to new temporary file
                 with temporary_file(suffix=".mp4") as f_decrypted:
-                    audio_bytes: bytes = decryptor.decrypt(ntf.read())
+                    # I hope that it doesn't come back to bite me, reading the bytes
+                    # from a file with an open 'wb' file descriptor context manager
+                    audio_bytes: bytes = decryptor.decrypt(Path(ntf.name).read_bytes())
                     f_decrypted.write(audio_bytes)
                     logger.info(
                         f"Audio data for track {self.track_id} has been decrypted."
