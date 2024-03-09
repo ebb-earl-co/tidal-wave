@@ -205,7 +205,9 @@ def login_windows(
             token_path.unlink()
     else:
         logger.debug(f"Writing this access token to '{str(token_path.absolute())}'")
-        s.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) TIDAL/2.36.2 Chrome/116.0.5845.228 Electron/26.6.1 Safari/537.36"
+        s.headers["User-Agent"] = (
+            "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) TIDAL/2.36.2 Chrome/116.0.5845.228 Electron/26.6.1 Safari/537.36"
+        )
         s.params["deviceType"] = "DESKTOP"
         to_write: dict = {
             "access_token": s.auth.token,
