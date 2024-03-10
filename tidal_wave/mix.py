@@ -53,8 +53,9 @@ class Mix:
         if mix_items is None:
             self.items = tuple()
         else:
-            self.items: Tuple[Optional[MixItem]] = tuple(mix_items.items)
-
+            self.items: Tuple[Optional[MixItem]] = tuple(
+                filter(None, mix_items.items)
+            )
     def set_mix_dir(self, out_dir: Path):
         """Populates self.mix_dir based on self.name, self.mix_id"""
         mix_substring: str = f"{self.name} [{self.mix_id}]"
