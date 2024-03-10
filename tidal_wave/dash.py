@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple, Union
 from xml.etree import ElementTree as ET
 
 import dataclass_wizard
-from requests import Session
+from niquests import Session
 
 from .models import TracksEndpointStreamResponseJSON
 from .utils import decrypt_manifest_key_id

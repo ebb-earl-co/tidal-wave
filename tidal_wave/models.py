@@ -7,7 +7,7 @@ from typing import Dict, List, Literal, Optional, Tuple, Union
 from typing_extensions import Annotated
 
 import dataclass_wizard
-from requests.auth import AuthBase
+from niquests.auth import AuthBase
 
 from .utils import replace_illegal_characters
 
@@ -44,7 +44,7 @@ class TracksEndpointStreamResponseJSON(dataclass_wizard.JSONWizard):
 
 
 class BearerAuth(AuthBase):
-    """A class to be passed to the `auth` argument in a `requests.Session`
+    """A class to be passed to the `auth` argument in a `niquests.Session`
     constructor"""
 
     def __init__(self, token: str):

@@ -8,7 +8,7 @@ import tempfile
 from typing import Optional, Tuple, Union
 
 from Crypto.Cipher import AES
-from requests import Session
+from niquests import Session
 
 TIDAL_API_URL: str = "https://api.tidal.com/v1"
 IMAGE_URL: str = "https://resources.tidal.com/images/%s.jpg"

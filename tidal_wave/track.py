@@ -12,7 +12,7 @@ from typing import Dict, Iterable, List, Optional, Union
 import mutagen
 from mutagen.mp4 import MP4Cover
 import ffmpeg
-from requests import Session
+from niquests import Session
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
 

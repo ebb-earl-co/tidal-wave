@@ -19,7 +19,7 @@ from .utils import replace_illegal_characters, temporary_file
 import ffmpeg
 import mutagen
 import m3u8
-from requests import Session
+from niquests import Session
 
 logger = logging.getLogger("__name__")
 
@@ -50,9 +50,9 @@ class Video:
 
     def get_contributors(self, session: Session):
         """Request from TIDAL API /videos/contributors endpoint"""
-        self.contributors: Optional[VideosContributorsResponseJSON] = (
-            request_video_contributors(session=session, video_id=self.video_id)
-        )
+        self.contributors: Optional[
+            VideosContributorsResponseJSON
+        ] = request_video_contributors(session=session, video_id=self.video_id)
 
     def get_stream(self, session: Session, video_format=VideoFormat.high):
         """Populates self.stream by requesting from TIDAL API

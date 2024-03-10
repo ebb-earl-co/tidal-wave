@@ -11,7 +11,7 @@ from typing import Dict, Optional, Tuple, Union
 
 import dataclass_wizard
 from platformdirs import user_config_path
-import requests
+import niquests
 
 PROJECT_NAME: str = "tidal-wave"
 TOKEN_DIR_PATH: Path = user_config_path() / PROJECT_NAME
@@ -198,12 +198,12 @@ class BearerToken:
             "scope": "r_usr+w_usr+w_sub",
         }
         _auth = (self.client_id, self.client_secret)
-        with requests.post(
+        with niquests.post(
             url=f"{OAUTH2_URL}/token", data=_data, auth=_auth, headers=OAUTH2_HEADERS
         ) as resp:
             try:
                 resp.raise_for_status()
-            except requests.HTTPError:
+            except niquests.HTTPError:
                 raise TokenException(
                     f"Could not refresh bearer token: HTTP error code {resp.status_code}"
                 )
@@ -262,10 +262,10 @@ class TidalOauth:
             "client_id": self.client_id,
             "scope": "r_usr+w_usr+w_sub",
         }
-        with requests.post(url=_url, data=_data, headers=headers) as resp:
+        with niquests.post(url=_url, data=_data, headers=headers) as resp:
             try:
                 resp.raise_for_status()
-            except requests.HTTPError as he:
+            except niquests.HTTPError as he:
                 raise AuthorizationException(he.args[0])
 
             daerj = DeviceAuthorizationEndpointResponseJSON.from_dict(resp.json())
@@ -304,7 +304,7 @@ class TidalOauth:
         )
 
         while datetime.now(tz=timezone.utc) < self.verification_expiration:
-            with requests.post(
+            with niquests.post(
                 url=f"{OAUTH2_URL}/token", headers=headers, data=_data, auth=_auth
             ) as resp:
                 if not resp.ok:

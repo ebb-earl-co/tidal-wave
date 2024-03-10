@@ -1,6 +1,6 @@
 import json
 import logging
-from requests import Session
+from niquests import Session
 from typing import Dict, List, Optional, Union
 
 from .models import VideosEndpointStreamResponseJSON
@@ -34,7 +34,7 @@ def playlister(
 ) -> m3u8.M3U8:
     """Attempts to parse a VideosEndpointStreamResponseJSON object into an
     m3u8.M3U8 object. Requires fetching HTTP(s) resources, so takes a
-    requests.Session object as an argument. If error occurs, raises
+    niquests.Session object as an argument. If error occurs, raises
     TidalM3U8Exception"""
     em_three_you_ate: Optional[m3u8.M3U8] = None
     if vesrj.manifest_mime_type == "application/vnd.tidal.emu":

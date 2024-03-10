@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 
-from requests import Session
+from niquests import Session
 
 from .album import Album
 from .media import AudioFormat

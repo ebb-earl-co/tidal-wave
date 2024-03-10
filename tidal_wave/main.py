@@ -75,7 +75,11 @@ def main(
         level=logging.getLevelName(loglevel.value),
     )
     logger = logging.getLogger(__name__)
-
+    
+    # Dependence hpack is brought in by niquests[performance],
+    # but its DEBUG logging is voluminous, so set it to INFO
+    logging.getLogger("hpack").setLevel(logging.INFO)
+    
     tidal_resource: Optional[
         Union[TidalAlbum, TidalMix, TidalPlaylist, TidalTrack, TidalVideo]
     ] = match_tidal_url(tidal_url)

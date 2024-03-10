@@ -15,8 +15,9 @@ from .oauth import (
 )
 from .utils import TIDAL_API_URL
 
-import requests
+import niquests
 import typer
+from urllib3.util import Retry
 
 COMMON_HEADERS: Dict[str, str] = {"Accept-Encoding": "gzip, deflate, br"}
 
@@ -65,18 +66,21 @@ def load_token_from_disk(
 
 def validate_token_for_session(
     token: str, headers: Dict[str, str] = COMMON_HEADERS
-) -> Optional[requests.Session]:
+) -> Optional[niquests.Session]:
     """Send a GET request to the /sessions endpoint of Tidal's API.
     If `token` is valid, use the SessionsEndpointResponseJSON object
-    that was returned from the API to create a requests.Session object with
+    that was returned from the API to create a niquests.Session object with
     some additional attributes. Otherwise, return None"""
-    auth_headers: Dict[str, str] = {**headers, "Authorization": f"Bearer {token}"}
-    sess: Optional[requests.Session] = None
-
-    with requests.get(url=f"{TIDAL_API_URL}/sessions", headers=auth_headers) as r:
+    sess: Optional[niquests.Session] = None
+    headers["User-Agent"] = None
+    headers["user-agent"] = None
+    
+    with niquests.get(
+        url=f"{TIDAL_API_URL}/sessions", headers=headers, auth=token
+    ) as r:
         try:
             r.raise_for_status()
-        except requests.HTTPError as h:
+        except niquests.HTTPError as h:
             if r.status_code == 401:
                 logger.error("Token is not authorized")
                 return sess
@@ -88,7 +92,12 @@ def validate_token_for_session(
         logger.debug("Adding data from API reponse to session object:")
         logger.debug(serj)
 
-    sess: requests.Session = requests.Session()
+    sess: niquests.Session = niquests.Session(
+        # https://niquests.readthedocs.io/en/latest/user/quickstart.html#supported-dns-url
+        # resolver="dot://dns.mullvad.net",
+        disable_http3=True,
+        retries=Retry(total=4, backoff_factor=0.4, allowed_methods={"GET", "HEAD", "POST"})
+    )
     sess.headers: Dict[str, str] = headers
     sess.auth: BearerAuth = BearerAuth(token=token)
     sess.user_id: str = serj.user_id
@@ -106,9 +115,9 @@ def validate_token_for_session(
 
 def login_fire_tv(
     token_path: Path = TOKEN_DIR_PATH / "fire_tv-tidal.token",
-) -> Optional[requests.Session]:
+) -> Optional[niquests.Session]:
     """Load `token_path` from disk, initializing a BearerToken from its
-    contents. If successful, return a requests.Session object with
+    contents. If successful, return a niquests.Session object with
     extra attributes set
     """
     bearer_token = BearerToken.load(p=token_path)
@@ -130,7 +139,7 @@ def login_fire_tv(
         else:
             logger.info("Successfully refreshed TIDAL access token")
 
-    s: Optional[requests.Session] = validate_token_for_session(
+    s: Optional[niquests.Session] = validate_token_for_session(
         bearer_token.access_token
     )
     if s is None:
@@ -144,7 +153,7 @@ def login_fire_tv(
 
 def login_android(
     token_path: Path = TOKEN_DIR_PATH / "android-tidal.token",
-) -> Optional[requests.Session]:
+) -> Optional[niquests.Session]:
     logger.info(f"Loading TIDAL access token from '{str(token_path.absolute())}'")
     _token: Optional[dict] = load_token_from_disk(token_path=token_path)
     access_token: Optional[str] = None if _token is None else _token.get("access_token")
@@ -163,7 +172,7 @@ def login_android(
         elif dt_input.lower() == "tablet":
             device_type = "TABLET"
 
-    s: Optional[requests.Session] = validate_token_for_session(access_token)
+    s: Optional[niquests.Session] = validate_token_for_session(access_token)
     if s is None:
         logger.critical("Access token is not valid: exiting now.")
         if token_path.exists():
@@ -190,7 +199,7 @@ def login_android(
 
 def login_windows(
     token_path: Path = TOKEN_DIR_PATH / "windows-tidal.token",
-) -> Optional[requests.Session]:
+) -> Optional[niquests.Session]:
     _token: Optional[dict] = load_token_from_disk(token_path=token_path)
     access_token: Optional[str] = None if _token is None else _token.get("access_token")
     if access_token is None:
@@ -198,7 +207,7 @@ def login_windows(
             "Enter Tidal API access token (the part after 'Bearer ')"
         )
 
-    s: Optional[requests.Session] = validate_token_for_session(access_token)
+    s: Optional[niquests.Session] = validate_token_for_session(access_token)
     if s is None:
         logger.critical("Access token is not valid: exiting now.")
         if token_path.exists():
@@ -222,17 +231,17 @@ def login_windows(
 
 def login_mac_os(
     token_path: Path = TOKEN_DIR_PATH / "mac_os-tidal.token",
-) -> Optional[requests.Session]:
+) -> Optional[niquests.Session]:
     raise NotImplementedError
 
 
 def login(
     audio_format: AudioFormat,
-) -> Tuple[Optional[requests.Session], Optional[AudioFormat]]:
+) -> Tuple[Optional[niquests.Session], Optional[AudioFormat]]:
     """Given a selected audio_format, either log in "automatically"
     via the Fire TV OAuth 2.0 flow, or ask for an Android-/Windows-/MacOS-
     gleaned API token; the latter to be able to access HiRes fLaC audio.
-    Returns a tuple of a requests.Session object, if no error, and the
+    Returns a tuple of a niquests.Session object, if no error, and the
     AudioFormat instance passed in; or (None, "") in the event of error.
     """
     high_quality_formats: Set[AudioFormat] = {
