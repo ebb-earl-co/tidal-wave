@@ -405,9 +405,6 @@ class Track:
                         return
                     else:
                         ntf.write(resp.content)
-                        logger.debug(
-                            f"Wrote {len(resp.content):_} bytes of track {self.track_id} to '{ntf.name}'"
-                        )
             else:
                 ntf.seek(0)
 
