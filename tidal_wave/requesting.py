@@ -25,7 +25,7 @@ from .models import (
 from .utils import TIDAL_API_URL
 
 import backoff
-from niquests import HTTPError, Response, Session
+from httpx import Client, HTTPError, Request, Response, URL
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ ResponseJSON = Union[
 
 
 def requester_maker(
-    session: Session,
+    client: Client,
     endpoint: str,
     identifier: int,
     url_end: str = "",
@@ -63,10 +63,10 @@ def requester_maker(
 ) -> Callable:
     """This function is a function factory: it crafts nearly identical
     versions of the same logic: send a GET request to a certain endpoint;
-    if a requests.HTTPError arises, return None; else, transform the
+    if a httpx.HTTPError arises, return None; else, transform the
     JSON response into an instance of a subclass of JSONWizard."""
 
-    def function(s, e, i, u, h, p, sc, cf):
+    def function(c, e, i, u, h, p, sc, cf):
         url: str = f"{TIDAL_API_URL}/{e}/{i}{u}"
         kwargs: dict = {"url": url}
         if p is not None:
@@ -74,33 +74,45 @@ def requester_maker(
         if h is not None:
             kwargs["headers"] = h
 
+        @backoff.on_predicate(
+            backoff.expo,
+            predicate=lambda r: r.status_code == 429,
+            jitter=backoff.random_jitter,
+            max_time=10,
+            logger=logger,
+        )
+        def _get(c: Client, request_kwargs: dict) -> Response:
+            """Return an httpx.Response object, from having passed request_kwargs
+            to c.get(), optionally retrying if 429 error occurs."""
+            return c.get(**request_kwargs)
+
         data: Optional[sc] = None
         logger.info(f"Requesting from TIDAL API: {e}/{i}{u}")
+        resp: Response = _get(c=c, request_kwargs=kwargs)
 
-        with s.get(**kwargs) as resp:
-            try:
-                resp.raise_for_status()
-            except HTTPError as he:
-                if resp.status_code == 404:
-                    logger.warning(
-                        f"404 Client Error: not found for TIDAL API endpoint {e}/{i}{u}"
-                    )
-                elif resp.status_code == 401:
-                    logger.warning(
-                        f"401 Client Error: Unauthorized for TIDAL API endpoint {e}/{i}{u}"
-                    )
-                else:
-                    logger.exception(he)
+        try:
+            resp.raise_for_status()
+        except HTTPError as he:
+            if resp.status_code == 404:
+                logger.warning(
+                    f"404 Client Error: not found for TIDAL API endpoint {e}/{i}{u}"
+                )
+            elif resp.status_code == 401:
+                logger.warning(
+                    f"401 Client Error: Unauthorized for TIDAL API endpoint {e}/{i}{u}"
+                )
             else:
-                if cf:
-                    data = sc.from_dict({"credits": resp.json()})
-                else:
-                    data = sc.from_dict(resp.json())
-            finally:
-                return data
+                logger.exception(he)
+        else:
+            if cf:
+                data = sc.from_dict({"credits": resp.json()})
+            else:
+                data = sc.from_dict(resp.json())
+        finally:
+            return data
 
     return function(
-        s=session,
+        c=client,
         e=endpoint,
         i=identifier,
         u=url_end,
@@ -111,17 +123,15 @@ def requester_maker(
     )
 
 
-# Functions will curry all arguments except session and identifier, as those
-# don't change during runtime, and session is only available once the __main__
+# Functions will curry all arguments except client and identifier, as those
+# don't change during runtime, and client is only available once the __main__
 # process (on the happy path) creates a requests.Session object. Identifier
 # varies with the media type, etc.
-
-
 def request_albums(
-    session: Session, album_id: int
+    client: Client, album_id: int
 ) -> Optional[AlbumsEndpointResponseJSON]:
     return requester_maker(
-        session=session,
+        client=client,
         endpoint="albums",
         identifier=album_id,
         headers={"Accept": "application/json"},
@@ -130,10 +140,10 @@ def request_albums(
 
 
 def request_album_items(
-    session: Session, album_id: int
+    client: Client, album_id: int
 ) -> Optional[AlbumsItemsResponseJSON]:
     return requester_maker(
-        session=session,
+        client=client,
         endpoint="albums",
         identifier=album_id,
         headers={"Accept": "application/json"},
@@ -144,10 +154,10 @@ def request_album_items(
 
 
 def request_album_review(
-    session: Session, album_id: int
+    client: Client, album_id: int
 ) -> Optional[AlbumsReviewResponseJSON]:
     return requester_maker(
-        session=session,
+        client=client,
         endpoint="albums",
         identifier=album_id,
         headers={"Accept": "application/json"},
@@ -157,10 +167,10 @@ def request_album_review(
 
 
 def request_artist_bio(
-    session: Session, artist_id: int
+    client: Client, artist_id: int
 ) -> Optional[ArtistsBioResponseJSON]:
     return requester_maker(
-        session=session,
+        client=client,
         endpoint="artists",
         identifier=artist_id,
         headers={"Accept": "application/json"},
@@ -170,10 +180,10 @@ def request_artist_bio(
 
 
 def request_artists(
-    session: Session, artist_id: int
+    client: Client, artist_id: int
 ) -> Optional[ArtistsEndpointResponseJSON]:
     return requester_maker(
-        session=session,
+        client=client,
         endpoint="artists",
         identifier=artist_id,
         headers={"Accept": "application/json"},
@@ -182,10 +192,10 @@ def request_artists(
 
 
 def request_artists_albums(
-    session: Session, artist_id: int
+    client: Client, artist_id: int
 ) -> Optional[ArtistsAlbumsResponseJSON]:
     return requester_maker(
-        session=session,
+        client=client,
         endpoint="artists",
         identifier=artist_id,
         headers={"Accept": "application/json"},
@@ -195,10 +205,10 @@ def request_artists_albums(
 
 
 def request_artists_audio_works(
-    session: Session, artist_id: int
+    client: Client, artist_id: int
 ) -> Optional[ArtistsAlbumsResponseJSON]:
     return requester_maker(
-        session=session,
+        client=client,
         endpoint="artists",
         identifier=artist_id,
         headers={"Accept": "application/json"},
@@ -209,10 +219,10 @@ def request_artists_audio_works(
 
 
 def request_artists_videos(
-    session: Session, artist_id: int
+    client: Client, artist_id: int
 ) -> Optional[ArtistsVideosResponseJSON]:
     return requester_maker(
-        session=session,
+        client=client,
         endpoint="artists",
         identifier=artist_id,
         headers={"Accept": "application/json"},
@@ -222,10 +232,10 @@ def request_artists_videos(
 
 
 def request_tracks(
-    session: Session, track_id: int
+    client: Client, track_id: int
 ) -> Optional[TracksEndpointResponseJSON]:
     return requester_maker(
-        session=session,
+        client=client,
         endpoint="tracks",
         identifier=track_id,
         headers={"Accept": "application/json"},
@@ -237,10 +247,10 @@ def request_tracks(
 # it's just an array of JSON objects, so we have to pass a flag to mark
 # that the logic common to the rest of the functions is slightly different here.
 def request_credits(
-    session: Session, track_id: int
+    client: Client, track_id: int
 ) -> Optional[TracksCreditsResponseJSON]:
     return requester_maker(
-        session=session,
+        client=client,
         endpoint="tracks",
         identifier=track_id,
         headers={"Accept": "application/json"},
@@ -255,10 +265,10 @@ def request_credits(
 # it's just an array of JSON objects, so we have to pass a flag to mark
 # that the logic common to the rest of the functions is slightly different here.
 def request_albums_credits(
-    session: Session, album_id: int
+    client: Client, album_id: int
 ) -> Optional[AlbumsCreditsResponseJSON]:
     return requester_maker(
-        session=session,
+        client=client,
         endpoint="albums",
         identifier=album_id,
         headers={"Accept": "application/json"},
@@ -270,10 +280,10 @@ def request_albums_credits(
 
 
 def request_lyrics(
-    session: Session, track_id: int
+    client: Client, track_id: int
 ) -> Optional[TracksLyricsResponseJSON]:
     return requester_maker(
-        session=session,
+        client=client,
         endpoint="tracks",
         identifier=track_id,
         headers={"Accept": "application/json"},
@@ -285,11 +295,11 @@ def request_lyrics(
 # One more layer of currying here, as the parameters argument
 # is dependent on a runtime variable.
 def request_stream(
-    session: Session, track_id: int, audio_quality: str
+    client: Client, track_id: int, audio_quality: str
 ) -> Optional[TracksEndpointStreamResponseJSON]:
     func = partial(
         requester_maker,
-        session=session,
+        client=client,
         endpoint="tracks",
         identifier=track_id,
         headers={"Accept": "application/json"},
@@ -305,10 +315,10 @@ def request_stream(
 
 
 def request_videos(
-    session: Session, video_id: int
+    client: Client, video_id: int
 ) -> Optional[VideosEndpointResponseJSON]:
     return requester_maker(
-        session=session,
+        client=client,
         endpoint="videos",
         identifier=video_id,
         headers={"Accept": "application/json"},
@@ -317,10 +327,10 @@ def request_videos(
 
 
 def request_video_contributors(
-    session: Session, video_id: int
+    client: Client, video_id: int
 ) -> Optional[VideosContributorsResponseJSON]:
     return requester_maker(
-        session=session,
+        client=client,
         endpoint="videos",
         identifier=video_id,
         headers={"Accept": "application/json"},
@@ -331,11 +341,11 @@ def request_video_contributors(
 
 
 def request_video_stream(
-    session: Session, video_id: int, video_quality: str
+    client: Client, video_id: int, video_quality: str
 ) -> Optional[VideosEndpointStreamResponseJSON]:
     func = partial(
         requester_maker,
-        session=session,
+        client=client,
         identifier=video_id,
         endpoint="videos",
         headers={"Accept": "application/json"},
@@ -351,10 +361,10 @@ def request_video_stream(
 
 
 def request_playlists(
-    session: Session, playlist_id: int
+    client: Client, playlist_id: int
 ) -> Optional[PlaylistsEndpointResponseJSON]:
     return requester_maker(
-        session=session,
+        client=client,
         endpoint="playlists",
         identifier=playlist_id,
         headers={"Accept": "application/json"},
@@ -362,10 +372,10 @@ def request_playlists(
     )
 
 
-def get_album_id(session: Session, track_id: int) -> Optional[int]:
+def get_album_id(client: Client, track_id: int) -> Optional[int]:
     """Given the Tidal ID to a track, query the Tidal API in order to retrieve
     the Tidal ID of the album to which the track belongs"""
-    terj: Optional[TracksEndpointResponseJSON] = request_tracks(session, track_id)
+    terj: Optional[TracksEndpointResponseJSON] = request_tracks(client, track_id)
     album_id: Optional[int] = None
 
     try:
@@ -420,18 +430,21 @@ def http_request_range_headers(
         return iterable
 
 
-def fetch_content_length(session: Session, url: str) -> int:
+def fetch_content_length(client: Client, url: str) -> int:
     """Attempt to get the amount of bytes pointed to by `url`. If
-    the HEAD request from the requests.Session object, `session`,
+    the HEAD request from the httpx.Client object, `client`,
     encounters an HTTP request; or if the server does not support
     HTTP range requests; or if the server does not respond with a
     Content-Length header, return 0"""
-    session_params: dict = session.params
+    client_params: dict = client.params
     # Unset params to avoid 403 response
-    _params: dict = {k: None for k in session_params}
-    with session.head(url=url, params=_params) as resp:
-        if not resp.ok:
-            cl: str = "0"
-        else:
-            cl: str = resp.headers.get("Content-Length", "0")
+    request: Request = client.build_request("HEAD", url)
+    request.headers["Accept"] = "image/jpeg"
+    request.url: URL = URL(url)
+    response: Response = client.send(request)
+
+    if not response.status_code == 200:
+        cl: str = "0"
+    else:
+        cl: str = response.headers.get("Content-Length", "0")
     return int(cl)

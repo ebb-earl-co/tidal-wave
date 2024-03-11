@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple, Union
 from xml.etree import ElementTree as ET
 
 import dataclass_wizard
-from niquests import Session
+from httpx import Client
 
 from .models import TracksEndpointStreamResponseJSON
 from .utils import decrypt_manifest_key_id
@@ -86,7 +86,7 @@ class XMLDASHManifest:
             int(self.start_number) if self.start_number is not None else None
         )
 
-    def build_urls(self, session: Session) -> Optional[List[str]]:
+    def build_urls(self, client: Client) -> Optional[List[str]]:
         """Parse the MPEG-DASH manifest into a list of URLs. In
         particular, look for a special value, r, in self.segment_timeline.s.
         If there is no such value, set r=1. In both cases, start substituting
@@ -108,7 +108,7 @@ class XMLDASHManifest:
         if r is None:
             urls_list: List[str] = [self.initialization]
             number: int = 1
-            while session.head(url=sub_number(number)).status_code != 500:
+            while client.head(url=sub_number(number)).status_code != 500:
                 urls_list.append(sub_number(number))
                 number += 1
             else:
@@ -119,7 +119,7 @@ class XMLDASHManifest:
                 sub_number(i) for i in number_range
             ]
             number: int = r + 1
-            while session.head(url=sub_number(number)).status_code != 500:
+            while client.head(url=sub_number(number)).status_code != 500:
                 urls_list.append(sub_number(number))
                 number += 1
             else:

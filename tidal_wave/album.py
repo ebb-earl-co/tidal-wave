@@ -5,8 +5,6 @@ from pathlib import Path
 import sys
 from typing import List, Optional, Tuple
 
-from niquests import Session
-
 from .media import AudioFormat
 from .models import (
     AlbumsCreditsResponseJSON,
@@ -24,6 +22,8 @@ from .requesting import (
 from .track import Track
 from .utils import download_cover_image
 
+from httpx import Client
+
 logger = logging.getLogger("__name__")
 
 
@@ -35,43 +35,43 @@ class Album:
         self.album_dir: Optional[Path] = None
         self.album_cover_saved: bool = False
 
-    def set_tracks(self, session: Session):
+    def set_tracks(self, client: Client):
         """This method populates self.tracks by requesting from
         TIDAL albums/items endpoint."""
         album_items: AlbumsItemsResponseJSON = request_album_items(
-            session=session, album_id=self.album_id
+            client=client, album_id=self.album_id
         )
         _items = album_items.items if album_items is not None else ()
         self.tracks: Tuple[TracksEndpointResponseJSON] = tuple(
             _item.item for _item in _items
         )
 
-    def set_metadata(self, session: Session):
+    def set_metadata(self, client: Client):
         """This method sets self.metadata by requesting from
         TIDAL /albums endpoint"""
         self.metadata: AlbumsEndpointResponseJSON = request_albums(
-            session=session, album_id=self.album_id
+            client=client, album_id=self.album_id
         )
 
-    def set_album_review(self, session: Session):
+    def set_album_review(self, client: Client):
         """This method requests the review corresponding to self.album_id
         in TIDAL. If it exists, it is written to disk as AlbumReview.json
         in self.album_dir"""
         self.album_review: Optional[AlbumsReviewResponseJSON] = request_album_review(
-            session=session, album_id=self.album_id
+            client=client, album_id=self.album_id
         )
         if self.album_review is not None:
             (self.album_dir / "AlbumReview.json").write_text(
                 self.album_review.to_json()
             )
 
-    def set_album_credits(self, session: Session):
+    def set_album_credits(self, client: Client):
         """This method requests the album's top-level credits (separate from
         each track's credits) and writes them to AlbumCredits.json in
         self.album_dir"""
         self.album_credits: Optional[
             AlbumsCreditsResponseJSON
-        ] = request_albums_credits(session=session, album_id=self.album_id)
+        ] = request_albums_credits(client=client, album_id=self.album_id)
         if self.album_credits is not None:
             f: str = str((self.album_dir / "AlbumCredits.json").absolute())
             with open(f, "w") as fp:
@@ -96,7 +96,7 @@ class Album:
                     parents=True, exist_ok=True
                 )
 
-    def save_cover_image(self, session: Session, out_dir: Path):
+    def save_cover_image(self, client: Client, out_dir: Path):
         """This method writes cover.jpg in self.album_dir via the
         utils.download_cover_image() function. If successful,
         then self.album_cover_saved takes the value True"""
@@ -105,7 +105,7 @@ class Album:
         self.cover_path: Path = self.album_dir / "cover.jpg"
         if not self.cover_path.exists():
             download_cover_image(
-                session=session,
+                client=client,
                 cover_uuid=self.metadata.cover,
                 output_dir=self.album_dir,
             )
@@ -114,7 +114,7 @@ class Album:
 
     def get_tracks(
         self,
-        session: Session,
+        client: Client,
         audio_format: AudioFormat,
         out_dir: Path,
         no_extra_files: bool,
@@ -127,7 +127,7 @@ class Album:
             track: Track = Track(track_id=t.id)
 
             track_files_value: Optional[str] = track.get(
-                session=session,
+                client=client,
                 audio_format=audio_format,
                 out_dir=out_dir,
                 metadata=t,
@@ -149,7 +149,7 @@ class Album:
 
     def get(
         self,
-        session: Session,
+        client: Client,
         audio_format: AudioFormat,
         out_dir: Path,
         metadata: Optional[AlbumsEndpointResponseJSON] = None,
@@ -164,7 +164,7 @@ class Album:
             5. get_tracks()
         """
         if metadata is None:
-            self.set_metadata(session)
+            self.set_metadata(client=client)
         else:
             self.metadata = metadata
 
@@ -172,24 +172,24 @@ class Album:
             self.track_files = {}
             return
 
-        self.set_tracks(session)
+        self.set_tracks(client=client)
 
-        self.set_album_dir(out_dir)
+        self.set_album_dir(out_dir=out_dir)
 
         if self.metadata.cover != "":  # None was sent from the API
-            self.save_cover_image(session, out_dir)
+            self.save_cover_image(client=client, out_dir=out_dir)
         else:
             logger.warning(
                 f"No cover image was returned from TIDAL API for album {self.album_id}"
             )
 
         if not no_extra_files:
-            self.set_album_review(session)
-            self.set_album_credits(session)
+            self.set_album_review(client)
+            self.set_album_credits(client)
         else:
             try:
                 self.cover_path.unlink()
             except FileNotFoundError:
                 pass
 
-        self.get_tracks(session, audio_format, out_dir, no_extra_files)
+        self.get_tracks(client, audio_format, out_dir, no_extra_files)

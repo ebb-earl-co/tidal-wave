@@ -1,10 +1,10 @@
 import json
 import logging
-from niquests import Session
 from typing import Dict, List, Optional, Union
 
 from .models import VideosEndpointStreamResponseJSON
 
+from httpx import Client, Request, Response, URL
 import m3u8
 
 logger = logging.getLogger(__name__)
@@ -18,23 +18,25 @@ class TidalM3U8Exception(Exception):
 class RequestsClient:
     """A custom class to pass to the m3u8.load() function"""
 
-    def __init__(self, session: Session):
-        self.session = session
+    def __init__(self, client: Client):
+        self.client = client
 
     def download(
         self, url: str, timeout: Optional[int] = None, headers={}, verify_ssl=True
     ):
-        p: Dict[str, None] = {k: None for k in self.session.params}
-        with self.session.get(url=url, timeout=timeout, params=p) as response:
-            return response.text, response.url
+            # Unset params to avoid 403 response
+        request: Request = client.build_request("GET", url)
+        request.url: URL = URL(url)
+        response: Response = self.client.send(request).raise_for_status()
+        return response.text, response.url
 
 
 def playlister(
-    session: Session, vesrj: Optional[VideosEndpointStreamResponseJSON]
+    client: Client, vesrj: Optional[VideosEndpointStreamResponseJSON]
 ) -> m3u8.M3U8:
     """Attempts to parse a VideosEndpointStreamResponseJSON object into an
-    m3u8.M3U8 object. Requires fetching HTTP(s) resources, so takes a
-    niquests.Session object as an argument. If error occurs, raises
+    m3u8.M3U8 object. Requires fetching HTTP(s) resources, so takes an
+    httpx.Client object as an argument. If error occurs, raises
     TidalM3U8Exception"""
     em_three_you_ate: Optional[m3u8.M3U8] = None
     if vesrj.manifest_mime_type == "application/vnd.tidal.emu":
@@ -61,7 +63,7 @@ def playlister(
             )
 
         em_three_you_ate: m3u8.M3U8 = m3u8.load(
-            url, http_client=RequestsClient(session=session)
+            url, http_client=RequestsClient(client=client)
         )
     return em_three_you_ate
 

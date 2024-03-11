@@ -76,9 +76,11 @@ def main(
     )
     logger = logging.getLogger(__name__)
     
-    # Dependence hpack is brought in by niquests[performance],
-    # but its DEBUG logging is voluminous, so set it to INFO
+    # Dependences brought in by httpx[http2]
+    # DEBUG logging is voluminous, so set to INFO
     logging.getLogger("hpack").setLevel(logging.INFO)
+    logging.getLogger("httpcore").setLevel(logging.INFO)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     
     tidal_resource: Optional[
         Union[TidalAlbum, TidalMix, TidalPlaylist, TidalTrack, TidalVideo]
@@ -90,15 +92,15 @@ def main(
         )
         raise typer.Exit(code=1)
 
-    s, audio_format = login(audio_format=audio_format)
-    if s is None:
+    c, audio_format = login(audio_format=audio_format)
+    if c is None:
         raise typer.Exit(code=1)
 
-    with closing(s) as session:
+    with closing(c) as client:
         if isinstance(tidal_resource, TidalTrack):
             track = Track(track_id=tidal_resource.tidal_id)
             track.get(
-                session=session,
+                client=client,
                 audio_format=audio_format,
                 out_dir=output_directory,
                 no_extra_files=no_extra_files,
@@ -110,7 +112,7 @@ def main(
         elif isinstance(tidal_resource, TidalAlbum):
             album = Album(album_id=tidal_resource.tidal_id)
             album.get(
-                session=session,
+                client=client,
                 audio_format=audio_format,
                 out_dir=output_directory,
                 no_extra_files=no_extra_files,
@@ -122,7 +124,7 @@ def main(
         elif isinstance(tidal_resource, TidalArtist):
             artist = Artist(artist_id=tidal_resource.tidal_id)
             artist.get(
-                session=session,
+                client=client,
                 audio_format=audio_format,
                 out_dir=output_directory,
                 include_eps_singles=include_eps_singles,
@@ -131,7 +133,7 @@ def main(
             raise typer.Exit(code=0)
         elif isinstance(tidal_resource, TidalVideo):
             video = Video(video_id=tidal_resource.tidal_id)
-            video.get(session=session, out_dir=output_directory)
+            video.get(client=client, out_dir=output_directory)
 
             if loglevel == LogLevel.debug:
                 video.dump()
@@ -140,14 +142,14 @@ def main(
             playlist = Playlist(playlist_id=tidal_resource.tidal_id)
             if no_flatten:
                 playlist.get_elements(
-                    session=session,
+                    client=client,
                     audio_format=audio_format,
                     out_dir=output_directory,
                     no_extra_files=no_extra_files,
                 )
             else:
                 playlist.get(
-                    session=session,
+                    client=client,
                     audio_format=audio_format,
                     out_dir=output_directory,
                     no_extra_files=no_extra_files,
@@ -160,14 +162,14 @@ def main(
             mix = Mix(mix_id=tidal_resource.tidal_id)
             if no_flatten:
                 mix.get_elements(
-                    session=session,
+                    client=client,
                     audio_format=audio_format,
                     out_dir=output_directory,
                     no_extra_files=no_extra_files,
                 )
             else:
                 mix.get(
-                    session=session,
+                    client=client,
                     audio_format=audio_format,
                     out_dir=output_directory,
                     no_extra_files=no_extra_files,

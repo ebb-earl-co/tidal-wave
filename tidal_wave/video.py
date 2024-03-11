@@ -17,9 +17,9 @@ from .requesting import request_videos, request_video_contributors, request_vide
 from .utils import replace_illegal_characters, temporary_file
 
 import ffmpeg
+from httpx import Client, Request, Response, URL
 import mutagen
 import m3u8
-from niquests import Session
 
 logger = logging.getLogger("__name__")
 
@@ -39,36 +39,36 @@ class Video:
         self.tags: dict = {}
         self.codec: str = "mp4"
 
-    def get_metadata(self, session: Session):
+    def get_metadata(self, client: Client):
         """Request from TIDAL API /videos endpoint and set self.metadata
         attribute as None or VideosEndpointResponseJSON instance. Also,
         sets self.name as a sanitized version of self.metadata.name"""
         self.metadata: Optional[VideosEndpointResponseJSON] = request_videos(
-            session=session, video_id=self.video_id
+            client=client, video_id=self.video_id
         )
         self.name = replace_illegal_characters(self.metadata.name)
 
-    def get_contributors(self, session: Session):
+    def get_contributors(self, client: Client):
         """Request from TIDAL API /videos/contributors endpoint"""
-        self.contributors: Optional[
-            VideosContributorsResponseJSON
-        ] = request_video_contributors(session=session, video_id=self.video_id)
+        self.contributors: Optional[VideosContributorsResponseJSON] = (
+            request_video_contributors(client=client, video_id=self.video_id)
+        )
 
-    def get_stream(self, session: Session, video_format=VideoFormat.high):
+    def get_stream(self, client: Client, video_format=VideoFormat.high):
         """Populates self.stream by requesting from TIDAL API
         /videos/playbackinfopostpaywall endpoint"""
         self.stream: Optional[VideosEndpointStreamResponseJSON] = request_video_stream(
-            session=session, video_id=self.video_id, video_quality=video_format.value
+            client=client, video_id=self.video_id, video_quality=video_format.value
         )
 
-    def get_m3u8(self, session: Session):
+    def get_m3u8(self, client: Client):
         """This method sets self.m3u8, an m3u8.M3U8 object
         following the HTTP Live Streaming specification; parsed from
         self.stream. I.e., self.get_stream() needs to have been executed
         before calling this method. N.b. self.m3u8 almost certainly will
         be a multivariant playlist, meaning further processing of its
         contents will be necessary."""
-        self.m3u8: m3u8.Playlist = playlister(session=session, vesrj=self.stream)
+        self.m3u8: m3u8.Playlist = playlister(client=client, vesrj=self.stream)
 
     def set_urls(self):
         """This method uses self.m3u8, an m3u8.M3U8 object that is variant:
@@ -110,15 +110,10 @@ class Video:
         else:
             return self.outfile
 
-    def download(self, session: Session, out_dir: Path) -> Optional[Path]:
+    def download(self, client: Client, out_dir: Path) -> Optional[Path]:
         """Requests the HLS video files that constitute self.video_id.
         Writes HLS bytes to a temporary file, then uses FFmpeg to write the
         video data to self.outfile"""
-        if session.session_id is not None:
-            download_headers: Dict[str, str] = {"sessionId": session.session_id}
-        else:
-            download_headers: dict = dict()
-        download_params: Dict[str, None] = {k: None for k in session.params}
         # self.outfile should already have been set by self.set_outfile()
         logger.info(
             f"Writing video {self.video_id} to '{str(self.outfile.absolute())}'"
@@ -126,14 +121,20 @@ class Video:
 
         with temporary_file(suffix=".mp4") as ntf:
             for u in self.urls:
-                with session.get(
-                    url=u, headers=download_headers, params=download_params
-                ) as download_response:
-                    if not download_response.ok:
-                        logger.warning(f"Could not download {self}")
-                        return
-                    else:
-                        ntf.write(download_response.content)
+                request: Request = client.build_request("GET", u)
+                request.headers: Dict[str, str] = (
+                    {"sessionId": client.session_id}
+                    if client.session_id is not None
+                    else dict()
+                )
+                # Unset params to avoid 403 response
+                request.url: URL = URL(u)
+                download_response: Response = client.send(request)
+                if not download_response.status_code == 200:
+                    logger.warning(f"Could not download {self}")
+                    return
+                else:
+                    ntf.write(download_response.content)
             else:
                 ntf.seek(0)
             self.outfile.write_bytes(Path(ntf.name).read_bytes())
@@ -204,7 +205,7 @@ class Video:
 
     def get(
         self,
-        session: Session,
+        client: Client,
         out_dir: Path,
         metadata: Optional["VideosEndpointResponseJSON"] = None,
     ) -> Optional[str]:
@@ -223,18 +224,18 @@ class Video:
           - self.set_tags()
         """
         if metadata is None:
-            self.get_metadata(session)
+            self.get_metadata(client)
         else:
             self.metadata = metadata
 
         if self.metadata is None:
             return None
 
-        self.get_contributors(session)
-        self.get_stream(session)
+        self.get_contributors(client)
+        self.get_stream(client)
         if self.stream is None:
             return None
-        self.get_m3u8(session)
+        self.get_m3u8(client)
         self.set_urls()
         self.set_artist_dir(out_dir)
         self.set_filename(out_dir)
@@ -244,7 +245,7 @@ class Video:
         else:
             self.absolute_outfile = str(self.outfile.absolute())
 
-        if self.download(session, out_dir) is None:
+        if self.download(client, out_dir) is None:
             return None
 
         self.craft_tags()
