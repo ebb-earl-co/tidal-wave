@@ -70,13 +70,13 @@ class Video:
         contents will be necessary."""
         self.m3u8: m3u8.M3U8 = playlister(client=client, vesrj=self.stream)
 
-    def set_urls(self):
+    def set_urls(self, client: Client):
         """This method uses self.m3u8, an m3u8.M3U8 object that is variant:
         (https://developer.apple.com/documentation/http-live-streaming/creating-a-multivariant-playlist)
         It retrieves the highest-quality .m3u8 in its .playlists attribute,
         and sets self.urls as the list of strings from that m3u8.Playlist"""
         # for now, just get the highest-bandwidth playlist
-        m3u8_files: List[str] = variant_streams(self.m3u8, return_urls=True)
+        m3u8_files: List[str] = variant_streams(self.m3u8, client, return_urls=True)
         if not all(file.startswith("http://vmz-ad-cf.video.tidal.com") for file in m3u8_files):
             raise TidalM3U8Exception(
                 f"HLS media segments are not available for video {self.video_id}"
@@ -231,6 +231,7 @@ class Video:
             self.get_metadata(client)
         else:
             self.metadata = metadata
+            self.name = replace_illegal_characters(self.metadata.name)
 
         if self.metadata is None:
             return None
@@ -240,7 +241,7 @@ class Video:
         if self.stream is None:
             return None
         self.get_m3u8(client)
-        self.set_urls()
+        self.set_urls(client)
         self.set_artist_dir(out_dir)
         self.set_filename(out_dir)
         outfile: Optional[Path] = self.set_outfile()

@@ -71,7 +71,7 @@ def playlister(
         except HTTPError:
             raise TidalM3U8Exception(
                 f"Could not retrieve variant streams from manifest for "
-                f"video {vesrj.video_id}, video mode {vesrj.video_quality}" 
+                f"video {vesrj.video_id}, video mode {vesrj.video_quality}"
             )
         else:
             em_three_you_ate: m3u8.M3U8 = m3u8.M3U8(content=response.text)
@@ -80,16 +80,16 @@ def playlister(
 
 
 def variant_streams(
-    m3u8: m3u8.M3U8, return_urls: bool = False
+    em3u8: m3u8.M3U8, client: Client, return_urls: bool = False
 ) -> Optional[Union[m3u8.M3U8, List[str]]]:
     """By default, return the highest-bandwidth option of m3u8.playlists
     attribute as an m3u8.M3U8 object. If return_urls, then returns the object's
     .files attribute, which is a list of strings. N.b. if m3u8.is_variant
     is False, then return None as there are no variant streams."""
-    if not m3u8.is_variant:
+    if not em3u8.is_variant:
         return
 
-    playlist: m3u8.Playlist = max(m3u8.playlists, key=lambda p: p.stream_info.bandwidth)
+    playlist: m3u8.Playlist = max(em3u8.playlists, key=lambda p: p.stream_info.bandwidth)
     if not return_urls:
         return playlist
 
@@ -101,11 +101,11 @@ def variant_streams(
     except HTTPError:
         raise TidalM3U8Exception(
             f"Could not retrieve media URLs from manifest for "
-            f"video {vesrj.video_id}, video mode {vesrj.video_quality}" 
+            f"video {vesrj.video_id}, video mode {vesrj.video_quality}"
         )
     else:
         _m3u8: m3u8.M3U8 = m3u8.M3U8(content=response.text)
-    
+
     if return_urls:
         return _m3u8.files
     else:

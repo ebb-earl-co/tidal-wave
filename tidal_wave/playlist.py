@@ -126,16 +126,15 @@ class Playlist:
                     client=client,
                     out_dir=self.playlist_dir,
                     metadata=item,
-                    no_extra_files=no_extra_files,
                 )
                 tracks_videos[i] = video
             else:
                 tracks_videos[i] = None
                 continue
         else:
-            self.tracks_videos: Tuple[
-                Tuple[int, Optional[Union[Track, Video]]]
-            ] = tuple(tracks_videos)
+            self.tracks_videos: Tuple[Tuple[int, Optional[Union[Track, Video]]]] = (
+                tuple(tracks_videos)
+            )
         return tracks_videos
 
     def flatten_playlist_dir(self):
@@ -246,7 +245,9 @@ class Playlist:
         in order to be able to access self.files
         N.b. the already-written file is temporarily copied to a .mp4 version in a
         temporary directory because .m4a files cannot be read with mutagen."""
-        m3u_text: str = f"#EXTM3U\n#EXTENC:UTF-8\n#EXTIMG:{str(self.cover_path.absolute())}\n#PLAYLIST:{self.name}\n"
+        m3u_text: str = (
+            f"#EXTM3U\n#EXTENC:UTF-8\n#EXTIMG:{str(self.cover_path.absolute())}\n#PLAYLIST:{self.name}\n"
+        )
 
         logger.info(
             f"Creating .m3u8 playlist file for Playlist with ID '{self.playlist_id}'"
@@ -542,9 +543,9 @@ def get_playlist(
         playlists_response: dict = request_playlist_items(
             client=client, playlist_id=playlist_id
         )
-        playlists_items_response_json: Optional[
-            "PlaylistsItemsResponseJSON"
-        ] = playlist_maker(playlists_response=playlists_response)
+        playlists_items_response_json: Optional["PlaylistsItemsResponseJSON"] = (
+            playlist_maker(playlists_response=playlists_response)
+        )
     except Exception as e:
         logger.exception(TidalPlaylistException(e.args[0]))
     finally:
