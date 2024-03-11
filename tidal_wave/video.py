@@ -68,7 +68,7 @@ class Video:
         before calling this method. N.b. self.m3u8 almost certainly will
         be a multivariant playlist, meaning further processing of its
         contents will be necessary."""
-        self.m3u8: m3u8.Playlist = playlister(client=client, vesrj=self.stream)
+        self.m3u8: m3u8.M3U8 = playlister(client=client, vesrj=self.stream)
 
     def set_urls(self):
         """This method uses self.m3u8, an m3u8.M3U8 object that is variant:
@@ -76,13 +76,12 @@ class Video:
         It retrieves the highest-quality .m3u8 in its .playlists attribute,
         and sets self.urls as the list of strings from that m3u8.Playlist"""
         # for now, just get the highest-bandwidth playlist
-        playlist: m3u8.Playlist = variant_streams(self.m3u8)
-        self.M3U8 = m3u8.load(playlist.uri)
-        if self.M3U8 is None or len(self.M3U8.files) == 0:
+        m3u8_files: List[str] = variant_streams(self.m3u8, return_urls=True)
+        if not all(file.startswith("http://vmz-ad-cf.video.tidal.com") for file in m3u8_files):
             raise TidalM3U8Exception(
                 f"HLS media segments are not available for video {self.video_id}"
             )
-        self.urls: List[str] = self.M3U8.files
+        self.urls: List[str] = m3u8_files
 
     def set_artist_dir(self, out_dir: Path):
         """Set self.artist_dir, which is the subdirectory of `out_dir`
@@ -120,15 +119,20 @@ class Video:
         )
 
         with temporary_file(suffix=".mp4") as ntf:
-            for u in self.urls:
-                request: Request = client.build_request("GET", u)
-                request.headers: Dict[str, str] = (
+            for i, u in enumerate(self.urls, 1):
+                request_headers: Dict[str, str] = (
                     {"sessionId": client.session_id}
                     if client.session_id is not None
                     else dict()
                 )
+                request: Request = client.build_request("GET", u, headers=request_headers)
+
                 # Unset params to avoid 403 response
                 request.url: URL = URL(u)
+                logger.debug(
+                    f"\tSending request for part {i} of video {self.video_id}: "
+                    f"'{u.split("?")[0]}'"
+                )
                 download_response: Response = client.send(request)
                 if not download_response.status_code == 200:
                     logger.warning(f"Could not download {self}")
