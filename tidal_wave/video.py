@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 import sys
 from typing import Dict, List, Optional
+import urllib
 
 from .hls import playlister, variant_streams, TidalM3U8Exception
 from .media import TAG_MAPPING
@@ -76,8 +77,9 @@ class Video:
         and sets self.urls as the list of strings from that m3u8.M3U8 object"""
         # for now, just get the highest-bandwidth playlist
         m3u8_files: List[str] = variant_streams(self.m3u8, session, return_urls=True)
+        m3u8_parse_results = (urllib.parse.urlparse(url=f) for f in m3u8_files)
         if not all(
-            file.startswith("http://vmz-ad-cf.video.tidal.com") for file in m3u8_files
+            u.netloc == "vmz-ad-cf.video.tidal.com" for u in m3u8_parse_results
         ):
             raise TidalM3U8Exception(
                 f"HLS media segments are not available for video {self.video_id}"
