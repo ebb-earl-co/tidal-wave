@@ -1,11 +1,12 @@
 import json
 import logging
-from requests import Session
 from typing import Dict, List, Optional, Union
 
 from .models import VideosEndpointStreamResponseJSON
 
 import m3u8
+from requests import HTTPError, Session
+
 
 logger = logging.getLogger(__name__)
 
@@ -60,24 +61,48 @@ def playlister(
                 "M3U8 file"
             )
 
-        em_three_you_ate: m3u8.M3U8 = m3u8.load(
-            url, http_client=RequestsClient(session=session)
-        )
+        download_params: Dict[str, None] = {k: None for k in session.params}
+        with session.get(url=url, params=download_params) as m3u8_response:
+            try:
+                m3u8_response.raise_for_status()
+            except HTTPError as he:
+                raise TidalM3U8Exception(
+                    f"Could not retrieve variant streams from manifest for "
+                    f"video {vesrj.video_id}, video mode {vesrj.video_quality}"
+                )
+            else:
+                em_three_you_ate: Optional[m3u8.M3U8] = m3u8.M3U8(
+                    content=m3u8_response.text
+                )
+
     return em_three_you_ate
 
 
 def variant_streams(
-    m3u8: m3u8.M3U8, return_urls: bool = False
-) -> Optional[Union[m3u8.Playlist, List[str]]]:
-    """By default, return the highest-bandwidth option of m3u8.playlists
-    as an m3u8.Playlist object. If return_urls, then returns the object's
-    .files attribute, which is a list of strings. N.b. if m3u8.is_variant
+    em3u8: m3u8.M3U8, session: Session, return_urls: bool = False
+) -> Optional[Union[m3u8.M3U8, List[str]]]:
+    """By default, return the highest-bandwidth option of em3u8.playlists
+    as an m3u8.M3U8 object. If return_urls, then the object's .files
+    attribute is returned, which is a list of strings. N.b., if m3u8.is_variant
     is False, then return None as there are no variant streams."""
-    if not m3u8.is_variant:
+    if not em3u8.is_variant:
         return
-    playlist: m3u8.Playlist = max(m3u8.playlists, key=lambda p: p.stream_info.bandwidth)
-    if return_urls:
-        _m3u8: m3u8.M3U8 = m3u8.load(playlist)
-        return _m3u8.files
-    else:
+
+    playlist: m3u8.Playlist = max(
+        em3u8.playlists, key=lambda p: p.stream_info.bandwidth
+    )
+    if not return_urls:
         return playlist
+
+    download_params: Dict[str, None] = {k: None for k in session.params}
+    with session.get(url=playlist.uri, params=download_params) as response:
+        try:
+            response.raise_for_status()
+        except HTTPError:
+            raise TidalM3U8Exception(
+                f"Could not retrieve media URLs from manifest {em3u8}"
+            )
+        else:
+            _m3u8: m3u8.M3U8 = m3u8.M3U8(content=response.text)
+
+    return _m3u8.files

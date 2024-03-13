@@ -7,8 +7,6 @@ import sys
 from types import SimpleNamespace
 from typing import Dict, List, Optional, Set, Tuple, Union
 
-from requests import HTTPError, Session
-
 from .media import AudioFormat
 from .models import (
     PlaylistsEndpointResponseJSON,
@@ -18,6 +16,8 @@ from .models import (
 from .track import Track
 from .utils import replace_illegal_characters, TIDAL_API_URL
 from .video import Video
+
+from requests import HTTPError, Session
 
 logger = logging.getLogger("__name__")
 
@@ -34,8 +34,8 @@ class Mix:
         self.mix_cover_saved: bool = False
 
     def set_metadata(self, session: Session):
-        """Request from TIDAL API /playlists endpoint"""
-        self.metadata: Optional[PlaylistsEndpointResponseJSON] = request_mixes(
+        """Request from TIDAL API /mixes endpoint"""
+        self.metadata: Optional[SimpleNamespace] = request_mixes(
             session=session, mix_id=self.mix_id
         )
 
@@ -326,7 +326,6 @@ def request_mixes(session: Session, mix_id: str) -> Optional[SimpleNamespace]:
     description, URL to cover image."""
     url: str = f"{TIDAL_API_URL}/pages/mix?mixId={mix_id}"
     kwargs: dict = {"url": url}
-    kwargs["params"] = {"deviceType": "PHONE"}
     kwargs["headers"] = {"Accept": "application/json"}
 
     logger.info(f"Requesting from TIDAL API: mixes/{mix_id}/items")

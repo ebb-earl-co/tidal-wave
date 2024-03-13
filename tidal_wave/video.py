@@ -41,12 +41,11 @@ class Video:
 
     def get_metadata(self, session: Session):
         """Request from TIDAL API /videos endpoint and set self.metadata
-        attribute as None or VideosEndpointResponseJSON instance. Also,
-        sets self.name as a sanitized version of self.metadata.name"""
+        attribute as None or VideosEndpointResponseJSON instance. N.b.,
+        self.metadata.name is a sanitized version of self.metadata.title"""
         self.metadata: Optional[VideosEndpointResponseJSON] = request_videos(
             session=session, video_id=self.video_id
         )
-        self.name = replace_illegal_characters(self.metadata.name)
 
     def get_contributors(self, session: Session):
         """Request from TIDAL API /videos/contributors endpoint"""
@@ -68,21 +67,22 @@ class Video:
         before calling this method. N.b. self.m3u8 almost certainly will
         be a multivariant playlist, meaning further processing of its
         contents will be necessary."""
-        self.m3u8: m3u8.Playlist = playlister(session=session, vesrj=self.stream)
+        self.m3u8: m3u8.M3U8 = playlister(session=session, vesrj=self.stream)
 
-    def set_urls(self):
+    def set_urls(self, session: Session):
         """This method uses self.m3u8, an m3u8.M3U8 object that is variant:
         (https://developer.apple.com/documentation/http-live-streaming/creating-a-multivariant-playlist)
         It retrieves the highest-quality .m3u8 in its .playlists attribute,
-        and sets self.urls as the list of strings from that m3u8.Playlist"""
+        and sets self.urls as the list of strings from that m3u8.M3U8 object"""
         # for now, just get the highest-bandwidth playlist
-        playlist: m3u8.Playlist = variant_streams(self.m3u8)
-        self.M3U8 = m3u8.load(playlist.uri)
-        if self.M3U8 is None or len(self.M3U8.files) == 0:
+        m3u8_files: List[str] = variant_streams(self.m3u8, session, return_urls=True)
+        if not all(
+            file.startswith("http://vmz-ad-cf.video.tidal.com") for file in m3u8_files
+        ):
             raise TidalM3U8Exception(
                 f"HLS media segments are not available for video {self.video_id}"
             )
-        self.urls: List[str] = self.M3U8.files
+        self.urls: List[str] = m3u8_files
 
     def set_artist_dir(self, out_dir: Path):
         """Set self.artist_dir, which is the subdirectory of `out_dir`
@@ -93,17 +93,18 @@ class Video:
     def set_filename(self, out_dir: Path):
         """Set self.filename, which is constructed from self.metadata.name
         and self.stream.video_quality"""
-        self.filename: str = f"{self.name} [{self.stream.video_quality}].{self.codec}"
+        self.filename: str = f"{self.metadata.name} [{self.stream.video_quality}].{self.codec}"
 
     def set_outfile(self):
         """Uses self.artist_dir and self.metadata and self.filename
         to craft the pathlib.Path object, self.outfile, that is a
         reference to where the track will be written on disk."""
         self.outfile: Path = self.artist_dir / self.filename
+        self.absolute_outfile: str = str(self.outfile.absolute())
 
         if (self.outfile.exists()) and (self.outfile.stat().st_size > 0):
             logger.info(
-                f"Video {str(self.outfile.absolute())} already exists "
+                f"Video {self.absolute_outfile} already exists "
                 "and therefore will not be overwritten"
             )
             return
@@ -114,10 +115,6 @@ class Video:
         """Requests the HLS video files that constitute self.video_id.
         Writes HLS bytes to a temporary file, then uses FFmpeg to write the
         video data to self.outfile"""
-        if session.session_id is not None:
-            download_headers: Dict[str, str] = {"sessionId": session.session_id}
-        else:
-            download_headers: dict = dict()
         download_params: Dict[str, None] = {k: None for k in session.params}
         # self.outfile should already have been set by self.set_outfile()
         logger.info(
@@ -125,9 +122,18 @@ class Video:
         )
 
         with temporary_file(suffix=".mp4") as ntf:
-            for u in self.urls:
+            request_headers: Dict[str, str] = (
+                {"sessionId": session.session_id}
+                if session.session_id is not None
+                else dict()
+            )
+            for i, u in enumerate(self.urls, 1):
+                logger.debug(
+                    f"\tRequesting part {i} of video {self.video_id}: "
+                    f"'{u.split("?")[0]}'"
+                )
                 with session.get(
-                    url=u, headers=download_headers, params=download_params
+                    url=u, headers=request_headers, params=download_params
                 ) as download_response:
                     if not download_response.ok:
                         logger.warning(f"Could not download {self}")
@@ -140,12 +146,12 @@ class Video:
 
             if self.outfile.exists() and self.outfile.stat().st_size > 0:
                 logger.info(
-                    f"Video {self.video_id} written to '{str(self.outfile.absolute())}'"
+                    f"Video {self.video_id} written to '{self.absolute_outfile}'"
                 )
 
             try:
                 ffmpeg.input(ntf.name, hide_banner=None, y=None).output(
-                    str(self.outfile.absolute()),
+                    self.absolute_outfile,
                     vcodec="copy",
                     acodec="copy",
                     loglevel="quiet",
@@ -235,14 +241,12 @@ class Video:
         if self.stream is None:
             return None
         self.get_m3u8(session)
-        self.set_urls()
+        self.set_urls(session)
         self.set_artist_dir(out_dir)
         self.set_filename(out_dir)
         outfile: Optional[Path] = self.set_outfile()
         if outfile is None:
             return None
-        else:
-            self.absolute_outfile = str(self.outfile.absolute())
 
         if self.download(session, out_dir) is None:
             return None

@@ -8,10 +8,6 @@ import sys
 from types import SimpleNamespace
 from typing import Dict, List, Optional, Set, Tuple, Union
 
-import ffmpeg
-import mutagen
-from requests import HTTPError, Session
-
 from .media import AudioFormat
 from .models import (
     PlaylistsEndpointResponseJSON,
@@ -27,6 +23,10 @@ from .utils import (
     TIDAL_API_URL,
 )
 from .video import Video
+
+import ffmpeg
+import mutagen
+from requests import HTTPError, Session
 
 logger = logging.getLogger("__name__")
 
@@ -126,7 +126,6 @@ class Playlist:
                     session=session,
                     out_dir=self.playlist_dir,
                     metadata=item,
-                    no_extra_files=no_extra_files,
                 )
                 tracks_videos[i] = video
             else:
