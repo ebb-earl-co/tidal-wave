@@ -78,9 +78,7 @@ class Video:
         # for now, just get the highest-bandwidth playlist
         m3u8_files: List[str] = variant_streams(self.m3u8, session, return_urls=True)
         m3u8_parse_results = (urllib.parse.urlparse(url=f) for f in m3u8_files)
-        if not all(
-            u.netloc == "vmz-ad-cf.video.tidal.com" for u in m3u8_parse_results
-        ):
+        if not all(u.netloc == "vmz-ad-cf.video.tidal.com" for u in m3u8_parse_results):
             raise TidalM3U8Exception(
                 f"HLS media segments are not available for video {self.video_id}"
             )
@@ -95,7 +93,9 @@ class Video:
     def set_filename(self, out_dir: Path):
         """Set self.filename, which is constructed from self.metadata.name
         and self.stream.video_quality"""
-        self.filename: str = f"{self.metadata.name} [{self.stream.video_quality}].{self.codec}"
+        self.filename: str = (
+            f"{self.metadata.name} [{self.stream.video_quality}].{self.codec}"
+        )
 
     def set_outfile(self):
         """Uses self.artist_dir and self.metadata and self.filename
@@ -131,8 +131,7 @@ class Video:
             )
             for i, u in enumerate(self.urls, 1):
                 logger.debug(
-                    f"\tRequesting part {i} of video {self.video_id}: "
-                    f"'{u.split("?")[0]}'"
+                    f"\tRequesting part {i} of video {self.video_id}: {u.split('?')[0]}"
                 )
                 with session.get(
                     url=u, headers=request_headers, params=download_params
