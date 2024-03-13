@@ -293,6 +293,15 @@ class Playlist:
                         f"{artist} - {title}\n{file}\n"
                     )
                     m3u_text += extinf
+            elif file.endswith(".mp4"):  # video files
+                m = mutagen.mp4.MP4(file)
+                artist: str = m.get("\xa9ART", [""])[0]
+                title: str = m.get("\xa9nam", [""])[0]
+                extinf: str = (
+                    f"#EXTINF:{math.ceil(m.info.length)},"
+                    f"{artist} - {title}\n{file}\n"
+                )
+                m3u_text += extinf
         else:
             return m3u_text
 
