@@ -6,6 +6,8 @@ from .models import VideosEndpointStreamResponseJSON
 
 from httpx import Client, HTTPError, Request, Response, URL
 import m3u8
+from requests import HTTPError, Session
+
 
 logger = logging.getLogger(__name__)
 
@@ -80,11 +82,11 @@ def playlister(
 
 
 def variant_streams(
-    em3u8: m3u8.M3U8, client: Client, return_urls: bool = False
+    em3u8: m3u8.M3U8, session: Session, return_urls: bool = False
 ) -> Optional[Union[m3u8.M3U8, List[str]]]:
-    """By default, return the highest-bandwidth option of m3u8.playlists
-    attribute as an m3u8.M3U8 object. If return_urls, then returns the object's
-    .files attribute, which is a list of strings. N.b. if m3u8.is_variant
+    """By default, return the highest-bandwidth option of em3u8.playlists
+    as an m3u8.M3U8 object. If return_urls, then the object's .files
+    attribute is returned, which is a list of strings. N.b., if m3u8.is_variant
     is False, then return None as there are no variant streams."""
     if not em3u8.is_variant:
         return

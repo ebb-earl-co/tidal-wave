@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 import sys
 from typing import Dict, List, Optional
+import urllib
 
 from .hls import playlister, variant_streams, TidalM3U8Exception
 from .media import TAG_MAPPING
@@ -41,12 +42,11 @@ class Video:
 
     def get_metadata(self, client: Client):
         """Request from TIDAL API /videos endpoint and set self.metadata
-        attribute as None or VideosEndpointResponseJSON instance. Also,
-        sets self.name as a sanitized version of self.metadata.name"""
+        attribute as None or VideosEndpointResponseJSON instance. N.b.,
+        self.metadata.name is a sanitized version of self.metadata.title"""
         self.metadata: Optional[VideosEndpointResponseJSON] = request_videos(
             client=client, video_id=self.video_id
         )
-        self.name = replace_illegal_characters(self.metadata.name)
 
     def get_contributors(self, client: Client):
         """Request from TIDAL API /videos/contributors endpoint"""
@@ -74,10 +74,11 @@ class Video:
         """This method uses self.m3u8, an m3u8.M3U8 object that is variant:
         (https://developer.apple.com/documentation/http-live-streaming/creating-a-multivariant-playlist)
         It retrieves the highest-quality .m3u8 in its .playlists attribute,
-        and sets self.urls as the list of strings from that m3u8.Playlist"""
+        and sets self.urls as the list of strings from that m3u8.M3U8 object"""
         # for now, just get the highest-bandwidth playlist
         m3u8_files: List[str] = variant_streams(self.m3u8, client, return_urls=True)
-        if not all(file.startswith("http://vmz-ad-cf.video.tidal.com") for file in m3u8_files):
+        m3u8_parse_results = (urllib.parse.urlparse(url=f) for f in m3u8_files)
+        if not all(u.netloc == "vmz-ad-cf.video.tidal.com" for u in m3u8_parse_results):
             raise TidalM3U8Exception(
                 f"HLS media segments are not available for video {self.video_id}"
             )
@@ -92,17 +93,20 @@ class Video:
     def set_filename(self, out_dir: Path):
         """Set self.filename, which is constructed from self.metadata.name
         and self.stream.video_quality"""
-        self.filename: str = f"{self.name} [{self.stream.video_quality}].{self.codec}"
+        self.filename: str = (
+            f"{self.metadata.name} [{self.stream.video_quality}].{self.codec}"
+        )
 
     def set_outfile(self):
         """Uses self.artist_dir and self.metadata and self.filename
         to craft the pathlib.Path object, self.outfile, that is a
         reference to where the track will be written on disk."""
         self.outfile: Path = self.artist_dir / self.filename
+        self.absolute_outfile: str = str(self.outfile.absolute())
 
         if (self.outfile.exists()) and (self.outfile.stat().st_size > 0):
             logger.info(
-                f"Video {str(self.outfile.absolute())} already exists "
+                f"Video {self.absolute_outfile} already exists "
                 "and therefore will not be overwritten"
             )
             return
@@ -145,12 +149,12 @@ class Video:
 
             if self.outfile.exists() and self.outfile.stat().st_size > 0:
                 logger.info(
-                    f"Video {self.video_id} written to '{str(self.outfile.absolute())}'"
+                    f"Video {self.video_id} written to '{self.absolute_outfile}'"
                 )
 
             try:
                 ffmpeg.input(ntf.name, hide_banner=None, y=None).output(
-                    str(self.outfile.absolute()),
+                    self.absolute_outfile,
                     vcodec="copy",
                     acodec="copy",
                     loglevel="quiet",
@@ -247,8 +251,6 @@ class Video:
         outfile: Optional[Path] = self.set_outfile()
         if outfile is None:
             return None
-        else:
-            self.absolute_outfile = str(self.outfile.absolute())
 
         if self.download(client, out_dir) is None:
             return None

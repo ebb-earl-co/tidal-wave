@@ -127,7 +127,8 @@ class TracksEndpointResponseJSON(dataclass_wizard.JSONWizard):
 
     def __post_init__(self):
         name: str = replace_illegal_characters(self.title)
-        self.name: str = name if self.version is None else f"{name} ({self.version})"
+        version: str = replace_illegal_characters(self.version)
+        self.name: str = name if self.version is None else f"{name} ({version})"
 
 
 @dataclass

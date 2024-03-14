@@ -34,8 +34,8 @@ class Mix:
         self.mix_cover_saved: bool = False
 
     def set_metadata(self, client: Client):
-        """Request from TIDAL API /playlists endpoint"""
-        self.metadata: Optional[PlaylistsEndpointResponseJSON] = request_mixes(
+        """Request from TIDAL API /mixed endpoint"""
+        self.metadata: Optional[SimpleNamespace] = request_mixes(
             client=client, mix_id=self.mix_id
         )
 
@@ -334,7 +334,6 @@ def request_mixes(client: Client, mix_id: str) -> Optional[SimpleNamespace]:
     description, URL to cover image."""
     url: str = f"{TIDAL_API_URL}/pages/mix?mixId={mix_id}"
     kwargs: Dict[str, Union[str, Dict[str, str]]] = {"url": url}
-    kwargs["params"] = {"deviceType": "PHONE"}
     kwargs["headers"] = {"Accept": "application/json"}
 
     logger.info(f"Requesting from TIDAL API: mixes/{mix_id}/items")
