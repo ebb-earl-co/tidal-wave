@@ -495,8 +495,16 @@ class Track:
 
         tags[tag_map["album"]] = self.album.title
         tags[tag_map["album_artist"]] = ";".join((a.name for a in self.album.artists))
-        tags[tag_map["album_peak_amplitude"]] = f"{self.stream.album_peak_amplitude}"
-        tags[tag_map["album_replay_gain"]] = f"{self.stream.album_replay_gain}"
+        tags[tag_map["album_peak_amplitude"]] = (
+            f"{self.stream.album_peak_amplitude}"
+            if self.stream.album_peak_amplitude is not None
+            else None
+        )
+        tags[tag_map["album_replay_gain"]] = (
+            f"{self.stream.album_replay_gain}"
+            if self.stream.album_replay_gain is not None
+            else None
+        )
         tags[tag_map["artist"]] = ";".join((a.name for a in self.metadata.artists))
         tags[tag_map["artists"]] = [a.name for a in self.metadata.artists]
         tags[tag_map["barcode"]] = self.album.upc
@@ -505,8 +513,14 @@ class Track:
         tags[tag_map["date"]] = str(self.album.release_date)
         tags[tag_map["isrc"]] = self.metadata.isrc
         tags[tag_map["title"]] = self.metadata.name
-        tags[tag_map["track_peak_amplitude"]] = f"{self.metadata.peak}"
-        tags[tag_map["track_replay_gain"]] = f"{self.metadata.replay_gain}"
+        tags[tag_map["track_peak_amplitude"]] = (
+            f"{self.metadata.peak}" if self.metadata.peak is not None else None
+        )
+        tags[tag_map["track_replay_gain"]] = (
+            f"{self.metadata.replay_gain}"
+            if self.metadata.replay_gain is not None
+            else None
+        )
         # credits
         for tag in {"composer", "engineer", "lyricist", "mixer", "producer", "remixer"}:
             try:

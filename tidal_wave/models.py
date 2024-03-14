@@ -128,7 +128,11 @@ class TracksEndpointResponseJSON(dataclass_wizard.JSONWizard):
 
     def __post_init__(self):
         name: str = replace_illegal_characters(self.title)
-        version: str = replace_illegal_characters(self.version)
+        version: str = (
+            replace_illegal_characters(self.version)
+            if self.version is not None
+            else None
+        )
         self.name: str = name if self.version is None else f"{name} ({version})"
 
 
@@ -756,7 +760,7 @@ def download_artist_image(
         logger.debug(response.reason_phrase)
         return
     else:
-        bytes_to_write = BytesIO(r.content)
+        bytes_to_write = BytesIO(response.content)
 
     file_name: str = f"{artist.name.replace('..', '')}.jpg"
     if bytes_to_write is not None:
