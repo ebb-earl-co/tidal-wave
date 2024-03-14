@@ -89,8 +89,19 @@ def validate_token_for_client(token: str, user_agent: str) -> Optional[httpx.Cli
     logger.debug("Adding data from API reponse to client object:")
     logger.debug(serj)
 
+    limits = httpx.Limits(
+        max_keepalive_connections=None,
+        max_connections=None,
+    )
+    timeout: httpx.Timeout = httpx.Timeout(
+        20.0, connect=60.0, read=10.0, pool=10.0
+    )
     http_client: httpx.Client = httpx.Client(
-        http2=True, follow_redirects=True, max_redirects=2
+        follow_redirects=True, 
+        http2=True,
+        limits=limits,
+        max_redirects=2,
+        timeout=timeout
     )
     http_client.headers: Dict[str, str] = headers
     http_client.user_id: str = serj.user_id
@@ -176,11 +187,11 @@ def login_android(
     else:
         logger.info(f"Access token is valid: saving to '{str(token_path.absolute())}'")
         if device_type is not None:
-            c.params["deviceType"] = device_type
+            c.params = c.params.set("deviceType", device_type)
 
         c.params = c.params.set("platform", "ANDROID")
         to_write: dict = {
-            "access_token": c.auth.token,
+            "access_token": access_token,
             "session_id": c.session_id,
             "client_id": c.client_id,
             "client_name": c.client_name,

@@ -38,7 +38,7 @@ from .requesting import (
 )
 from .utils import download_cover_image, temporary_file
 
-from httpx import Client, Request, Response, URL
+from httpx import Client, HTTPError, RemoteProtocolError, Request, Response, URL
 import mutagen
 from mutagen.mp4 import MP4Cover
 import ffmpeg
@@ -295,7 +295,7 @@ class Track:
     def download_url(self, client: Client, out_dir: Path) -> Optional[Path]:
         """This method downloads self.urls[0], for use in situations when
         the manifest returned by TIDAL API contains one URL. It relies on
-        byte range headers to incrementally get all content from a URL"""
+        byte range headers to incrementally get all content from the URL"""
         logger.info(f"Writing track {self.track_id} to '{self.absolute_outfile}'")
         # Implement HTTP range requests here to mimic official clients
         range_size: int = 1024 * 1024  # 1 MiB
@@ -315,13 +315,23 @@ class Track:
                 request: Request = client.build_request("GET", self.urls[0])
                 request.headers["Range"] = rh
                 request.url: URL = URL(self.urls[0])
-                rr: Response = client.send(request)
-
-                if rr.status_code not in {200, 206}:
-                    logger.warning(f"Could not download {self}")
+                try:
+                    resp: Response = client.send(request).raise_for_status()
+                except HTTPError as he:
+                    logger.warning(
+                        f"Could not download {self} due to HTTP error {resp.status_code}"
+                    )
                     return
+                except RemoteProtocolError as rpe:
+                    if "StreamReset" in rpe.args[0]:
+                        logger.warning(
+                            f"Remote server reset the connection. Retrying now"
+                        )
+                        resp: Response = client.send(request)
+                        ntf.write(resp.content)
+                        logger.debug(f"Wrote {rh} of track {self.track_id} to '{ntf.name}'")
                 else:
-                    ntf.write(rr.content)
+                    ntf.write(resp.content)
                     logger.debug(f"Wrote {rh} of track {self.track_id} to '{ntf.name}'")
             else:
                 ntf.seek(0)
@@ -397,17 +407,40 @@ class Track:
         logger.info(f"Writing track {self.track_id} to '{self.absolute_outfile}'")
 
         with temporary_file(suffix=".mp4") as ntf:
-            for u in self.urls:
+            for i, u in enumerate(self.urls):
+                _url: str = u.split("?")[0]
+                logger.debug(
+                    f"Requesting part {i} of track {self.track_id} "
+                    f"from '{_url}', writing to '{ntf.name}'"
+                )
                 request: Request = client.build_request("GET", u)
                 # Unset params to avoid 403 response
                 request.url: URL = URL(u)
-                resp: Response = client.send(request)
 
-                if not resp.status_code == 200:
-                    logger.warning(f"Could not download {self}")
+                try:
+                    resp: Response = client.send(request).raise_for_status()
+                except HTTPError as he:
+                    logger.warning(
+                        f"Could not download {self} due to HTTP error {resp.status_code}"
+                    )
                     return
+                except RemoteProtocolError as rpe:
+                    if "StreamReset" in rpe.args[0]:
+                        logger.warning(
+                            f"Remote server reset the connection. Retrying now"
+                        )
+                        resp: Response = client.send(request)
+                        ntf.write(resp.content)
+                        logger.debug(
+                            f"Wrote {len(resp.content):_} bytes of track "
+                            f"{self.track_id} to '{ntf.name}'"
+                        )
                 else:
                     ntf.write(resp.content)
+                    logger.debug(
+                        f"Wrote {len(resp.content):_} bytes of track "
+                        f"{self.track_id} to '{ntf.name}'"
+                    )
             else:
                 ntf.seek(0)
 

@@ -130,7 +130,9 @@ class TracksEndpointResponseJSON(dataclass_wizard.JSONWizard):
         name: str = replace_illegal_characters(self.title)
         if self.version is not None:
             version: str = replace_illegal_characters(self.version)
-            self.name = f"{name} ({version})"
+            self.name: str = f"{name} ({version})"
+        else:
+            self.name: str = name
 
 
 @dataclass

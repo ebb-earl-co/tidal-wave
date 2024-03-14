@@ -25,7 +25,7 @@ from .models import (
 from .utils import TIDAL_API_URL
 
 import backoff
-from httpx import Client, HTTPError, Request, Response, URL
+from httpx import Client, HTTPError, RemoteProtocolError, Request, Response, URL
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -103,6 +103,12 @@ def requester_maker(
                 )
             else:
                 logger.exception(he)
+        # except RemoteProtocolError as rpe:
+        #     logger.warning(
+        #         f"TIDAL API responded with {resp.status_code}, but a "
+        #         "RemoteProtocolError occured: most likely the connection "
+        #         "was reset. Retrying now"
+        #     )
         else:
             if cf:
                 data = sc.from_dict({"credits": resp.json()})
