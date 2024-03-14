@@ -31,11 +31,11 @@ dependencies = [
     "backoff==2.2.1",
     "dataclass-wizard==0.22.3",
     "ffmpeg-python==0.2.0",
+    "httpx[brotli,http2]==0.27.0",
     "mutagen==1.47.0",
     "m3u8==4.0.0",
     "platformdirs==4.2.0",
     "pycryptodome==3.20.0",
-    "requests==2.31.0",
     "typer==0.9.0"
 ]
 [project.optional-dependencies]

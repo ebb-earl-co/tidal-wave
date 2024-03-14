@@ -9,13 +9,6 @@ import subprocess
 import sys
 from typing import Dict, Iterable, List, Optional, Union
 
-import mutagen
-from mutagen.mp4 import MP4Cover
-import ffmpeg
-from requests import Session
-from Crypto.Cipher import AES
-from Crypto.Util import Counter
-
 from .dash import (
     manifester,
     JSONDASHManifest,
@@ -31,6 +24,7 @@ from .models import (
     TracksEndpointResponseJSON,
     TracksEndpointStreamResponseJSON,
     TracksLyricsResponseJSON,
+    download_artist_image,
 )
 from .requesting import (
     fetch_content_length,
@@ -42,7 +36,14 @@ from .requesting import (
     request_stream,
     request_tracks,
 )
-from .utils import download_artist_image, download_cover_image, temporary_file
+from .utils import download_cover_image, temporary_file
+
+from httpx import Client, HTTPError, RemoteProtocolError, Request, Response, URL
+import mutagen
+from mutagen.mp4 import MP4Cover
+import ffmpeg
+from Crypto.Cipher import AES
+from Crypto.Util import Counter
 
 logger = logging.getLogger("__name__")
 
@@ -64,42 +65,42 @@ class Track:
             AudioFormat.low: "LOW",
         }
 
-    def set_metadata(self, session: Session):
-        """This method executes request_tracks, passing in 'session' and
+    def set_metadata(self, client: Client):
+        """This method executes request_tracks, passing in 'client' and
         self.track_id. If an error occurs, self.metadata is set to None.
         Otherwise, self.metadata is set to the response of request_tracks(),
         a TracksEndpointResponseJSON instance."""
         self.metadata: Optional[TracksEndpointResponseJSON] = request_tracks(
-            session=session, track_id=self.track_id
+            client=client, track_id=self.track_id
         )
 
-    def get_album(self, session: Session):
-        """This method executes request_albums, passing in 'session' and
+    def get_album(self, client: Client):
+        """This method executes request_albums, passing in 'client' and
         self.metadata.album.id. If an error occurs, self.album is set to None.
         Otherwise, self.album is set to the response of request_albums(),
         an AlbumsEndpointResponseJSON instance."""
         self.album: Optional[AlbumsEndpointResponseJSON] = request_albums(
-            session=session, album_id=self.metadata.album.id
+            client=client, album_id=self.metadata.album.id
         )
 
-    def set_credits(self, session: Session):
-        """This method executes request_credits, passing in 'session' and
+    def set_credits(self, client: Client):
+        """This method executes request_credits, passing in 'client' and
         self.track_id. If an error occurs, self.credits is set to None.
         Otherwise, self.credits is set to the response of request_credits(),
         a TracksCreditsResponseJSON instance."""
         self.credits: Optional[TracksCreditsResponseJSON] = request_credits(
-            session=session, track_id=self.track_id
+            client=client, track_id=self.track_id
         )
 
-    def get_lyrics(self, session: Session):
-        """This method executes request_lyrics, passing in 'session' and
+    def get_lyrics(self, client: Client):
+        """This method executes request_lyrics, passing in 'client' and
         self.track_id. If an error occurs, self.lyrics is set to None
         and self._has_lyrics is set to False. Otherwise, self.lyrics is
         set to the response of request_lyrics(), an instance of
         TracksLyricsResponseJSON."""
         if self._has_lyrics is None:
             self.lyrics: Optional[TracksLyricsResponseJSON] = request_lyrics(
-                session=session, track_id=self.track_id
+                client=client, track_id=self.track_id
             )
             if self.lyrics is None:
                 self._has_lyrics = False
@@ -108,12 +109,12 @@ class Track:
         else:
             return self.lyrics
 
-    def set_stream(self, session: Session, audio_format: AudioFormat):
+    def set_stream(self, client: Client, audio_format: AudioFormat):
         """This method populates self.stream, which is either None
         (in the event of request error) or TracksEndpointStreamResponseJSON"""
         aq: Optional[str] = self.af_aq.get(audio_format)
         self.stream: Optional[TracksEndpointStreamResponseJSON] = request_stream(
-            session, self.track_id, aq
+            client, self.track_id, aq
         )
 
     def set_manifest(self):
@@ -246,7 +247,7 @@ class Track:
         else:
             return self.outfile
 
-    def save_artist_image(self, session: Session):
+    def save_artist_image(self, client: Client):
         """This method writes a JPEG file with the name of each of
         self.metadata.artists to self.album_dir"""
         for a in self.metadata.artists:
@@ -254,16 +255,16 @@ class Track:
                 self.album_dir / f"{a.name.replace('..', '')}.jpg"
             )
             if not track_artist_image.exists():
-                download_artist_image(session, a, self.album_dir)
+                download_artist_image(client, a, self.album_dir)
 
-    def save_artist_bio(self, session: Session):
+    def save_artist_bio(self, client: Client):
         """This method writes a JSON file with the name of each of
         self.metadata.artists to self.album_dir"""
         for a in self.metadata.artists:
             track_artist_bio_json: Path = self.album_dir / f"{a.name}-bio.json"
             if not track_artist_bio_json.exists():
                 artist_bio: Optional[ArtistsBioResponseJSON] = request_artist_bio(
-                    session=session, artist_id=a.id
+                    client=client, artist_id=a.id
                 )
                 if artist_bio is not None:
                     logger.info(
@@ -272,34 +273,33 @@ class Track:
                     )
                     track_artist_bio_json.write_text(artist_bio.to_json())
 
-    def save_album_cover(self, session: Session):
+    def save_album_cover(self, client: Client):
         """This method saves cover.jpg to self.album_dir; the bytes for cover.jpg
         come from self.album.cover"""
         self.cover_path: Path = self.album_dir / "cover.jpg"
         if not self.cover_path.exists():
             download_cover_image(
-                session=session, cover_uuid=self.album.cover, output_dir=self.album_dir
+                client=client, cover_uuid=self.album.cover, output_dir=self.album_dir
             )
 
-    def set_urls(self, session: Session):
+    def set_urls(self, client: Client):
         """This method sets self.urls based on self.manifest"""
         if isinstance(self.manifest, JSONDASHManifest):
             self.urls: List[str] = self.manifest.urls
         elif isinstance(self.manifest, XMLDASHManifest):
-            self.urls: List[str] = self.manifest.build_urls(session=session)
+            self.urls: List[str] = self.manifest.build_urls(client=client)
         self.download_headers: Dict[str, str] = {"Accept": self.manifest.mime_type}
-        if session.session_id is not None:
-            self.download_headers["sessionId"] = session.session_id
-        self.download_params = {k: None for k in session.params}
+        if client.session_id is not None:
+            self.download_headers["sessionId"] = client.session_id
 
-    def download_url(self, session: Session, out_dir: Path) -> Optional[Path]:
+    def download_url(self, client: Client, out_dir: Path) -> Optional[Path]:
         """This method downloads self.urls[0], for use in situations when
         the manifest returned by TIDAL API contains one URL. It relies on
-        byte range headers to incrementally get all content from a URL"""
+        byte range headers to incrementally get all content from the URL"""
         logger.info(f"Writing track {self.track_id} to '{self.absolute_outfile}'")
         # Implement HTTP range requests here to mimic official clients
         range_size: int = 1024 * 1024  # 1 MiB
-        content_length: int = fetch_content_length(session=session, url=self.urls[0])
+        content_length: int = fetch_content_length(client=client, url=self.urls[0])
         if content_length == 0:
             return
 
@@ -311,17 +311,28 @@ class Track:
 
         with temporary_file(suffix=".mp4") as ntf:
             for rh in range_headers:
-                with session.get(
-                    self.urls[0], params=self.download_params, headers={"Range": rh}
-                ) as rr:
-                    if not rr.ok:
-                        logger.warning(f"Could not download {self}")
-                        return
-                    else:
-                        ntf.write(rr.content)
-                        logger.debug(
-                            f"Wrote {rh} of track {self.track_id} to '{ntf.name}'"
+                # Unset params to avoid 403 response
+                request: Request = client.build_request("GET", self.urls[0])
+                request.headers["Range"] = rh
+                request.url: URL = URL(self.urls[0])
+                try:
+                    resp: Response = client.send(request).raise_for_status()
+                except HTTPError as he:
+                    logger.warning(
+                        f"Could not download {self} due to HTTP error {resp.status_code}"
+                    )
+                    return
+                except RemoteProtocolError as rpe:
+                    if "StreamReset" in rpe.args[0]:
+                        logger.warning(
+                            f"Remote server reset the connection. Retrying now"
                         )
+                        resp: Response = client.send(request)
+                        ntf.write(resp.content)
+                        logger.debug(f"Wrote {rh} of track {self.track_id} to '{ntf.name}'")
+                else:
+                    ntf.write(resp.content)
+                    logger.debug(f"Wrote {rh} of track {self.track_id} to '{ntf.name}'")
             else:
                 ntf.seek(0)
                 logger.debug(f"Finished writing track {self.track_id} to '{ntf.name}'")
@@ -390,21 +401,46 @@ class Track:
                 )
                 return self.outfile
 
-    def download_urls(self, session: Session, out_dir: Path) -> Optional[Path]:
+    def download_urls(self, client: Client, out_dir: Path) -> Optional[Path]:
         """This method writes the contents from self.urls to a temporary
         directory, then uses FFmpeg to re-mux the data to self.outfile"""
         logger.info(f"Writing track {self.track_id} to '{self.absolute_outfile}'")
 
         with temporary_file(suffix=".mp4") as ntf:
-            for u in self.urls:
-                with session.get(
-                    url=u, headers=self.download_headers, params=self.download_params
-                ) as resp:
-                    if not resp.ok:
-                        logger.warning(f"Could not download {self}")
-                        return
-                    else:
+            for i, u in enumerate(self.urls):
+                _url: str = u.split("?")[0]
+                logger.debug(
+                    f"Requesting part {i} of track {self.track_id} "
+                    f"from '{_url}', writing to '{ntf.name}'"
+                )
+                request: Request = client.build_request("GET", u)
+                # Unset params to avoid 403 response
+                request.url: URL = URL(u)
+
+                try:
+                    resp: Response = client.send(request).raise_for_status()
+                except HTTPError as he:
+                    logger.warning(
+                        f"Could not download {self} due to HTTP error {resp.status_code}"
+                    )
+                    return
+                except RemoteProtocolError as rpe:
+                    if "StreamReset" in rpe.args[0]:
+                        logger.warning(
+                            f"Remote server reset the connection. Retrying now"
+                        )
+                        resp: Response = client.send(request)
                         ntf.write(resp.content)
+                        logger.debug(
+                            f"Wrote {len(resp.content):_} bytes of track "
+                            f"{self.track_id} to '{ntf.name}'"
+                        )
+                else:
+                    ntf.write(resp.content)
+                    logger.debug(
+                        f"Wrote {len(resp.content):_} bytes of track "
+                        f"{self.track_id} to '{ntf.name}'"
+                    )
             else:
                 ntf.seek(0)
 
@@ -469,17 +505,13 @@ class Track:
                 )
                 return self.outfile
 
-    def download(self, session: Session, out_dir: Path) -> Optional[Path]:
+    def download(self, client: Client, out_dir: Path) -> Optional[Path]:
         """This method GETs the data from self.urls and writes it
         to self.outfile."""
         if len(self.urls) == 1:
-            outfile: Optional[Path] = self.download_url(
-                session=session, out_dir=out_dir
-            )
+            outfile: Optional[Path] = self.download_url(client=client, out_dir=out_dir)
         else:
-            outfile: Optional[Path] = self.download_urls(
-                session=session, out_dir=out_dir
-            )
+            outfile: Optional[Path] = self.download_urls(client=client, out_dir=out_dir)
 
         return outfile
 
@@ -496,8 +528,16 @@ class Track:
 
         tags[tag_map["album"]] = self.album.title
         tags[tag_map["album_artist"]] = ";".join((a.name for a in self.album.artists))
-        tags[tag_map["album_peak_amplitude"]] = f"{self.stream.album_peak_amplitude}"
-        tags[tag_map["album_replay_gain"]] = f"{self.stream.album_replay_gain}"
+        tags[tag_map["album_peak_amplitude"]] = (
+            f"{self.stream.album_peak_amplitude}"
+            if self.stream.album_peak_amplitude is not None
+            else None
+        )
+        tags[tag_map["album_replay_gain"]] = (
+            f"{self.stream.album_replay_gain}"
+            if self.stream.album_replay_gain is not None
+            else None
+        )
         tags[tag_map["artist"]] = ";".join((a.name for a in self.metadata.artists))
         tags[tag_map["artists"]] = [a.name for a in self.metadata.artists]
         tags[tag_map["barcode"]] = self.album.upc
@@ -506,8 +546,14 @@ class Track:
         tags[tag_map["date"]] = str(self.album.release_date)
         tags[tag_map["isrc"]] = self.metadata.isrc
         tags[tag_map["title"]] = self.metadata.name
-        tags[tag_map["track_peak_amplitude"]] = f"{self.metadata.peak}"
-        tags[tag_map["track_replay_gain"]] = f"{self.metadata.replay_gain}"
+        tags[tag_map["track_peak_amplitude"]] = (
+            f"{self.metadata.peak}" if self.metadata.peak is not None else None
+        )
+        tags[tag_map["track_replay_gain"]] = (
+            f"{self.metadata.replay_gain}"
+            if self.metadata.replay_gain is not None
+            else None
+        )
         # credits
         for tag in {"composer", "engineer", "lyricist", "mixer", "producer", "remixer"}:
             try:
@@ -626,7 +672,7 @@ class Track:
 
     def get(
         self,
-        session: Session,
+        client: Client,
         audio_format: AudioFormat,
         out_dir: Path,
         metadata: Optional[TracksEndpointResponseJSON] = None,
@@ -638,7 +684,7 @@ class Track:
         edge cases."""
 
         if metadata is None:
-            self.set_metadata(session)
+            self.set_metadata(client)
         else:
             self.metadata = metadata
 
@@ -684,7 +730,7 @@ class Track:
                 return
 
         if album is None:
-            self.get_album(session)
+            self.get_album(client)
         else:
             self.album = album
 
@@ -694,8 +740,8 @@ class Track:
         else:
             self.set_album_dir(out_dir)
 
-        self.set_credits(session)
-        self.set_stream(session, audio_format)
+        self.set_credits(client)
+        self.set_stream(client, audio_format)
         if self.stream is None:
             return
 
@@ -708,25 +754,25 @@ class Track:
         if outfile is None:
             if not no_extra_files:
                 try:
-                    self.save_artist_image(session)
+                    self.save_artist_image(client)
                 except Exception:
                     pass
 
                 try:
-                    self.save_artist_bio(session)
+                    self.save_artist_bio(client)
                 except Exception:
                     pass
 
             return
 
         try:
-            self.get_lyrics(session)
+            self.get_lyrics(client)
         except Exception:
             pass
 
-        self.set_urls(session)
+        self.set_urls(client)
 
-        if self.download(session, out_dir) is None:
+        if self.download(client, out_dir) is None:
             return
 
         self.set_mutagen()
@@ -736,7 +782,7 @@ class Track:
                 f"No cover image was returned from TIDAL API for album {self.album.id}"
             )
         else:
-            self.save_album_cover(session)
+            self.save_album_cover(client)
             if self.cover_path.exists() and self.cover_path.stat().st_size > 0:
                 self.set_cover_image_tag()
 
@@ -746,12 +792,12 @@ class Track:
 
         if not no_extra_files:
             try:
-                self.save_artist_image(session)
+                self.save_artist_image(client)
             except Exception:
                 pass
 
             try:
-                self.save_artist_bio(session)
+                self.save_artist_bio(client)
             except Exception:
                 pass
         else:

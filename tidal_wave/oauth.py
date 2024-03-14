@@ -11,7 +11,7 @@ from typing import Dict, Optional, Tuple, Union
 
 import dataclass_wizard
 from platformdirs import user_config_path
-import requests
+import httpx
 
 PROJECT_NAME: str = "tidal-wave"
 TOKEN_DIR_PATH: Path = user_config_path() / PROJECT_NAME
@@ -198,30 +198,36 @@ class BearerToken:
             "scope": "r_usr+w_usr+w_sub",
         }
         _auth = (self.client_id, self.client_secret)
-        with requests.post(
-            url=f"{OAUTH2_URL}/token", data=_data, auth=_auth, headers=OAUTH2_HEADERS
-        ) as resp:
-            try:
-                resp.raise_for_status()
-            except requests.HTTPError:
-                raise TokenException(
-                    f"Could not refresh bearer token: HTTP error code {resp.status_code}"
-                )
-            else:
-                token_json = resp.json()
+        logger.info(
+            f'Attempting to refresh access token for TIDAL "client" {self.client_name}, '
+            f"which expired at {self.expiration}"
+        )
+        try:
+            resp: httpx.Response = httpx.post(
+                url=f"{OAUTH2_URL}/token",
+                data=_data,
+                auth=_auth,
+                headers=OAUTH2_HEADERS,
+            ).raise_for_status()
+        except httpx.HTTPError:
+            raise TokenException(
+                f"Could not refresh bearer token: HTTP error code {resp.status_code}"
+            )
+        else:
+            token_json = resp.json()
 
-            self.access_token = token_json.get("access_token")
-            if token_json.get("clientName", token_json.get("client_name")) is not None:
-                self.client_name = token_json.get(
-                    "clientName", token_json.get("client_name")
-                )
-            if token_json.get("userId", token_json.get("user_id")) is not None:
-                self.user_id = token_json.get("userId", token_json.get("user_id"))
-            if token_json.get("userName", token_json.get("user_name")) is not None:
-                self.user_name = token_json.get("userName", token_json.get("user_name"))
+        self.access_token = token_json.get("access_token")
+        if token_json.get("clientName", token_json.get("client_name")) is not None:
+            self.client_name = token_json.get(
+                "clientName", token_json.get("client_name")
+            )
+        if token_json.get("userId", token_json.get("user_id")) is not None:
+            self.user_id = token_json.get("userId", token_json.get("user_id"))
+        if token_json.get("userName", token_json.get("user_name")) is not None:
+            self.user_name = token_json.get("userName", token_json.get("user_name"))
 
-            _timedelta = timedelta(seconds=token_json.get("expires_in") - 300)
-            self.expiration = datetime.now(tz=timezone.utc) + _timedelta
+        _timedelta = timedelta(seconds=token_json.get("expires_in") - 300)
+        self.expiration = datetime.now(tz=timezone.utc) + _timedelta
 
 
 @dataclass
@@ -262,13 +268,15 @@ class TidalOauth:
             "client_id": self.client_id,
             "scope": "r_usr+w_usr+w_sub",
         }
-        with requests.post(url=_url, data=_data, headers=headers) as resp:
-            try:
-                resp.raise_for_status()
-            except requests.HTTPError as he:
-                raise AuthorizationException(he.args[0])
 
-            daerj = DeviceAuthorizationEndpointResponseJSON.from_dict(resp.json())
+        try:
+            resp: httpx.Response = httpx.post(
+                url=_url, data=_data, headers=headers
+            ).raise_for_status()
+        except httpx.HTTPError as he:
+            raise AuthorizationException(he.args[0])
+
+        daerj = DeviceAuthorizationEndpointResponseJSON.from_dict(resp.json())
 
         self.device_authorization = daerj
         self.verification_url: str = f"http://{daerj.verification_uri_complete}"
@@ -304,14 +312,14 @@ class TidalOauth:
         )
 
         while datetime.now(tz=timezone.utc) < self.verification_expiration:
-            with requests.post(
+            resp: httpx.Response = httpx.post(
                 url=f"{OAUTH2_URL}/token", headers=headers, data=_data, auth=_auth
-            ) as resp:
-                if not resp.ok:
-                    time.sleep(self.device_authorization.interval * 2)
-                    continue
-                else:
-                    break
+            ).raise_for_status()
+            if not resp.status_code == 200:
+                time.sleep(self.device_authorization.interval * 2)
+                continue
+            else:
+                break
         else:
             raise AuthorizationException(
                 "OAuth login process has timed out. Please try again."

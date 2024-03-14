@@ -8,7 +8,7 @@ import tempfile
 from typing import Optional, Tuple, Union
 
 from Crypto.Cipher import AES
-from requests import Session
+from httpx import Client, Request, Response, URL
 
 TIDAL_API_URL: str = "https://api.tidal.com/v1"
 IMAGE_URL: str = "https://resources.tidal.com/images/%s.jpg"
@@ -40,7 +40,7 @@ def replace_illegal_characters(input_str: str) -> str:
 
 
 def download_cover_image(
-    session: Session,
+    client: Client,
     cover_uuid: str,
     output_dir: Path,
     file_name: str = "cover.jpg",
@@ -55,58 +55,27 @@ def download_cover_image(
     elif isinstance(dimension, tuple):
         _url: str = IMAGE_URL % f"{cover_url_part}/{dimension[0]}x{dimension[1]}"
 
-    with session.get(url=_url, headers={"Accept": "image/jpeg"}) as r:
-        if not r.ok:
-            logger.warning(
-                "Could not retrieve data from Tidal resources/images URL "
-                f"due to error code: {r.status_code}"
-            )
-            logger.debug(r.reason)
-            return
-        else:
-            bytes_to_write = BytesIO(r.content)
+    # Unset params to avoid 403 response
+    request: Request = client.build_request("GET", _url)
+    request.headers["Accept"] = "image/jpeg"
+    request.url: URL = URL(_url)
+    response: Response = client.send(request)
 
-    if bytes_to_write is not None:
-        output_file: Path = output_dir / file_name
-        bytes_to_write.seek(0)
-        output_file.write_bytes(bytes_to_write.read())
-        bytes_to_write.close()
-        return output_file
-
-
-def download_artist_image(session, artist, output_dir, dimension=320) -> Optional[Path]:
-    """Given a UUID that corresponds to a (JPEG) image on Tidal's servers,
-    download the image file and write it as '{artist name}.jpeg'
-    in the directory `output_dir`. Returns path to downloaded file"""
-    _url: str = artist.picture_url(dimension)
-    if _url is None:
-        logger.info(
-            f"Cannot download image for artist '{artist.name}', "
-            "as Tidal supplied no URL for this artist's image."
+    if not response.status_code == 200:
+        logger.warning(
+            "Could not retrieve data from Tidal resources/images URL "
+            f"due to error code: {response.status_code}"
         )
+        logger.debug(response.reason_phrase)
         return
+    else:
+        bytes_to_write = BytesIO(response.content)
 
-    with session.get(url=_url, headers={"Accept": "image/jpeg"}) as r:
-        if not r.ok:
-            logger.warning(
-                "Could not retrieve data from Tidal resources/images URL "
-                f"for artist {artist.name} due to error code: {r.status_code}"
-            )
-            logger.debug(r.reason)
-            return
-        else:
-            bytes_to_write = BytesIO(r.content)
-
-    file_name: str = f"{artist.name.replace('..', '')}.jpg"
     if bytes_to_write is not None:
         output_file: Path = output_dir / file_name
         bytes_to_write.seek(0)
         output_file.write_bytes(bytes_to_write.read())
         bytes_to_write.close()
-        logger.info(
-            f"Wrote artist image JPEG for {artist} to "
-            f"'{str(output_file.absolute())}'"
-        )
         return output_file
 
 

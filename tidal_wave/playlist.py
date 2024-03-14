@@ -25,8 +25,8 @@ from .utils import (
 from .video import Video
 
 import ffmpeg
+from httpx import HTTPError, Client, Response
 import mutagen
-from requests import HTTPError, Session
 
 logger = logging.getLogger("__name__")
 
@@ -39,10 +39,10 @@ class Playlist:
         self.playlist_dir: Optional[Path] = None
         self.playlist_cover_saved: bool = False
 
-    def set_metadata(self, session: Session):
+    def set_metadata(self, client: Client):
         """Request from TIDAL API /playlists endpoint"""
         self.metadata: Optional[PlaylistsEndpointResponseJSON] = request_playlists(
-            session=session, playlist_id=self.playlist_id
+            client=client, playlist_id=self.playlist_id
         )
 
         if self.metadata is None:
@@ -50,11 +50,11 @@ class Playlist:
 
         self.name = replace_illegal_characters(self.metadata.title)
 
-    def set_items(self, session: Session):
+    def set_items(self, client: Client):
         """Uses data from TIDAL API /playlists/items endpoint to
         populate self.items"""
         playlist_items: Optional[PlaylistsItemsResponseJSON] = get_playlist(
-            session=session, playlist_id=self.playlist_id
+            client=client, playlist_id=self.playlist_id
         )
         if playlist_items is None:
             self.items = tuple()
@@ -74,14 +74,14 @@ class Playlist:
         self.playlist_dir: Path = out_dir / "Playlists" / playlist_substring
         self.playlist_dir.mkdir(parents=True, exist_ok=True)
 
-    def save_cover_image(self, session: Session, out_dir: Path):
+    def save_cover_image(self, client: Client, out_dir: Path):
         """Requests self.metadata.image and attempts to write it to disk"""
         if self.playlist_dir is None:
             self.set_playlist_dir(out_dir=out_dir)
         self.cover_path: Path = self.playlist_dir / "cover.jpg"
         if not self.cover_path.exists():
             download_cover_image(
-                session=session,
+                client=client,
                 cover_uuid=self.metadata.square_image,
                 output_dir=self.playlist_dir,
                 dimension=1080,
@@ -97,7 +97,7 @@ class Playlist:
                 self.description_path.write_text(f"{self.metadata.description}\n")
 
     def get_items(
-        self, session: Session, audio_format: AudioFormat, no_extra_files: bool
+        self, client: Client, audio_format: AudioFormat, no_extra_files: bool
     ):
         """Using either Track.get() or Video.get(), attempt to request
         the data for each track or video in self.items. If no_extra_files
@@ -113,7 +113,7 @@ class Playlist:
             elif isinstance(item, TracksEndpointResponseJSON):
                 track: Track = Track(track_id=item.id)
                 track.get(
-                    session=session,
+                    client=client,
                     audio_format=audio_format,
                     out_dir=self.playlist_dir,
                     metadata=item,
@@ -123,7 +123,7 @@ class Playlist:
             elif isinstance(item, VideosEndpointResponseJSON):
                 video: Video = Video(video_id=item.id)
                 video.get(
-                    session=session,
+                    client=client,
                     out_dir=self.playlist_dir,
                     metadata=item,
                 )
@@ -323,7 +323,7 @@ class Playlist:
 
     def get(
         self,
-        session: Session,
+        client: Client,
         audio_format: AudioFormat,
         out_dir: Path,
         no_extra_files: bool,
@@ -340,16 +340,16 @@ class Playlist:
           - self.save_description()
           - self.craft_m3u8_text()
         """
-        self.set_metadata(session)
+        self.set_metadata(client)
 
         if self.metadata is None:
             self.files = {}
             return
 
-        self.set_items(session)
+        self.set_items(client)
         self.set_playlist_dir(out_dir)
 
-        if self.get_items(session, audio_format, no_extra_files) is None:
+        if self.get_items(client, audio_format, no_extra_files) is None:
             logger.critical(f"Could not retrieve playlist with ID '{self.playlist_id}'")
             self.files = {}
             return
@@ -368,7 +368,7 @@ class Playlist:
                     f"{self.playlist_dir / 'PlaylistDescription.txt'}"
                 )
 
-            self.save_cover_image(session, out_dir)
+            self.save_cover_image(client, out_dir)
 
             try:
                 m3u8_text: str = self.craft_m3u8_text()
@@ -387,7 +387,7 @@ class Playlist:
 
     def get_elements(
         self,
-        session: Session,
+        client: Client,
         audio_format: AudioFormat,
         out_dir: Path,
         no_extra_files: bool,
@@ -398,13 +398,13 @@ class Playlist:
           - self.set_metadata()
           - self.set_items()
         """
-        self.set_metadata(session)
+        self.set_metadata(client)
 
         if self.metadata is None:
             self.files = {}
             return
 
-        self.set_items(session)
+        self.set_items(client)
         if len(self.items) == 0:
             self.files = {}
             return
@@ -418,7 +418,7 @@ class Playlist:
             elif isinstance(item, TracksEndpointResponseJSON):
                 track: Track = Track(track_id=item.id)
                 track_file: Optional[str] = track.get(
-                    session=session,
+                    client=client,
                     audio_format=audio_format,
                     out_dir=out_dir,
                     metadata=item,
@@ -428,7 +428,7 @@ class Playlist:
             elif isinstance(item, VideosEndpointResponseJSON):
                 video: Video = Video(video_id=item.id)
                 video_file: Optional[str] = video.get(
-                    session=session,
+                    client=client,
                     out_dir=out_dir,
                     metadata=item,
                 )
@@ -444,10 +444,10 @@ class TidalPlaylistException(Exception):
     pass
 
 
-def request_playlist_items(session: Session, playlist_id: str) -> Optional[dict]:
+def request_playlist_items(client: Client, playlist_id: str) -> Optional[dict]:
     """Request from TIDAL API /playlists/items endpoint. If requests.HTTPError
     arises, warning is logged; upon this or any other exception, None is returned.
-    If no exception arises from 'session'.get(), the requests.Response.json()
+    If no exception arises from 'client'.get(), the requests.Response.json()
     object is returned."""
     url: str = f"{TIDAL_API_URL}/playlists/{playlist_id}/items"
     kwargs: dict = {"url": url}
@@ -456,23 +456,22 @@ def request_playlist_items(session: Session, playlist_id: str) -> Optional[dict]
 
     data: Optional[dict] = None
     logger.info(f"Requesting from TIDAL API: playlists/{playlist_id}/items")
-    with session.get(**kwargs) as resp:
-        try:
-            resp.raise_for_status()
-        except HTTPError as he:
-            if resp.status_code == 404:
-                logger.warning(
-                    f"404 Client Error: not found for TIDAL API endpoint playlists/{playlist_id}/items"
-                )
-            else:
-                logger.exception(he)
-        else:
-            data = resp.json()
-            logger.debug(
-                f"{resp.status_code} response from TIDAL API to request: playlists/{playlist_id}/items"
+    try:
+        resp: Response = client.get(**kwargs).raise_for_status()
+    except HTTPError as he:
+        if resp.status_code == 404:
+            logger.warning(
+                f"404 Client Error: not found for TIDAL API endpoint playlists/{playlist_id}/items"
             )
-        finally:
-            return data
+        else:
+            logger.exception(he)
+    else:
+        data = resp.json()
+        logger.debug(
+            f"{resp.status_code} response from TIDAL API to request: playlists/{playlist_id}/items"
+        )
+    finally:
+        return data
 
 
 @dataclass(frozen=True)
@@ -543,7 +542,7 @@ def playlist_maker(
 
 
 def get_playlist(
-    session: Session, playlist_id: str
+    client: Client, playlist_id: str
 ) -> Optional["PlaylistsItemsResponseJSON"]:
     """The pattern for playlist items retrieval does not follow the
     requesting.request_* functions, hence its implementation here.
@@ -551,7 +550,7 @@ def get_playlist(
     playlists_items_response_json: Optional["PlaylistsItemsResponseJSON"] = None
     try:
         playlists_response: dict = request_playlist_items(
-            session=session, playlist_id=playlist_id
+            client=client, playlist_id=playlist_id
         )
         playlists_items_response_json: Optional["PlaylistsItemsResponseJSON"] = (
             playlist_maker(playlists_response=playlists_response)

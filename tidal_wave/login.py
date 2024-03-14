@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 from typing import Dict, Optional, Set, Tuple
 
-from .models import BearerAuth, SessionsEndpointResponseJSON
+from .models import SessionsEndpointResponseJSON
 from .oauth import (
     TOKEN_DIR_PATH,
     BearerToken,
@@ -15,10 +15,8 @@ from .oauth import (
 )
 from .utils import TIDAL_API_URL
 
-import requests
+import httpx
 import typer
-
-COMMON_HEADERS: Dict[str, str] = {"Accept-Encoding": "gzip, deflate, br"}
 
 logger = logging.getLogger(__name__)
 
@@ -63,52 +61,69 @@ def load_token_from_disk(
         return bearer_token_json
 
 
-def validate_token_for_session(
-    token: str, headers: Dict[str, str] = COMMON_HEADERS
-) -> Optional[requests.Session]:
+def validate_token_for_client(token: str, user_agent: str) -> Optional[httpx.Client]:
     """Send a GET request to the /sessions endpoint of Tidal's API.
     If `token` is valid, use the SessionsEndpointResponseJSON object
-    that was returned from the API to create a requests.Session object with
+    that was returned from the API to create a httpx.Client object with
     some additional attributes. Otherwise, return None"""
-    auth_headers: Dict[str, str] = {**headers, "Authorization": f"Bearer {token}"}
-    sess: Optional[requests.Session] = None
+    http_client: Optional[httpx.Client] = None
+    headers: Dict[str, str] = {
+        "Accept-Encoding": "gzip, deflate, br",
+        "Authorization": f"Bearer {token}",
+        "User-Agent": user_agent,
+    }
 
-    with requests.get(url=f"{TIDAL_API_URL}/sessions", headers=auth_headers) as r:
-        try:
-            r.raise_for_status()
-        except requests.HTTPError as h:
-            if r.status_code == 401:
-                logger.error("Token is not authorized")
-                return sess
-            else:
-                logger.exception(h)
-                return sess
+    try:
+        r: httpx.Response = httpx.get(
+            url=f"{TIDAL_API_URL}/sessions", headers=headers
+        ).raise_for_status()
+    except httpx.HTTPError as h:
+        if r.status_code == 401:
+            logger.error("Token is not authorized")
+            return http_client
+        else:
+            logger.exception(h)
+            return http_client
 
-        serj = SessionsEndpointResponseJSON.from_dict(r.json())
-        logger.debug("Adding data from API reponse to session object:")
-        logger.debug(serj)
+    serj = SessionsEndpointResponseJSON.from_dict(r.json())
+    logger.debug("Adding data from API reponse to client object:")
+    logger.debug(serj)
 
-    sess: requests.Session = requests.Session()
-    sess.headers: Dict[str, str] = headers
-    sess.auth: BearerAuth = BearerAuth(token=token)
-    sess.user_id: str = serj.user_id
-    sess.session_id: str = serj.session_id
-    sess.client_id: str = serj.client.id
-    sess.client_name: str = serj.client.name
+    limits = httpx.Limits(
+        max_keepalive_connections=None,
+        max_connections=None,
+    )
+    timeout: httpx.Timeout = httpx.Timeout(
+        20.0, connect=60.0, read=10.0, pool=10.0
+    )
+    http_client: httpx.Client = httpx.Client(
+        follow_redirects=True, 
+        http2=True,
+        limits=limits,
+        max_redirects=2,
+        timeout=timeout
+    )
+    http_client.headers: Dict[str, str] = headers
+    http_client.user_id: str = serj.user_id
+    http_client.session_id: str = serj.session_id
+    http_client.client_id: str = serj.client.id
+    http_client.client_name: str = serj.client.name
+
     if serj.country_code == "US":
-        sess.params["countryCode"] = "US"
-        sess.params["locale"] = "en_US"
-        sess.headers["Accept-Language"] = "en-US"
+        http_client.headers["Accept-Language"] = "en-US"
+        http_client.params = http_client.params.set("countryCode", "US").set(
+            "locale", "en_US"
+        )
     elif (len(serj.country_code) == 2) and (serj.country_code.isupper()):
-        sess.params["countryCode"] = serj.country_code
-    return sess
+        http_client.params = http_client.params.set("countryCode", serj.country_code)
+    return http_client
 
 
 def login_fire_tv(
     token_path: Path = TOKEN_DIR_PATH / "fire_tv-tidal.token",
-) -> Optional[requests.Session]:
+) -> Optional[httpx.Client]:
     """Load `token_path` from disk, initializing a BearerToken from its
-    contents. If successful, return a requests.Session object with
+    contents. If successful, return a httpx.Client object with
     extra attributes set
     """
     bearer_token = BearerToken.load(p=token_path)
@@ -130,21 +145,20 @@ def login_fire_tv(
         else:
             logger.info("Successfully refreshed TIDAL access token")
 
-    s: Optional[requests.Session] = validate_token_for_session(
-        bearer_token.access_token
+    c: Optional[httpx.Client] = validate_token_for_client(
+        token=bearer_token.access_token, user_agent="TIDAL_ANDROID/2.38.0"
     )
-    if s is None:
+    if c is None:
         logger.critical("Access token is not valid: exiting now.")
     else:
-        s.params["deviceType"] = "TV"
-        s.headers["User-Agent"] = "TIDAL_ANDROID/2.38.0"
+        c.params = c.params.set("deviceType", "TV")
         bearer_token.save()
-    return s
+    return c
 
 
 def login_android(
     token_path: Path = TOKEN_DIR_PATH / "android-tidal.token",
-) -> Optional[requests.Session]:
+) -> Optional[httpx.Client]:
     logger.info(f"Loading TIDAL access token from '{str(token_path.absolute())}'")
     _token: Optional[dict] = load_token_from_disk(token_path=token_path)
     access_token: Optional[str] = None if _token is None else _token.get("access_token")
@@ -163,34 +177,35 @@ def login_android(
         elif dt_input.lower() == "tablet":
             device_type = "TABLET"
 
-    s: Optional[requests.Session] = validate_token_for_session(access_token)
-    if s is None:
+    c: Optional[httpx.Client] = validate_token_for_client(
+        token=access_token, user_agent="TIDAL_ANDROID/1136 okhttp 4.3.0"
+    )
+    if c is None:
         logger.critical("Access token is not valid: exiting now.")
         if token_path.exists():
             token_path.unlink()
     else:
         logger.info(f"Access token is valid: saving to '{str(token_path.absolute())}'")
         if device_type is not None:
-            s.params["deviceType"] = device_type
+            c.params = c.params.set("deviceType", device_type)
 
-        s.params["platform"] = "ANDROID"
-        s.headers["User-Agent"] = "TIDAL_ANDROID/1136 okhttp 4.3.0"
+        c.params = c.params.set("platform", "ANDROID")
         to_write: dict = {
-            "access_token": s.auth.token,
-            "session_id": s.session_id,
-            "client_id": s.client_id,
-            "client_name": s.client_name,
-            "country_code": s.params["countryCode"],
+            "access_token": access_token,
+            "session_id": c.session_id,
+            "client_id": c.client_id,
+            "client_name": c.client_name,
+            "country_code": c.params["countryCode"],
             "device_type": device_type,
         }
         logger.debug(f"Writing this bearer token to '{str(token_path.absolute())}'")
         token_path.write_bytes(base64.b64encode(bytes(json.dumps(to_write), "UTF-8")))
-    return s
+    return c
 
 
 def login_windows(
     token_path: Path = TOKEN_DIR_PATH / "windows-tidal.token",
-) -> Optional[requests.Session]:
+) -> Optional[httpx.Client]:
     _token: Optional[dict] = load_token_from_disk(token_path=token_path)
     access_token: Optional[str] = None if _token is None else _token.get("access_token")
     if access_token is None:
@@ -198,41 +213,41 @@ def login_windows(
             "Enter Tidal API access token (the part after 'Bearer ')"
         )
 
-    s: Optional[requests.Session] = validate_token_for_session(access_token)
-    if s is None:
+    c: Optional[httpx.Client] = validate_token_for_client(
+        token=access_token,
+        user_agent="Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) TIDAL/2.36.2 Chrome/116.0.5845.228 Electron/26.6.1 Safari/537.36",
+    )
+    if c is None:
         logger.critical("Access token is not valid: exiting now.")
         if token_path.exists():
             token_path.unlink()
     else:
         logger.debug(f"Writing this access token to '{str(token_path.absolute())}'")
-        s.headers["User-Agent"] = (
-            "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) TIDAL/2.36.2 Chrome/116.0.5845.228 Electron/26.6.1 Safari/537.36"
-        )
-        s.params["deviceType"] = "DESKTOP"
+        c.params = c.params.set("deviceType", "DESKTOP")
         to_write: dict = {
-            "access_token": s.auth.token,
-            "session_id": s.session_id,
-            "client_id": s.client_id,
-            "client_name": s.client_name,
-            "country_code": s.params["countryCode"],
+            "access_token": c.auth.token,
+            "session_id": c.session_id,
+            "client_id": c.client_id,
+            "client_name": c.client_name,
+            "country_code": c.params["countryCode"],
         }
         token_path.write_bytes(base64.b64encode(bytes(json.dumps(to_write), "UTF-8")))
-    return s
+    return c
 
 
 def login_mac_os(
     token_path: Path = TOKEN_DIR_PATH / "mac_os-tidal.token",
-) -> Optional[requests.Session]:
+) -> Optional[httpx.Client]:
     raise NotImplementedError
 
 
 def login(
     audio_format: AudioFormat,
-) -> Tuple[Optional[requests.Session], Optional[AudioFormat]]:
+) -> Tuple[Optional[httpx.Client], Optional[AudioFormat]]:
     """Given a selected audio_format, either log in "automatically"
     via the Fire TV OAuth 2.0 flow, or ask for an Android-/Windows-/MacOS-
     gleaned API token; the latter to be able to access HiRes fLaC audio.
-    Returns a tuple of a requests.Session object, if no error, and the
+    Returns a tuple of a httpx.Client object, if no error, and the
     AudioFormat instance passed in; or (None, "") in the event of error.
     """
     high_quality_formats: Set[AudioFormat] = {
