@@ -199,12 +199,15 @@ class BearerToken:
         }
         _auth = (self.client_id, self.client_secret)
         logger.info(
-            f"Attempting to refresh access token for TIDAL \"client\" {self.client_name}, "
+            f'Attempting to refresh access token for TIDAL "client" {self.client_name}, '
             f"which expired at {self.expiration}"
         )
         try:
             resp: httpx.Response = httpx.post(
-                url=f"{OAUTH2_URL}/token", data=_data, auth=_auth, headers=OAUTH2_HEADERS
+                url=f"{OAUTH2_URL}/token",
+                data=_data,
+                auth=_auth,
+                headers=OAUTH2_HEADERS,
             ).raise_for_status()
         except httpx.HTTPError:
             raise TokenException(

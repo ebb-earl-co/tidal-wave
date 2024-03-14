@@ -91,7 +91,9 @@ def variant_streams(
     if not em3u8.is_variant:
         return
 
-    playlist: m3u8.Playlist = max(em3u8.playlists, key=lambda p: p.stream_info.bandwidth)
+    playlist: m3u8.Playlist = max(
+        em3u8.playlists, key=lambda p: p.stream_info.bandwidth
+    )
     if not return_urls:
         return playlist
 

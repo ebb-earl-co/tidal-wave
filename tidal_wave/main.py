@@ -75,13 +75,13 @@ def main(
         level=logging.getLevelName(loglevel.value),
     )
     logger = logging.getLogger(__name__)
-    
+
     # Dependences brought in by httpx[http2]
     # DEBUG logging is voluminous, so set to INFO
     logging.getLogger("hpack").setLevel(logging.INFO)
     logging.getLogger("httpcore").setLevel(logging.INFO)
     logging.getLogger("httpx").setLevel(logging.WARNING)
-    
+
     tidal_resource: Optional[
         Union[TidalAlbum, TidalMix, TidalPlaylist, TidalTrack, TidalVideo]
     ] = match_tidal_url(tidal_url)

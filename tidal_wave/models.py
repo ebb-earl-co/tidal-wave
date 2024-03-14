@@ -727,7 +727,9 @@ def match_tidal_url(input_str: str) -> Optional[TidalResource]:
             return resource_match
 
 
-def download_artist_image(client: Client, artist: Artist, output_dir: Path, dimension: int = 320) -> Optional[Path]:
+def download_artist_image(
+    client: Client, artist: Artist, output_dir: Path, dimension: int = 320
+) -> Optional[Path]:
     """Given a UUID that corresponds to a (JPEG) image on Tidal's servers,
     download the image file and write it as '{artist name}.jpeg'
     in the directory `output_dir`. Returns path to downloaded file"""
@@ -744,7 +746,7 @@ def download_artist_image(client: Client, artist: Artist, output_dir: Path, dime
     # Unset params to avoid 403 response
     request.url: URL = URL(_url)
     response: Response = client.send(request)
-    
+
     if not response.status_code == 200:
         logger.warning(
             "Could not retrieve data from Tidal resources/images URL "

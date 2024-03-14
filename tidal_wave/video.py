@@ -129,13 +129,14 @@ class Video:
                     if client.session_id is not None
                     else dict()
                 )
-                request: Request = client.build_request("GET", u, headers=request_headers)
+                request: Request = client.build_request(
+                    "GET", u, headers=request_headers
+                )
 
                 # Unset params to avoid 403 response
                 request.url: URL = URL(u)
                 logger.debug(
-                    f"\tSending request for part {i} of video {self.video_id}: "
-                    f"'{u.split("?")[0]}'"
+                    f"\tSending request for part {i} of video {self.video_id}: {u.split('?')[0]}"
                 )
                 download_response: Response = client.send(request)
                 if not download_response.status_code == 200:

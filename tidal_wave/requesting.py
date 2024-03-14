@@ -279,9 +279,7 @@ def request_albums_credits(
     )
 
 
-def request_lyrics(
-    client: Client, track_id: int
-) -> Optional[TracksLyricsResponseJSON]:
+def request_lyrics(client: Client, track_id: int) -> Optional[TracksLyricsResponseJSON]:
     return requester_maker(
         client=client,
         endpoint="tracks",

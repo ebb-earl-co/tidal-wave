@@ -358,9 +358,7 @@ def request_mixes(client: Client, mix_id: str) -> Optional[SimpleNamespace]:
         .get("modules")[0]["mix"]["images"]["LARGE"]["url"]
     )
 
-    logger.debug(
-        f"{resp.status_code} response from TIDAL API to request: pages/mix"
-    )
+    logger.debug(f"{resp.status_code} response from TIDAL API to request: pages/mix")
     return SimpleNamespace(**d)
 
 
