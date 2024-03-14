@@ -82,7 +82,7 @@ def playlister(
 
 
 def variant_streams(
-    em3u8: m3u8.M3U8, session: Session, return_urls: bool = False
+    em3u8: m3u8.M3U8, client: Client, return_urls: bool = False
 ) -> Optional[Union[m3u8.M3U8, List[str]]]:
     """By default, return the highest-bandwidth option of em3u8.playlists
     as an m3u8.M3U8 object. If return_urls, then the object's .files
