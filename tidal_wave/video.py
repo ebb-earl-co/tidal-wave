@@ -21,6 +21,7 @@ import ffmpeg
 from httpx import Client, Request, Response, URL
 import mutagen
 import m3u8
+import urllib
 
 logger = logging.getLogger("__name__")
 

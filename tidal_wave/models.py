@@ -1,6 +1,7 @@
 import base64
 from dataclasses import dataclass, field
 from datetime import date, datetime
+from io import BytesIO
 import logging
 from pathlib import Path
 import re
@@ -750,7 +751,7 @@ def download_artist_image(
     if not response.status_code == 200:
         logger.warning(
             "Could not retrieve data from Tidal resources/images URL "
-            f"for artist {artist.name} due to error code: {r.status_code}"
+            f"for artist {artist.name} due to error code: {response.status_code}"
         )
         logger.debug(response.reason_phrase)
         return

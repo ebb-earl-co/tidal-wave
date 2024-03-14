@@ -9,7 +9,6 @@ from typing import Dict, List, Optional, Set, Tuple, Union
 
 from .media import AudioFormat
 from .models import (
-    PlaylistsEndpointResponseJSON,
     TracksEndpointResponseJSON,
     VideosEndpointResponseJSON,
 )
@@ -34,7 +33,7 @@ class Mix:
         self.mix_cover_saved: bool = False
 
     def set_metadata(self, client: Client):
-        """Request from TIDAL API /mixed endpoint"""
+        """Request from TIDAL API /mixes endpoint"""
         self.metadata: Optional[SimpleNamespace] = request_mixes(
             client=client, mix_id=self.mix_id
         )

@@ -25,7 +25,7 @@ from .utils import (
 from .video import Video
 
 import ffmpeg
-from httpx import Client, Response
+from httpx import HTTPError, Client, Response
 import mutagen
 
 logger = logging.getLogger("__name__")

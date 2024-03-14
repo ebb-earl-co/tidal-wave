@@ -434,7 +434,6 @@ def fetch_content_length(client: Client, url: str) -> int:
     encounters an HTTP request; or if the server does not support
     HTTP range requests; or if the server does not respond with a
     Content-Length header, return 0"""
-    client_params: dict = client.params
     # Unset params to avoid 403 response
     request: Request = client.build_request("HEAD", url)
     request.headers["Accept"] = "image/jpeg"

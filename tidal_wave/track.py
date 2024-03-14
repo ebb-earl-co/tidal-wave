@@ -317,7 +317,7 @@ class Track:
                 request.url: URL = URL(self.urls[0])
                 rr: Response = client.send(request)
 
-                if not rr.status_code in {200, 206}:
+                if rr.status_code not in {200, 206}:
                     logger.warning(f"Could not download {self}")
                     return
                 else:

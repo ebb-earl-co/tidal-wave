@@ -98,14 +98,15 @@ def variant_streams(
         return playlist
 
     request: Request = client.build_request("GET", playlist.uri)
+    # Unset parameters from client to avoid 403 error
     request.url = URL(playlist.uri)
 
     try:
         response: Response = client.send(request).raise_for_status()
     except HTTPError:
         raise TidalM3U8Exception(
-            f"Could not retrieve media URLs from manifest for "
-            f"video {vesrj.video_id}, video mode {vesrj.video_quality}"
+            "Could not retrieve media URLs from manifest m3u8 due to "
+            f"error {response.reason_phrase}"
         )
     else:
         _m3u8: m3u8.M3U8 = m3u8.M3U8(content=response.text)
