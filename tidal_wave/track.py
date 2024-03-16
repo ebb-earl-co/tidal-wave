@@ -9,13 +9,6 @@ import subprocess
 import sys
 from typing import Dict, Iterable, List, Optional, Union
 
-import mutagen
-from mutagen.mp4 import MP4Cover
-import ffmpeg
-from requests import Session
-from Crypto.Cipher import AES
-from Crypto.Util import Counter
-
 from .dash import (
     manifester,
     JSONDASHManifest,
@@ -31,6 +24,7 @@ from .models import (
     TracksEndpointResponseJSON,
     TracksEndpointStreamResponseJSON,
     TracksLyricsResponseJSON,
+    download_artist_image,
 )
 from .requesting import (
     fetch_content_length,
@@ -42,7 +36,14 @@ from .requesting import (
     request_stream,
     request_tracks,
 )
-from .utils import download_artist_image, download_cover_image, temporary_file
+from .utils import download_cover_image, temporary_file
+
+import ffmpeg
+import mutagen
+from mutagen.mp4 import MP4Cover
+from requests import Session
+from Crypto.Cipher import AES
+from Crypto.Util import Counter
 
 logger = logging.getLogger("__name__")
 
@@ -73,7 +74,7 @@ class Track:
             session=session, track_id=self.track_id
         )
 
-    def get_album(self, session: Session):
+    def set_album(self, session: Session):
         """This method executes request_albums, passing in 'session' and
         self.metadata.album.id. If an error occurs, self.album is set to None.
         Otherwise, self.album is set to the response of request_albums(),
@@ -409,10 +410,6 @@ class Track:
                         logger.warning(f"Could not download {self}")
                         return
                     else:
-                        logger.debug(
-                            f"Wrote {len(resp.content):_} bytes of track "
-                            f"{self.track_id} to '{ntf.name}'"
-                        )
                         ntf.write(resp.content)
             else:
                 ntf.seek(0)
@@ -708,7 +705,7 @@ class Track:
                 return
 
         if album is None:
-            self.get_album(session)
+            self.set_album(session)
         else:
             self.album = album
 
