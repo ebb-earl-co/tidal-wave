@@ -515,7 +515,7 @@ def playlist_maker(
                 playlist_item = TracksEndpointResponseJSON.from_dict(namespace.item)
             except Exception as e:
                 logger.warning(
-                    f"TidalPlaylistException: unable to parse playlist item [i] "
+                    f"TidalPlaylistException: unable to parse playlist item {i} "
                     f"with type '{namespace.type}'"
                 )
                 logger.debug(e)
@@ -527,7 +527,7 @@ def playlist_maker(
                 playlist_item = VideosEndpointResponseJSON.from_dict(namespace.item)
             except Exception as e:
                 logger.warning(
-                    f"TidalPlaylistException: unable to parse playlist item [i] "
+                    f"TidalPlaylistException: unable to parse playlist item {i} "
                     f"with type '{namespace.type}'"
                 )
                 logger.debug(e)
