@@ -1,6 +1,7 @@
 import base64
 from dataclasses import dataclass, field
 from datetime import date, datetime
+from io import BytessIO
 import logging
 from pathlib import Path
 import re
