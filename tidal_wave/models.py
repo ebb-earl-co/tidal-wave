@@ -1,7 +1,9 @@
 import base64
 from dataclasses import dataclass, field
 from datetime import date, datetime
+from io import BytesIO
 import logging
+from pathlib import Path
 import re
 from typing import Dict, List, Literal, Optional, Tuple, Union
 from typing_extensions import Annotated
@@ -138,8 +140,11 @@ class TracksEndpointResponseJSON(dataclass_wizard.JSONWizard):
 
     def __post_init__(self):
         name: str = replace_illegal_characters(self.title)
-        version: str = replace_illegal_characters(self.version)
-        self.name: str = name if self.version is None else f"{name} ({version})"
+        if self.version is not None:
+            version: str = replace_illegal_characters(self.version)
+            self.name: str = f"{name} ({version})"
+        else:
+            self.name: str = name
 
 
 @dataclass
@@ -736,3 +741,41 @@ def match_tidal_url(input_str: str) -> Optional[TidalResource]:
             continue
         else:
             return resource_match
+
+
+def download_artist_image(
+    session, artist: Artist, output_dir, dimension=320
+) -> Optional[Path]:
+    """Given a UUID that corresponds to a (JPEG) image on Tidal's servers,
+    download the image file and write it as '{artist name}.jpeg'
+    in the directory `output_dir`. Returns path to downloaded file"""
+    _url: str = artist.picture_url(dimension)
+    if _url is None:
+        logger.info(
+            f"Cannot download image for artist '{artist.name}', "
+            "as Tidal supplied no URL for this artist's image."
+        )
+        return
+
+    with session.get(url=_url, headers={"Accept": "image/jpeg"}) as r:
+        if not r.ok:
+            logger.warning(
+                "Could not retrieve data from Tidal resources/images URL "
+                f"for artist '{artist.name}' due to error code: {r.status_code}"
+            )
+            logger.debug(r.reason)
+            return
+        else:
+            bytes_to_write: BytesIO = BytesIO(r.content)
+
+    file_name: str = f"{artist.name.replace('..', '')}.jpg"
+    if bytes_to_write is not None:
+        output_file: Path = output_dir / file_name
+        bytes_to_write.seek(0)
+        output_file.write_bytes(bytes_to_write.read())
+        bytes_to_write.close()
+        logger.info(
+            f"Wrote artist image JPEG for {artist} to "
+            f"'{str(output_file.absolute())}'"
+        )
+        return output_file

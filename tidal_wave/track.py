@@ -9,13 +9,6 @@ import subprocess
 import sys
 from typing import Dict, Iterable, List, Optional, Union
 
-import mutagen
-from mutagen.mp4 import MP4Cover
-import ffmpeg
-from requests import Session
-from Crypto.Cipher import AES
-from Crypto.Util import Counter
-
 from .dash import (
     manifester,
     JSONDASHManifest,
@@ -31,6 +24,7 @@ from .models import (
     TracksEndpointResponseJSON,
     TracksEndpointStreamResponseJSON,
     TracksLyricsResponseJSON,
+    download_artist_image,
 )
 from .requesting import (
     fetch_content_length,
@@ -42,7 +36,14 @@ from .requesting import (
     request_stream,
     request_tracks,
 )
-from .utils import download_artist_image, download_cover_image, temporary_file
+from .utils import download_cover_image, temporary_file
+
+import ffmpeg
+import mutagen
+from mutagen.mp4 import MP4Cover
+from requests import Session
+from Crypto.Cipher import AES
+from Crypto.Util import Counter
 
 logger = logging.getLogger("__name__")
 
@@ -73,7 +74,7 @@ class Track:
             session=session, track_id=self.track_id
         )
 
-    def get_album(self, session: Session):
+    def set_album(self, session: Session):
         """This method executes request_albums, passing in 'session' and
         self.metadata.album.id. If an error occurs, self.album is set to None.
         Otherwise, self.album is set to the response of request_albums(),
@@ -396,7 +397,12 @@ class Track:
         logger.info(f"Writing track {self.track_id} to '{self.absolute_outfile}'")
 
         with temporary_file(suffix=".mp4") as ntf:
-            for u in self.urls:
+            for i, u in enumerate(self.urls, 1):
+                _url: str = u.split("?")[0]
+                logger.debug(
+                    f"Requesting part {i} of track {self.track_id} "
+                    f"from '{_url}', writing to '{ntf.name}'"
+                )
                 with session.get(
                     url=u, headers=self.download_headers, params=self.download_params
                 ) as resp:
@@ -496,8 +502,16 @@ class Track:
 
         tags[tag_map["album"]] = self.album.title
         tags[tag_map["album_artist"]] = ";".join((a.name for a in self.album.artists))
-        tags[tag_map["album_peak_amplitude"]] = f"{self.stream.album_peak_amplitude}"
-        tags[tag_map["album_replay_gain"]] = f"{self.stream.album_replay_gain}"
+        tags[tag_map["album_peak_amplitude"]] = (
+            f"{self.stream.album_peak_amplitude}"
+            if self.stream.album_peak_amplitude is not None
+            else None
+        )
+        tags[tag_map["album_replay_gain"]] = (
+            f"{self.stream.album_replay_gain}"
+            if self.stream.album_replay_gain is not None
+            else None
+        )
         tags[tag_map["artist"]] = ";".join((a.name for a in self.metadata.artists))
         tags[tag_map["artists"]] = [a.name for a in self.metadata.artists]
         tags[tag_map["barcode"]] = self.album.upc
@@ -507,7 +521,14 @@ class Track:
         tags[tag_map["isrc"]] = self.metadata.isrc
         tags[tag_map["title"]] = self.metadata.name
         tags[tag_map["track_peak_amplitude"]] = f"{self.metadata.peak}"
-        tags[tag_map["track_replay_gain"]] = f"{self.metadata.replay_gain}"
+        tags[tag_map["track_peak_amplitude"]] = (
+            f"{self.metadata.peak}" if self.metadata.peak is not None else None
+        )
+        tags[tag_map["track_replay_gain"]] = (
+            f"{self.metadata.replay_gain}"
+            if self.metadata.replay_gain is not None
+            else None
+        )
         # credits
         for tag in {"composer", "engineer", "lyricist", "mixer", "producer", "remixer"}:
             try:
@@ -684,7 +705,7 @@ class Track:
                 return
 
         if album is None:
-            self.get_album(session)
+            self.set_album(session)
         else:
             self.album = album
 

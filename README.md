@@ -44,7 +44,7 @@ A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to ret
    - [`m3u8`](https://pypi.org/project/m3u8/)
    - [`platformdirs`](https://pypi.org/project/platformdirs/)
    - [`pycryptodome`](https://pypi.org/project/pycryptodome/)
-   - [`requests`](https://pypi.org/project/requests/)
+   - [`requests[socks]`](https://pypi.org/project/requests/)
    - [`typer`](https://pypi.org/project/typer/)
 
 ## Installation
