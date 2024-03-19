@@ -215,6 +215,7 @@ def login_windows(
         s.headers["User-Agent"] = (
             "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) TIDAL/2.36.2 Chrome/116.0.5845.228 Electron/26.6.1 Safari/537.36"
         )
+        s.headers["Origin"] = s.headers["Referer"] = "https://desktop.tidal.com/"
         s.params["deviceType"] = "DESKTOP"
         to_write: dict = {
             "access_token": s.auth.token,
@@ -249,6 +250,8 @@ def login_macos(
     else:
         logger.debug(f"Writing this access token to '{str(token_path.absolute())}'")
         s.headers["User-Agent"] = "TIDALPlayer/3.1.4.209 CFNetwork/1494.0.7 Darwin/23.4.0"
+        s.headers["x-tidal-client-version"] = "2024.3.14"
+        s.headers["Origin"] = s.headers["Referer"] = "https://desktop.tidal.com/"
         s.params["deviceType"] = "DESKTOP"
         to_write: dict = {
             "access_token": s.auth.token,
