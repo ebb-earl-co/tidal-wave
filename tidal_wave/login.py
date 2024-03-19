@@ -4,7 +4,7 @@ import json
 import logging
 from pathlib import Path
 import sys
-from typing import Dict, Optional, Set, Tuple
+from typing import Dict, Optional, Set, Tuple, Union
 
 from .models import BearerAuth, SessionsEndpointResponseJSON
 from .oauth import (
@@ -66,7 +66,7 @@ def load_token_from_disk(
 def validate_token_for_session(
     token: str, headers: Dict[str, str] = COMMON_HEADERS
 ) -> Optional[requests.Session]:
-    """Send a GET request to the /sessions endpoint of Tidal's API.
+    """Send a GET request to the /sessions endpoint of TIDAL's API.
     If `token` is valid, use the SessionsEndpointResponseJSON object
     that was returned from the API to create a requests.Session object with
     some additional attributes. Otherwise, return None"""
@@ -109,8 +109,7 @@ def login_fire_tv(
 ) -> Optional[requests.Session]:
     """Load `token_path` from disk, initializing a BearerToken from its
     contents. If successful, return a requests.Session object with
-    extra attributes set
-    """
+    extra attributes set, particular to the emulated client, Fire TV"""
     bearer_token = BearerToken.load(p=token_path)
     if bearer_token is not None:
         bearer_token.save(p=token_path)
@@ -145,6 +144,10 @@ def login_fire_tv(
 def login_android(
     token_path: Path = TOKEN_DIR_PATH / "android-tidal.token",
 ) -> Optional[requests.Session]:
+    """Load `token_path` from disk, initializing a BearerToken from its
+    contents. If successful, return a requests.Session object with
+    extra attributes set, particular to the emulated client, Android
+    phone or tablet."""
     logger.info(f"Loading TIDAL access token from '{str(token_path.absolute())}'")
     _token: Optional[dict] = load_token_from_disk(token_path=token_path)
     access_token: Optional[str] = None if _token is None else _token.get("access_token")
@@ -191,11 +194,15 @@ def login_android(
 def login_windows(
     token_path: Path = TOKEN_DIR_PATH / "windows-tidal.token",
 ) -> Optional[requests.Session]:
+    """Load `token_path` from disk, initializing a BearerToken from its
+    contents. If successful, return a requests.Session object with
+    extra attributes set, particular to the emulated client, a Windows
+    laptop or desktop."""
     _token: Optional[dict] = load_token_from_disk(token_path=token_path)
     access_token: Optional[str] = None if _token is None else _token.get("access_token")
     if access_token is None:
         access_token: str = typer.prompt(
-            "Enter Tidal API access token (the part after 'Bearer ')"
+            "Enter TIDAL API access token (the part after 'Bearer ')"
         )
 
     s: Optional[requests.Session] = validate_token_for_session(access_token)
@@ -220,17 +227,44 @@ def login_windows(
     return s
 
 
-def login_mac_os(
+def login_macos(
     token_path: Path = TOKEN_DIR_PATH / "mac_os-tidal.token",
 ) -> Optional[requests.Session]:
-    raise NotImplementedError
+    """Load `token_path` from disk, initializing a BearerToken from its
+    contents. If successful, return a requests.Session object with
+    extra attributes set, particular to the emulated client, a macOS
+    laptop or desktop"""
+    _token: Optional[dict] = load_token_from_disk(token_path=token_path)
+    access_token: Optional[str] = None if _token is None else _token.get("access_token")
+    if access_token is None:
+        access_token: str = typer.prompt(
+            "Enter TIDAL API access token (the part after 'Bearer ')"
+        )
 
+    s: Optional[requests.Session] = validate_token_for_session(access_token)
+    if s is None:
+        logger.critical("Access token is not valid: exiting now.")
+        if token_path.exists():
+            token_path.unlink()
+    else:
+        logger.debug(f"Writing this access token to '{str(token_path.absolute())}'")
+        s.headers["User-Agent"] = "TIDALPlayer/3.1.4.209 CFNetwork/1494.0.7 Darwin/23.4.0"
+        s.params["deviceType"] = "DESKTOP"
+        to_write: dict = {
+            "access_token": s.auth.token,
+            "session_id": s.session_id,
+            "client_id": s.client_id,
+            "client_name": s.client_name,
+            "country_code": s.params["countryCode"],
+        }
+        token_path.write_bytes(base64.b64encode(bytes(json.dumps(to_write), "UTF-8")))
+    return s
 
 def login(
     audio_format: AudioFormat,
-) -> Tuple[Optional[requests.Session], Optional[AudioFormat]]:
+) -> Tuple[Optional[requests.Session], Union[AudioFormat, str]]:
     """Given a selected audio_format, either log in "automatically"
-    via the Fire TV OAuth 2.0 flow, or ask for an Android-/Windows-/MacOS-
+    via the Fire TV OAuth 2.0 flow, or ask for an Android-/Windows-/macOS-
     gleaned API token; the latter to be able to access HiRes fLaC audio.
     Returns a tuple of a requests.Session object, if no error, and the
     AudioFormat instance passed in; or (None, "") in the event of error.
@@ -252,7 +286,7 @@ def login(
         if (TOKEN_DIR_PATH / "android-tidal.token").exists():
             return (login_android(), audio_format)
 
-        options: set = {"android", "a", "windows", "w"}
+        options: set = {"android", "a", "macos", "m", "windows", "w"}
         _input: str = ""
         while _input not in options:
             _input = typer.prompt(
@@ -261,6 +295,8 @@ def login(
         else:
             if _input in {"android", "a"}:
                 return (login_android(), audio_format)
+            elif _input in {"macos", "m"}:
+                return (login_macos(), audio_format)
             elif _input in {"windows", "w"}:
                 return (login_windows(), audio_format)
     else:
