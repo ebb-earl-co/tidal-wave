@@ -66,7 +66,7 @@ def load_token_from_disk(
 def validate_token_for_session(
     token: str, headers: Dict[str, str] = COMMON_HEADERS
 ) -> Optional[requests.Session]:
-    """Send a GET request to the /sessions endpoint of Tidal's API.
+    """Send a GET request to the /sessions endpoint of TIDAL's API.
     If `token` is valid, use the SessionsEndpointResponseJSON object
     that was returned from the API to create a requests.Session object with
     some additional attributes. Otherwise, return None"""
@@ -202,7 +202,7 @@ def login_windows(
     access_token: Optional[str] = None if _token is None else _token.get("access_token")
     if access_token is None:
         access_token: str = typer.prompt(
-            "Enter Tidal API access token (the part after 'Bearer ')"
+            "Enter TIDAL API access token (the part after 'Bearer ')"
         )
 
     s: Optional[requests.Session] = validate_token_for_session(access_token)
@@ -238,7 +238,7 @@ def login_mac_os(
     access_token: Optional[str] = None if _token is None else _token.get("access_token")
     if access_token is None:
         access_token: str = typer.prompt(
-            "Enter Tidal API access token (the part after 'Bearer ')"
+            "Enter TIDAL API access token (the part after 'Bearer ')"
         )
 
     s: Optional[requests.Session] = validate_token_for_session(access_token)
