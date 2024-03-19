@@ -227,7 +227,7 @@ def login_windows(
     return s
 
 
-def login_mac_os(
+def login_macos(
     token_path: Path = TOKEN_DIR_PATH / "mac_os-tidal.token",
 ) -> Optional[requests.Session]:
     """Load `token_path` from disk, initializing a BearerToken from its
