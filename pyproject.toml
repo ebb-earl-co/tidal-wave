@@ -39,7 +39,7 @@ dependencies = [
     "typer==0.10.0"
 ]
 [project.optional-dependencies]
-all = ["typer[all]==0.9.0"]
+all = ["typer[all]==0.10.0"]
 [project.scripts]
 tidal-wave = "tidal_wave.main:app"
 [project.urls]
