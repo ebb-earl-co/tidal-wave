@@ -25,7 +25,7 @@ jobs:
         uses: baptiste0928/cargo-install@v3
         with:
           crate: pyapp
-          version: 0.15.1
+          version: 0.16.0
 
       - name: Rename just-compiled binary
         run: |
