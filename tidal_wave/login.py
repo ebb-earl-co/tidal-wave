@@ -256,7 +256,7 @@ def login_macos(
         s.headers["Origin"] = s.headers["Referer"] = "https://desktop.tidal.com/"
         s.params["deviceType"] = "DESKTOP"
         to_write: dict = {
-            "access_token": s.  auth.token,
+            "access_token": s.auth.token,
             "session_id": s.session_id,
             "client_id": s.client_id,
             "client_name": s.client_name,
