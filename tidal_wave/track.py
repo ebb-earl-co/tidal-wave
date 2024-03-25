@@ -207,7 +207,12 @@ class Track:
             self.filename: Optional[str] = f"{track_substring}.{self.codec}"
 
         # for use in playlist file ordering
-        self.trackname = re.match(r"(?:\d{2,3} - )(.+?$)", self.filename).groups()[0]
+        if self.filename is None:
+            self.trackname: Optional[str] = None
+        else:
+            self.trackname: str = re.match(
+                r"(?:\d{2,3} - )(.+?$)", self.filename
+            ).groups()[0]
 
     def set_outfile(self):
         """Uses self.album_dir and self.metadata and self.filename
@@ -718,13 +723,19 @@ class Track:
         self.set_credits(session)
         self.set_stream(session, audio_format)
         if self.stream is None:
+            self.outfile = None
             return
 
         self.set_manifest()
         if self.manifest is None:
+            self.outfile = None
             return
 
         self.set_filename(audio_format)
+        if self.filename is None:
+            self.outfile = None
+            return
+
         outfile: Optional[Path] = self.set_outfile()
         if outfile is None:
             if not no_extra_files:

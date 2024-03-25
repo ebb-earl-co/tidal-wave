@@ -78,7 +78,7 @@ def requester_maker(
             backoff.expo,
             predicate=lambda r: r.status_code == 429,
             jitter=backoff.random_jitter,
-            max_time=10,
+            max_time=15,
             logger=logger,
         )
         def _get(s: Session, request_kwargs: dict) -> Response:

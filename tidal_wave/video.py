@@ -15,7 +15,7 @@ from .models import (
     VideosEndpointStreamResponseJSON,
 )
 from .requesting import request_videos, request_video_contributors, request_video_stream
-from .utils import replace_illegal_characters, temporary_file
+from .utils import temporary_file
 
 import ffmpeg
 import mutagen

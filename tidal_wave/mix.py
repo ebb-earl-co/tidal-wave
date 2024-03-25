@@ -9,7 +9,6 @@ from typing import Dict, List, Optional, Set, Tuple, Union
 
 from .media import AudioFormat
 from .models import (
-    PlaylistsEndpointResponseJSON,
     TracksEndpointResponseJSON,
     VideosEndpointResponseJSON,
 )

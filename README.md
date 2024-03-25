@@ -16,26 +16,30 @@ This software uses libraries from the [FFmpeg](http://ffmpeg.org) project under 
 ## Features
 * Retrieve [FLAC](https://xiph.org/flac/), [Dolby Atmos](https://www.dolby.com/technologies/dolby-atmos/), [Sony 360 Reality Audio](https://electronics.sony.com/360-reality-audio), or [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) tracks; [AVC/H.264](https://en.wikipedia.org/wiki/Advanced_Video_Coding) (up to 1920x1080) + [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) videos
 * Either a single track or an entire album can be retrieved
-* Album covers and artist images are retrieved by default
+* Album covers are retrieved by default, and embedded into all tracks
 * Support for albums with multiple discs
 * If available, lyrics are added as metadata to tracks
-* If available, album reviews are retrieved as JSON 
-* Video retrieval support
+* If available, album reviews are retrieved as JSON
+* If available, album credits are retrieved as JSON
+* If available, artist bios are retrieved as JSON
+* If available, artist images are retrieved as JPEG
 * Playlist retrieval support (video or audio or both)
+* Playlist .m3u8 file automatically created
 * Mix retrieval support (video or audio)
 * Artist's entire works retrieval support (video and audio; albums or albums and EPs and singles)
+* Because of the use of the `requests` package, system proxies are respected (HTTP, HTTPs, Socks); or can be specified by typical environment variable
 
 ## Getting Started
 A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to retrieve HiRes FLAC, Dolby Atmos, and Sony 360 Reality Audio tracks. Simply a [HiFi](https://tidal.com/pricing) plan is sufficient to retrieve in 16-bit, 44.1 kHz (i.e., lossless) or lower quality as well as videos. More information on sound quality at [TIDAL's site here](https://tidal.com/sound-quality).
 
 ### Requirements
  - As resources will be fetched from the World Wide Web, an Internet connection is required
- - The excellent tool [FFmpeg](http://ffmpeg.org/download.html) is necessary for audio file manipulation. The [container image](https://github.com/ebb-earl-co/tidal-wave/blob/trunk/Dockerfile) as well as the [`pyinstaller`](https://pyinstaller.org/en/stable/)-created [binary for GNU/Linux](https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_py311_FFmpeg6.1.1_linux), [binary for Apple Silicon macOS](https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_py311_FFmpeg6.1.1_macos_arm64), [binary for x86\_64 macOS](https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_py311_FFmpeg6.1.1_macos_x86_64) build FFmpeg from source, so separate installation is unnecessary.
-   - Static builds are available from [John Van Sickle](https://www.johnvansickle.com/ffmpeg/) for GNU/Linux, or most package managers feature `ffmpeg`.
-   - For macOS, the [FFmpeg download page](http://ffmpeg.org/download.html#build-mac) links to [this download source](https://evermeet.cx/ffmpeg/), or there is always [Homebrew](https://formulae.brew.sh/formula/ffmpeg)
+ - The venerable [FFmpeg](http://ffmpeg.org/download.html) is necessary for audio and video data manipulation. This project's [container image](https://github.com/ebb-earl-co/tidal-wave/blob/trunk/Dockerfile) as well as its [`pyinstaller`](https://pyinstaller.org/en/stable/)-created [binary for GNU/Linux](https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_py311_FFmpeg6.1.1_linux), [binary for Apple Silicon macOS](https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_py311_FFmpeg6.1.1_macos_arm64), and [binary for x86\_64 macOS](https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_py311_FFmpeg6.1.1_macos_x86_64) build FFmpeg from source, so separate installation is unnecessary.
+   - Static builds of FFmpeg are available from [John Van Sickle](https://www.johnvansickle.com/ffmpeg/) for GNU/Linux, or most package managers feature `ffmpeg`.
+   - For macOS, the [FFmpeg download page](http://ffmpeg.org/download.html#build-mac) links to [this download source](https://evermeet.cx/ffmpeg/); or there is always [Homebrew](https://formulae.brew.sh/formula/ffmpeg)
    - For Windows, the [FFmpeg download page](http://ffmpeg.org/download.html#build-windows) lists 2 resources; or [`chocolatey`](https://community.chocolatey.org/packages/ffmpeg) is an option
  - This is a Python package, so **to use it in the default manner** you will need [Python 3](https://www.python.org/downloads/), version 3.8 or newer, on your system.
-   - *However*, as of version 2023.12.10, an [OCI container image](https://github.com/ebb-earl-co/tidal-wave/pkgs/container/tidal-wave); `pyapp`-compiled binaries; and [`pyinstaller`](https://pyinstaller.org/en/stable/)-created binaries for x86\_64 GNU/Linux, Apple Silicon macOS, and x86\_64 macOS are provided for download and use that *do not require Python installed*
+   - *However*, as of December 2023, an [OCI container image](https://github.com/ebb-earl-co/tidal-wave/pkgs/container/tidal-wave); `pyapp`-compiled binaries; and [`pyinstaller`](https://pyinstaller.org/en/stable/)-created binaries for x86\_64 GNU/Linux, Apple Silicon macOS, and x86\_64 macOS are provided for download and use that *do not require Python to be installed*
  - Only a handful of Python libraries are dependencies:
    - [`backoff`](https://pypi.org/project/backoff/)
    - [`dataclass-wizard`](https://pypi.org/project/dataclass-wizard/)
@@ -51,12 +55,20 @@ A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to ret
 ### `pip` Install from PyPi
 Install this project with [`pip`](https://pip.pypa.io/en/stable/): either with a virtual environment (preferred) or any other way you desire:
 ```bash
+# GNU/Linux or macOS or Android (e.g. Termux)
 $ python3 -m pip install tidal-wave
+```
+```powershell
+# Windows
+PS > python.exe -m pip install tidal-wave
 ```
 
 Optionally, to get the full `typer` experience when using this utility, add `[all]` to the end of the `pip install command`:
 ```bash
 $ python3 -m pip install tidal-wave[all]
+```
+```powershell
+PS > python.exe -m pip install tidal-wave[all]
 ```
 ### `pip` Install from the Repository
 Alternatively, you can clone this repository; `cd` into it; and install from there:
@@ -65,7 +77,7 @@ $ git clone --depth=1 https://github.com/ebb-earl-co/tidal-wave.git
 $ cd tidal-wave
 $ python3 -m venv .venv
 $ source .venv/bin/activate
-$ (.venv) pip install .
+$ (.venv) pip install .  # or, pip install .[all]
 ```
 ### `Pyinstaller` executable
 This is the preferred release artifact, compiled with [`pyinstaller`](https://pyinstaller.org). It bundles Python 3.11, FFmpeg 6.1.1, and the `tidal-wave` program into one binary, licensed under the terms of FFmpeg: with the [GNU Lesser General Public License (LGPL) version 2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html). Installation is as simple as downloading the correct binary for your platform (currently, GNU/Linux x86\_64; macOS x86\_64; or macOS arm64), giving it execute permissions, and running it.
@@ -76,23 +88,25 @@ $ chmod +x ./tidal-wave_py311_FFmpeg6.1.1_linux
 $ mv ./tidal-wave_py311_FFmpeg6.1.1_linux ./tidal-wave_linux
 $ ./tidal-wave_linux --help
 ```
-
 ### `pyapp` executable
 Download the Rust-compiled binary from [the Releases](https://github.com/ebb-earl-co/tidal-wave/releases/latest), and, on macOS or GNU/Linux, make it executable
 ```bash
 $ wget https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_py311.pyapp
 $ chmod +x ./tidal-wave_py311.pyapp
+$ ./tidal-wave_py311.pyapp --help
 ```
 Or, on Windows, once the .exe file is downloaded, you might have to allow a security exception for an unknown developer, then:
 ```powershell
-Invoke-WebRequest https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_py311_pyapp.exe
-& "tidal-wave_py311_pyapp.exe" --help
+PS > Invoke-WebRequest https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_py311_pyapp.exe
+PS > & "tidal-wave_py311_pyapp.exe" --help
 ```
 
 ### Docker
 Pull the image from GitHub container repo:
 ```bash
-docker pull ghcr.io/ebb-earl-co/tidal-wave:latest
+$ docker pull ghcr.io/ebb-earl-co/tidal-wave:latest
+# Or, the main branch of this repository, which will be ahead of `latest`:
+$ docker pull ghcr.io/ebb-earl-co/tidal-wave:trunk
 ```
 ## Quickstart
 Run `python3 tidal-wave --help` to see the options available. Or, if you followed the repository cloning steps above, run `python3 -m tidal_wave --help` from the repository root directory, `tidal-wave`. In either case, you should see something like the following:
@@ -116,16 +130,30 @@ Usage: python -m tidal_wave [OPTIONS] TIDAL_URL [OUTPUT_DIRECTORY]
 ```
 
 ## Usage
-> By default, this tool can request (and, if no errors arise, retrieve) all of the audio formats *except* `HiRes` and `360`.
-
-> The [HiRes FLAC](https://tidal.com/supported-devices?filter=hires-flac) format is only available if the credentials from an Android, Windows, iOS, or macOS device can be obtained
-
-> The [Sony 360 Reality Audio](https://tidal.com/supported-devices?filter=sony-360) format is only available if the credentials from an Android or iOS device can be obtained
-
 Invocation of this tool will store credentials in a particular directory in the user's "home" directory: for Unix-like systems, this will be `/home/${USER}/.config/tidal-wave`: for Windows, it varies: in either OS situation, the exact directory is determined by the `user_config_path()` function of the `platformdirs` package.
 
-Similarly, all media retrieved is placed in subdirectories of the user's default music directory: for Unix-like systems, this probably is `/home/${USER}/Music`; for Windows it is probably `C:\Users\<USER>\Music`. This directory is determined by `platformdirs.user_music_path()`. 
+Similarly, by default, all media retrieved is placed in subdirectories of the user's default music directory: for Unix-like systems, this probably is `/home/${USER}/Music`; for Windows it is probably `C:\Users\<USER>\Music`. This directory is determined by `platformdirs.user_music_path()`. 
  - If a different path is passed to the second CLI argument, `output_directory`, then all media is written to subdirectories of that directory.
+
+### Which Audio Formats Are Available to Which Clients
+Source: [TIDAL](https://tidal.com/supported-devices)
+|                | Low                | High               | Lossless           |      MQA           | HiRes FLAC         | Dolby Atmos        | Sony 360 Reality Audio | Video (H.264 + AAC) |
+| :---           | :---:              | :---:              |   :---:            |     :---:          |   :---:            |    :---:           |        :---:           |     :---:           |
+| Android        | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |     :x:            |   :heavy_check_mark:   | :heavy_check_mark: |
+| Fire TV :large_blue_diamond: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:        |         :x:        | :heavy_check_mark:     | :x: | :heavy_check_mark: |
+| macOS          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |         :x:        |       :x:              | :heavy_check_mark: |
+| Windows        | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |         :x:        |            :x:         | :heavy_check_mark: |
+
+:large_blue_diamond: This is the default client for `tidal-wave`, a spoofed Amazon Fire TV. It is the one invoked in all situations unless `--audio-format hires` or `--audio-format 360` is passed as a command line flag:
+```bash
+$ tidal-wave https://listen.tidal.com/album/000000
+$ # no --audio-format flag passed will instruct tidal-wave to use the Fire TV client, as it implies --audio-format lossless
+$ tidal-wave https://listen.tidal.com/album/000000 --audio-format high
+$ # specifying low, high, lossless, or atmos will instruct tidal-wave to use the Fire TV client
+$ tidal-wave https://listen.tidal.com/album/000000 --audio-format hires
+$ # the above forces tidal-wave to ask for an access token gleaned from an Android, macOS, or Windows device, as laid out in the above table
+```
+Otherwise, in order to retrieve the desired audio format for a given track, it is **necessary** to have the access token from a compatible device; e.g. an Android device in order to retrieve Sony 360 Reality Audio tracks
 
 ### Example
  - First, find the URL of the album/artist/mix/playlist/track/video desired. Then, simply pass it as the first argument to `tidal-wave` with no other arguments in order to: *retrieve the album/artist/mix/playlist/track in Lossless quality to a subdirectory of user's music directory and INFO-level logging* in the case of audio; *retrieve the video in 1080p, H.264+AAC quality to a subdirectory of user's music directory with INFO-level logging* in the case of a video URL.
@@ -140,7 +168,7 @@ Similarly, all media retrieved is placed in subdirectories of the user's default
  ```bash
  (.venv) $ tidal-wave https://tidal.com/browse/track/... --audio-format atmos --loglevel debug
  ```
- **Keep in mind that authentication from an Android (preferred), iOS, Windows, or macOS device will need to be extracted and passed to this tool in order to access HiRes FLAC and Sony 360 Reality Audio versions of tracks**
+ **Keep in mind that an access token from an Android (preferred), Windows, or macOS device will need to be extracted and passed to this tool in order to access HiRes FLAC or Sony 360 Reality Audio tracks**
  - To (attempt to) get a HiRes FLAC version of an album, and you desire to see only warnings and errors, the following will do that:
  ```bash
  $ tidal-wave https://tidal.com/browse/album/... --audio-format hires --loglevel warning
@@ -148,7 +176,7 @@ Similarly, all media retrieved is placed in subdirectories of the user's default
 
  - To (attempt to) get a playlist, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when retrieving videos.
  ```powershell
- PS C:\Users\User > & tidal-wave_py311_pyapp.exe https://tidal.com/browse/playlist/...
+ PS > C:\Users\User > & tidal-wave_py311_pyapp.exe https://tidal.com/browse/playlist/...
  ```
 
  - To (attempt to) get a mix, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when retrieving videos.
@@ -212,12 +240,12 @@ $ docker run \
     --include-eps-singles
 ```
 
-Perhaps you don't want a single-shot executable type of Docker invocation, but rather a long-lived container into which one can `docker exec` in order to request media at one's leisure. This is one of the requested features from the GitHub Discussions, in particular for Unraid users. In order to do this, use the following, slightly modified Docker command:
+Perhaps you don't want a single-shot executable type of Docker invocation, but rather a long-lived container into which one can `docker exec` in order to request media at one's leisure. This is one of the requested features from the GitHub Discussions, in particular for Unraid users. In order to do this, use the following, slightly-modified Docker command:
 ```bash
 $ mkdir -p ./Music/ ./config/tidal-wave/
 $ docker run \
     --name tidal-wave \
-    -dit \
+    -dit \  # is short for: --detach --interactive --tty
     --volume ./Music:/home/debian/Music \
     --volume ./config/tidal-wave:/home/debian/.config/tidal-wave \
     --entrypoint "/bin/bash" \

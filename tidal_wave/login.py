@@ -249,7 +249,9 @@ def login_macos(
             token_path.unlink()
     else:
         logger.debug(f"Writing this access token to '{str(token_path.absolute())}'")
-        s.headers["User-Agent"] = "TIDALPlayer/3.1.4.209 CFNetwork/1494.0.7 Darwin/23.4.0"
+        s.headers["User-Agent"] = (
+            "TIDALPlayer/3.1.4.209 CFNetwork/1494.0.7 Darwin/23.4.0"
+        )
         s.headers["x-tidal-client-version"] = "2024.3.14"
         s.headers["Origin"] = s.headers["Referer"] = "https://desktop.tidal.com/"
         s.params["deviceType"] = "DESKTOP"
@@ -262,6 +264,7 @@ def login_macos(
         }
         token_path.write_bytes(base64.b64encode(bytes(json.dumps(to_write), "UTF-8")))
     return s
+
 
 def login(
     audio_format: AudioFormat,
@@ -286,8 +289,13 @@ def login(
     if audio_format in fire_tv_formats:
         return (login_fire_tv(), audio_format)
     elif audio_format in high_quality_formats:
+        # If there's already a token, skip the prompt and input rigmarole
         if (TOKEN_DIR_PATH / "android-tidal.token").exists():
             return (login_android(), audio_format)
+        elif (TOKEN_DIR_PATH / "windows-tidal.token").exists():
+            return (login_windows(), audio_format)
+        elif (TOKEN_DIR_PATH / "mac_os-tidal.token").exists():
+            return (login_macos(), audio_format)
 
         options: set = {"android", "a", "macos", "m", "windows", "w"}
         _input: str = ""
