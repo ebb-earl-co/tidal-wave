@@ -6,4 +6,4 @@ m3u8==4.0.0
 platformdirs==4.2.0
 pycryptodome==3.20.0
 requests[socks]==2.31.0
-typer==0.10.0
+typer==0.11.0
