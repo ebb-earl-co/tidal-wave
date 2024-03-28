@@ -4,9 +4,11 @@ on:
     types: ["published"]
 
 env:
+  PYAPP_DISTRIBUTION_EMBED: 1
+  PYAPP_METADATA_TEMPLATE: "{project}, version {version}"
+  PYAPP_PROJECT_FEATURES: "all"
   PYAPP_PROJECT_NAME: "tidal-wave"
   PYAPP_PROJECT_VERSION: ${{ github.event.release.tag_name }}
-  PYAPP_DISTRIBUTION_EMBED: 1
   PYAPP_PYTHON_VERSION: "3.11"
   # https://doc.rust-lang.org/cargo/reference/config.html#buildtarget
   CARGO_BUILD_TARGET: "x86_64-apple-darwin"
@@ -26,6 +28,17 @@ jobs:
         with:
           crate: pyapp
           version: 0.16.0
+          args: "--root ~/.cargo"
+
+      - name: Upload artifact
+        id: artifact-upload-step
+        uses: actions/upload-artifact@v4
+        with:
+          name: tidal-wave_${{ github.event.release.tag_name }}_py311_macos.pyapp
+          path: ~/.cargo/bin/pyapp
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Rename just-compiled binary
         run: |
