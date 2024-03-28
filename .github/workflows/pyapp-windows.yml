@@ -4,9 +4,11 @@ on:
     types: ["published"]
 
 env:
+  PYAPP_DISTRIBUTION_EMBED: 1
+  PYAPP_METADATA_TEMPLATE: "{project}, version {version}"
+  PYAPP_PROJECT_FEATURES: "all"
   PYAPP_PROJECT_NAME: "tidal-wave"
   PYAPP_PROJECT_VERSION: ${{ github.event.release.tag_name }}
-  PYAPP_DISTRIBUTION_EMBED: 1
   PYAPP_PYTHON_VERSION: "3.11"
 
 permissions:
@@ -24,26 +26,27 @@ jobs:
         with:
           crate: pyapp
           version: 0.16.0
-
-      - name: Test just-compiled binary
-        shell: pwsh
-        run: |
-          & "C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe" --help
-
-      - name: Rename just-compiled EXE
-        shell: pwsh
-        run: |
-          Move-Item "C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe" ${{ github.workspace }}\tidal-wave_py311_pyapp.exe
+          args: "--root C:\\Users\\runneradmin\\.cargo"
 
       - name: Upload artifact
         id: artifact-upload-step
         uses: actions/upload-artifact@v4
         with:
           name: tidal-wave_${{ github.event.release.tag_name }}_py311_pyapp.exe
-          path: ${{ github.workspace }}\tidal-wave_py311_pyapp.exe
+          path: C:\Users\runneradmin\.cargo\bin\pyapp.exe
           compression-level: 0
           if-no-files-found: error
           retention-days: 1
+
+      - name: Test just-compiled binary
+        shell: pwsh
+        run: |
+          & "C:\Users\runneradmin\.cargo\bin\pyapp.exe" --help
+
+      - name: Rename just-compiled EXE
+        shell: pwsh
+        run: |
+          Move-Item "C:\Users\runneradmin\.cargo\bin\pyapp.exe" ${{ github.workspace }}\tidal-wave_py311_pyapp.exe
 
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2

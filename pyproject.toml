@@ -29,6 +29,7 @@ classifiers=[
 ]
 dependencies = [
     "backoff==2.2.1",
+    "cachecontrol==0.14.0",
     "dataclass-wizard==0.22.3",
     "ffmpeg-python==0.2.0",
     "mutagen==1.47.0",
@@ -36,7 +37,7 @@ dependencies = [
     "platformdirs==4.2.0",
     "pycryptodome==3.20.0",
     "requests[socks]==2.31.0",
-    "typer==0.10.0"
+    "typer==0.11.0"
 ]
 [project.optional-dependencies]
 all = ["typer[all]==0.10.0"]

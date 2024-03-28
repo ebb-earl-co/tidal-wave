@@ -28,6 +28,7 @@ This software uses libraries from the [FFmpeg](http://ffmpeg.org) project under 
 * Mix retrieval support (video or audio)
 * Artist's entire works retrieval support (video and audio; albums or albums and EPs and singles)
 * Because of the use of the `requests` package, system proxies are respected (HTTP, HTTPs, Socks); or can be specified by typical environment variable
+* Also because of the use of `requests`, very simple [`Cache-Control`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control) request caching occurs via `CacheControl`
 
 ## Getting Started
 A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to retrieve HiRes FLAC, Dolby Atmos, and Sony 360 Reality Audio tracks. Simply a [HiFi](https://tidal.com/pricing) plan is sufficient to retrieve in 16-bit, 44.1 kHz (i.e., lossless) or lower quality as well as videos. More information on sound quality at [TIDAL's site here](https://tidal.com/sound-quality).
@@ -42,6 +43,7 @@ A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to ret
    - *However*, as of December 2023, an [OCI container image](https://github.com/ebb-earl-co/tidal-wave/pkgs/container/tidal-wave); `pyapp`-compiled binaries; and [`pyinstaller`](https://pyinstaller.org/en/stable/)-created binaries for x86\_64 GNU/Linux, Apple Silicon macOS, and x86\_64 macOS are provided for download and use that *do not require Python to be installed*
  - Only a handful of Python libraries are dependencies:
    - [`backoff`](https://pypi.org/project/backoff/)
+   - [`cachecontrol`](https://pypi.org/project/CacheControl/)
    - [`dataclass-wizard`](https://pypi.org/project/dataclass-wizard/)
    - [`ffmpeg-python`](https://pypi.org/project/ffmpeg-python/)
    - [`mutagen`](https://pypi.org/project/mutagen/)

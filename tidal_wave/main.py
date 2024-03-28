@@ -20,6 +20,7 @@ from .models import (
     TidalVideo,
 )
 
+from cachecontrol import CacheControl
 from platformdirs import user_music_path
 import typer
 from typing_extensions import Annotated
@@ -90,7 +91,7 @@ def main(
     if s is None:
         raise typer.Exit(code=1)
 
-    with closing(s) as session:
+    with closing(CacheControl(s)) as session:
         if isinstance(tidal_resource, TidalTrack):
             track = Track(track_id=tidal_resource.tidal_id)
             track.get(
