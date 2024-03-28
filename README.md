@@ -4,7 +4,7 @@
 [![Build Python package](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/python-build.yml/badge.svg?branch=trunk&event=release)](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/python-build.yml)
 [![Docker Image CI](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/docker-image.yml/badge.svg?branch=trunk)](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/docker-image.yml)
 
-# tidal-wave
+# tidal-wave &#x1F3B6; &#x1F30A;
 Waving at the [TIDAL](https://tidal.com) music service with [Python](https://www.python.org/). Runs on (at least) Windows, macOS, and GNU/Linux.
 
 >  TIDAL is an artist-first, fan-centered music streaming platform that delivers over 100 million songs in HiFi sound quality to the global music community. © 2024 TIDAL Music AS
