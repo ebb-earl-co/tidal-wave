@@ -4,14 +4,14 @@ on:
     types: ["published"]
 
 env:
+  # https://doc.rust-lang.org/cargo/reference/config.html#buildtarget
+  CARGO_BUILD_TARGET: "aarch64-apple-darwin"
   PYAPP_DISTRIBUTION_EMBED: 1
   PYAPP_METADATA_TEMPLATE: "{project}, version {version}"
   PYAPP_PROJECT_FEATURES: "all"
   PYAPP_PROJECT_NAME: "tidal-wave"
   PYAPP_PROJECT_VERSION: ${{ github.event.release.tag_name }}
   PYAPP_PYTHON_VERSION: "3.11"
-  # https://doc.rust-lang.org/cargo/reference/config.html#buildtarget
-  CARGO_BUILD_TARGET: "aarch64-apple-darwin"
 
 permissions:
   contents: write
@@ -28,36 +28,30 @@ jobs:
         with:
           crate: pyapp
           version: 0.16.0
-          args: "--root ~/.cargo"
+
+      - name: Test just-compiled binary
+        run: |
+          chmod +x /Users/runner/.cargo-install/pyapp/bin/pyapp
+          /Users/runner/.cargo-install/pyapp/bin/pyapp --help
 
       - name: Upload artifact
         id: artifact-upload-step
         uses: actions/upload-artifact@v4
         with:
           name: tidal-wave_${{ github.event.release.tag_name }}_py311_macos_arm64.pyapp
-          path: ~/.cargo/bin/pyapp
+          path: /Users/runner/.cargo-install/pyapp/bin/pyapp
           compression-level: 0
           if-no-files-found: error
           retention-days: 1
 
       - name: Rename just-compiled binary
         run: |
-          mv ~/.cargo/bin/pyapp ${{ github.workspace }}/tidal-wave_py311_macos_arm64.pyapp
+          mv /Users/runner/.cargo-install/pyapp/bin/pyapp ${{ github.workspace }}/tidal-wave_py311_macos_arm64.pyapp
 
       - name: Test just-compiled binary
         run: ${{ github.workspace }}/tidal-wave_py311_macos_arm64.pyapp --help
 
-      - name: Upload artifact
-        id: artifact-upload-step
-        uses: actions/upload-artifact@v4
-        with:
-          name: tidal-wave_${{ github.event.release.tag_name }}_py311_macos_arm64.pyapp
-          path: ${{ github.workspace }}/tidal-wave_py311_macos_arm64.pyapp
-          compression-level: 0
-          if-no-files-found: error
-          retention-days: 1
-
-      - name: Add (upload) artifact to release
+      - name: Add artifact to release
         uses: softprops/action-gh-release@v2
         with:
           token: ${{ github.token }}

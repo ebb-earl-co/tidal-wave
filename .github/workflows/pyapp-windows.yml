@@ -26,27 +26,26 @@ jobs:
         with:
           crate: pyapp
           version: 0.16.0
-          args: "--root C:\\Users\\runneradmin\\.cargo"
+
+      - name: Test just-compiled binary
+        shell: pwsh
+        run: |
+          & "C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe" --help
 
       - name: Upload artifact
         id: artifact-upload-step
         uses: actions/upload-artifact@v4
         with:
           name: tidal-wave_${{ github.event.release.tag_name }}_py311_pyapp.exe
-          path: C:\Users\runneradmin\.cargo\bin\pyapp.exe
+          path: C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe
           compression-level: 0
           if-no-files-found: error
           retention-days: 1
 
-      - name: Test just-compiled binary
-        shell: pwsh
-        run: |
-          & "C:\Users\runneradmin\.cargo\bin\pyapp.exe" --help
-
       - name: Rename just-compiled EXE
         shell: pwsh
         run: |
-          Move-Item "C:\Users\runneradmin\.cargo\bin\pyapp.exe" ${{ github.workspace }}\tidal-wave_py311_pyapp.exe
+          Move-Item "C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe" ${{ github.workspace }}\tidal-wave_py311_pyapp.exe
 
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
