@@ -59,7 +59,7 @@ def main(
         bool,
         typer.Option(
             "--no-extra-files",
-            help="Whether to not even attempt to retrieve artist bio, artist image, album review, or playlist m3u8",
+            help="Whether to not even attempt to retrieve artist bio, artist image, album credits, album review, or playlist m3u8",
         ),
     ] = False,
     no_flatten: Annotated[
