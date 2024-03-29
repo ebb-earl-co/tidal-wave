@@ -37,7 +37,7 @@ dependencies = [
     "platformdirs==4.2.0",
     "pycryptodome==3.20.0",
     "requests[socks]==2.31.0",
-    "typer==0.11.0"
+    "typer==0.11.1"
 ]
 [project.optional-dependencies]
 all = ["typer[all]==0.11.0"]
