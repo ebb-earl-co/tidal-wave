@@ -35,6 +35,7 @@ class VideoFormat(str, Enum):
 @dataclass
 class Video:
     video_id: int
+    transparent: bool = False
 
     def __post_init__(self):
         self.tags: dict = {}
@@ -45,20 +46,25 @@ class Video:
         attribute as None or VideosEndpointResponseJSON instance. N.b.,
         self.metadata.name is a sanitized version of self.metadata.title"""
         self.metadata: Optional[VideosEndpointResponseJSON] = request_videos(
-            session=session, video_id=self.video_id
+            session=session, video_id=self.video_id, transparent=self.transparent
         )
 
     def get_contributors(self, session: Session):
         """Request from TIDAL API /videos/contributors endpoint"""
         self.contributors: Optional[VideosContributorsResponseJSON] = (
-            request_video_contributors(session=session, video_id=self.video_id)
+            request_video_contributors(
+                session=session, video_id=self.video_id, transparent=self.transparent
+            )
         )
 
     def get_stream(self, session: Session, video_format=VideoFormat.high):
         """Populates self.stream by requesting from TIDAL API
         /videos/playbackinfopostpaywall endpoint"""
         self.stream: Optional[VideosEndpointStreamResponseJSON] = request_video_stream(
-            session=session, video_id=self.video_id, video_quality=video_format.value
+            session=session,
+            video_id=self.video_id,
+            video_quality=video_format.value,
+            transparent=self.transparent,
         )
 
     def get_m3u8(self, session: Session):

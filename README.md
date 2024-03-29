@@ -195,6 +195,12 @@ Otherwise, in order to retrieve the desired audio format for a given track, it i
  ```bash
  (.venv) $ tidal-wave https://listen.tidal.com/artist/... --audio-format hires --include-eps-singles
  ```
+
+ - As a throw-everything-at-the-wall-and-see-what-sticks option, there is the `--transparent` flag. In the directory where `tidal-wave` is called, `--transparent` will write the responses from the TIDAL API to .json files
+ ```bash
+ (.venv) $ tidal-wave https://listen.tidal.com/track/... --audio-format low  --loglevel debug --transparent
+ ```
+
 #### Playlists and Mixes
 By default, when passed a playlist or mix URL, `tidal-wave` will retrieve all of the tracks and/or videos specified by that URL, and write them to a subdirectory of either `Playlists` or `Mixes`, which itself is a subdirectory of the specified `output_directory`. E.g. `~/Music/Mixes/My Daily Discovery [016dccd302e9ac6132d8334cfbc022]`. In this directory, once all of the tracks and/or videos have been retrieved, they are renamed based on the order in which they appear in the playlist. E.g.
 ```bash

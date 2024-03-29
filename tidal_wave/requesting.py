@@ -1,6 +1,9 @@
 from functools import partial
+import json
 import logging
+from pathlib import Path
 from typing import Callable, Iterable, Iterator, Optional, Tuple, Union
+from uuid import uuid4
 
 from .models import (
     AlbumsCreditsResponseJSON,
@@ -60,13 +63,14 @@ def requester_maker(
     parameters: Optional[dict] = None,
     subclass: Optional["ResponseJSON"] = None,
     credits_flag: bool = False,
+    transparent: bool = False,
 ) -> Callable:
     """This function is a function factory: it crafts nearly identical
     versions of the same logic: send a GET request to a certain endpoint;
     if a requests.HTTPError arises, return None; else, transform the
     JSON response into an instance of a subclass of JSONWizard."""
 
-    def function(s, e, i, u, h, p, sc, cf):
+    def function(s, e, i, u, h, p, sc, cf, t):
         url: str = f"{TIDAL_API_URL}/{e}/{i}{u}"
         kwargs: dict = {"url": url}
         if p is not None:
@@ -98,19 +102,28 @@ def requester_maker(
                 logger.warning(
                     f"404 Client Error: not found for TIDAL API endpoint {e}/{i}{u}"
                 )
+                return
             elif resp.status_code == 401:
                 logger.warning(
                     f"401 Client Error: Unauthorized for TIDAL API endpoint {e}/{i}{u}"
                 )
+                return
             else:
                 logger.exception(he)
+                return
+
+        if t:
+            json_name: str = f"{e}-{i}-{u.strip('/')}_{uuid4().hex}.json"
+            Path(json_name).write_text(
+                json.dumps(resp.json(), ensure_ascii=True, indent=4, sort_keys=True)
+            )
+
+        if cf:
+            data = sc.from_dict({"credits": resp.json()})
         else:
-            if cf:
-                data = sc.from_dict({"credits": resp.json()})
-            else:
-                data = sc.from_dict(resp.json())
-        finally:
-            return data
+            data = sc.from_dict(resp.json())
+        
+        return data
 
     return function(
         s=session,
@@ -121,6 +134,7 @@ def requester_maker(
         p=parameters,
         sc=subclass,
         cf=credits_flag,
+        t=transparent,
     )
 
 
@@ -131,7 +145,7 @@ def requester_maker(
 
 
 def request_albums(
-    session: Session, album_id: int
+    session: Session, album_id: int, transparent: bool = False
 ) -> Optional[AlbumsEndpointResponseJSON]:
     return requester_maker(
         session=session,
@@ -139,11 +153,12 @@ def request_albums(
         identifier=album_id,
         headers={"Accept": "application/json"},
         subclass=AlbumsEndpointResponseJSON,
+        transparent=transparent,
     )
 
 
 def request_album_items(
-    session: Session, album_id: int
+    session: Session, album_id: int, transparent: bool = False
 ) -> Optional[AlbumsItemsResponseJSON]:
     return requester_maker(
         session=session,
@@ -153,11 +168,12 @@ def request_album_items(
         parameters={"limit": 100},
         url_end="/items",
         subclass=AlbumsItemsResponseJSON,
+        transparent=transparent,
     )
 
 
 def request_album_review(
-    session: Session, album_id: int
+    session: Session, album_id: int, transparent: bool = False
 ) -> Optional[AlbumsReviewResponseJSON]:
     return requester_maker(
         session=session,
@@ -166,11 +182,12 @@ def request_album_review(
         headers={"Accept": "application/json"},
         url_end="/review",
         subclass=AlbumsReviewResponseJSON,
+        transparent=transparent,
     )
 
 
 def request_artist_bio(
-    session: Session, artist_id: int
+    session: Session, artist_id: int, transparent: bool = False
 ) -> Optional[ArtistsBioResponseJSON]:
     return requester_maker(
         session=session,
@@ -179,11 +196,12 @@ def request_artist_bio(
         headers={"Accept": "application/json"},
         url_end="/bio",
         subclass=ArtistsBioResponseJSON,
+        transparent=transparent,
     )
 
 
 def request_artists(
-    session: Session, artist_id: int
+    session: Session, artist_id: int, transparent: bool = False
 ) -> Optional[ArtistsEndpointResponseJSON]:
     return requester_maker(
         session=session,
@@ -191,11 +209,12 @@ def request_artists(
         identifier=artist_id,
         headers={"Accept": "application/json"},
         subclass=ArtistsEndpointResponseJSON,
+        transparent=transparent,
     )
 
 
 def request_artists_albums(
-    session: Session, artist_id: int
+    session: Session, artist_id: int, transparent: bool = False
 ) -> Optional[ArtistsAlbumsResponseJSON]:
     return requester_maker(
         session=session,
@@ -204,11 +223,12 @@ def request_artists_albums(
         headers={"Accept": "application/json"},
         url_end="/albums",
         subclass=ArtistsAlbumsResponseJSON,
+        transparent=transparent,
     )
 
 
 def request_artists_audio_works(
-    session: Session, artist_id: int
+    session: Session, artist_id: int, transparent: bool = False
 ) -> Optional[ArtistsAlbumsResponseJSON]:
     return requester_maker(
         session=session,
@@ -218,11 +238,12 @@ def request_artists_audio_works(
         parameters={"filter": "EPSANDSINGLES"},
         url_end="/albums",
         subclass=ArtistsAlbumsResponseJSON,
+        transparent=transparent,
     )
 
 
 def request_artists_videos(
-    session: Session, artist_id: int
+    session: Session, artist_id: int, transparent: bool = False
 ) -> Optional[ArtistsVideosResponseJSON]:
     return requester_maker(
         session=session,
@@ -231,11 +252,12 @@ def request_artists_videos(
         headers={"Accept": "application/json"},
         url_end="/videos",
         subclass=ArtistsVideosResponseJSON,
+        transparent=transparent,
     )
 
 
 def request_tracks(
-    session: Session, track_id: int
+    session: Session, track_id: int, transparent: bool = False
 ) -> Optional[TracksEndpointResponseJSON]:
     return requester_maker(
         session=session,
@@ -243,6 +265,7 @@ def request_tracks(
         identifier=track_id,
         headers={"Accept": "application/json"},
         subclass=TracksEndpointResponseJSON,
+        transparent=transparent,
     )
 
 
@@ -250,7 +273,7 @@ def request_tracks(
 # it's just an array of JSON objects, so we have to pass a flag to mark
 # that the logic common to the rest of the functions is slightly different here.
 def request_credits(
-    session: Session, track_id: int
+    session: Session, track_id: int, transparent: bool = False
 ) -> Optional[TracksCreditsResponseJSON]:
     return requester_maker(
         session=session,
@@ -261,6 +284,7 @@ def request_credits(
         url_end="/credits",
         subclass=TracksCreditsResponseJSON,
         credits_flag=True,
+        transparent=transparent,
     )
 
 
@@ -268,7 +292,7 @@ def request_credits(
 # it's just an array of JSON objects, so we have to pass a flag to mark
 # that the logic common to the rest of the functions is slightly different here.
 def request_albums_credits(
-    session: Session, album_id: int
+    session: Session, album_id: int, transparent: bool = False
 ) -> Optional[AlbumsCreditsResponseJSON]:
     return requester_maker(
         session=session,
@@ -279,11 +303,12 @@ def request_albums_credits(
         url_end="/credits",
         subclass=AlbumsCreditsResponseJSON,
         credits_flag=True,
+        transparent=transparent,
     )
 
 
 def request_lyrics(
-    session: Session, track_id: int
+    session: Session, track_id: int, transparent: bool = False
 ) -> Optional[TracksLyricsResponseJSON]:
     return requester_maker(
         session=session,
@@ -292,13 +317,14 @@ def request_lyrics(
         headers={"Accept": "application/json"},
         url_end="/lyrics",
         subclass=TracksLyricsResponseJSON,
+        transparent=transparent,
     )
 
 
 # One more layer of currying here, as the parameters argument
 # is dependent on a runtime variable.
 def request_stream(
-    session: Session, track_id: int, audio_quality: str
+    session: Session, track_id: int, audio_quality: str, transparent: bool = False
 ) -> Optional[TracksEndpointStreamResponseJSON]:
     func = partial(
         requester_maker,
@@ -313,12 +339,13 @@ def request_stream(
         },
         url_end="/playbackinfopostpaywall",
         subclass=TracksEndpointStreamResponseJSON,
+        transparent=transparent
     )
     return func()
 
 
 def request_videos(
-    session: Session, video_id: int
+    session: Session, video_id: int, transparent: bool = False
 ) -> Optional[VideosEndpointResponseJSON]:
     return requester_maker(
         session=session,
@@ -326,11 +353,12 @@ def request_videos(
         identifier=video_id,
         headers={"Accept": "application/json"},
         subclass=VideosEndpointResponseJSON,
+        transparent=transparent
     )
 
 
 def request_video_contributors(
-    session: Session, video_id: int
+    session: Session, video_id: int, transparent: bool = False
 ) -> Optional[VideosContributorsResponseJSON]:
     return requester_maker(
         session=session,
@@ -340,11 +368,12 @@ def request_video_contributors(
         parameters={"limit": 100},
         url_end="/contributors",
         subclass=VideosContributorsResponseJSON,
+        transparent=transparent
     )
 
 
 def request_video_stream(
-    session: Session, video_id: int, video_quality: str
+    session: Session, video_id: int, video_quality: str, transparent: bool = False
 ) -> Optional[VideosEndpointStreamResponseJSON]:
     func = partial(
         requester_maker,
@@ -359,12 +388,13 @@ def request_video_stream(
         },
         url_end="/playbackinfopostpaywall",
         subclass=VideosEndpointStreamResponseJSON,
+        transparent=transparent
     )
     return func()
 
 
 def request_playlists(
-    session: Session, playlist_id: int
+    session: Session, playlist_id: int, transparent: bool = False
 ) -> Optional[PlaylistsEndpointResponseJSON]:
     return requester_maker(
         session=session,
@@ -372,6 +402,7 @@ def request_playlists(
         identifier=playlist_id,
         headers={"Accept": "application/json"},
         subclass=PlaylistsEndpointResponseJSON,
+        transparent=transparent
     )
 
 
