@@ -73,7 +73,7 @@ def main(
         bool,
         typer.Option(
             "--transparent",
-            help="Whether to dump every JSON response from TIDAL API; maximum verbosity",
+            help="Whether to dump JSON responses from TIDAL API; maximum verbosity",
         ),
     ] = False,
 ):
