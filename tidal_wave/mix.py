@@ -27,6 +27,7 @@ MixItem = Optional[Union["TracksEndpointResponseJSON", "VideosEndpointResponseJS
 @dataclass
 class Mix:
     mix_id: str
+    transparent: bool = False
 
     def __post_init__(self):
         self.mix_dir: Optional[Path] = None
@@ -90,7 +91,7 @@ class Mix:
                 tracks_videos[i] = None
                 continue
             elif isinstance(item, TracksEndpointResponseJSON):
-                track: Track = Track(track_id=item.id)
+                track: Track = Track(track_id=item.id, transparent=self.transparent)
                 track.get(
                     session=session,
                     audio_format=audio_format,
@@ -100,7 +101,7 @@ class Mix:
                 )
                 tracks_videos[i] = track
             elif isinstance(item, VideosEndpointResponseJSON):
-                video: Video = Video(video_id=item.id)
+                video: Video = Video(video_id=item.id, transparent=self.transparent)
                 video.get(
                     session=session,
                     out_dir=self.mix_dir,
@@ -289,7 +290,7 @@ class Mix:
                 files[i] = None
                 continue
             elif isinstance(item, TracksEndpointResponseJSON):
-                track: Track = Track(track_id=item.id)
+                track: Track = Track(track_id=item.id, transparent=self.transparent)
                 track_file: Optional[str] = track.get(
                     session=session,
                     audio_format=audio_format,
@@ -299,7 +300,7 @@ class Mix:
                 )
                 files[i] = track_file
             elif isinstance(item, VideosEndpointResponseJSON):
-                video: Video = Video(video_id=item.id)
+                video: Video = Video(video_id=item.id, transparent=self.transparent)
                 video_file: Optional[str] = video.get(
                     session=session,
                     out_dir=self.mix_dir,
@@ -398,7 +399,7 @@ class MixesItemsResponseJSON:
 
 
 def mix_maker(
-    mixes_response: Dict[str, Union[int, List[dict]]]
+    mixes_response: Dict[str, Union[int, List[dict]]],
 ) -> "MixesItemsResponseJSON":
     """This function massages the response from the TIDAL API endpoint
     mixes/items into a format that MixesItemsResponseJSON.from_dict()

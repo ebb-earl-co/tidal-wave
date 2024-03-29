@@ -30,6 +30,7 @@ logger = logging.getLogger("__name__")
 @dataclass
 class Album:
     album_id: int
+    transparent: bool = False
 
     def __post_init__(self):
         self.album_dir: Optional[Path] = None
@@ -39,7 +40,7 @@ class Album:
         """This method populates self.tracks by requesting from
         TIDAL albums/items endpoint."""
         album_items: AlbumsItemsResponseJSON = request_album_items(
-            session=session, album_id=self.album_id
+            session=session, album_id=self.album_id, transparent=self.transparent
         )
         _items = album_items.items if album_items is not None else ()
         self.tracks: Tuple[TracksEndpointResponseJSON] = tuple(
@@ -50,7 +51,7 @@ class Album:
         """This method sets self.metadata by requesting from
         TIDAL /albums endpoint"""
         self.metadata: AlbumsEndpointResponseJSON = request_albums(
-            session=session, album_id=self.album_id
+            session=session, album_id=self.album_id, transparent=self.transparent
         )
 
     def set_album_review(self, session: Session):
@@ -58,7 +59,7 @@ class Album:
         in TIDAL. If it exists, it is written to disk as AlbumReview.json
         in self.album_dir"""
         self.album_review: Optional[AlbumsReviewResponseJSON] = request_album_review(
-            session=session, album_id=self.album_id
+            session=session, album_id=self.album_id, transparent=self.transparent
         )
         if self.album_review is not None:
             (self.album_dir / "AlbumReview.json").write_text(
@@ -70,7 +71,9 @@ class Album:
         each track's credits) and writes them to AlbumCredits.json in
         self.album_dir"""
         self.album_credits: Optional[AlbumsCreditsResponseJSON] = (
-            request_albums_credits(session=session, album_id=self.album_id)
+            request_albums_credits(
+                session=session, album_id=self.album_id, transparent=self.transparent
+            )
         )
         if self.album_credits is not None:
             f: str = str((self.album_dir / "AlbumCredits.json").absolute())
@@ -124,7 +127,7 @@ class Album:
         populate self.track_files"""
         track_files: List[str] = [None] * self.metadata.number_of_tracks
         for i, t in enumerate(self.tracks):  # type(t) is TracksEndpointResponseJSON
-            track: Track = Track(track_id=t.id)
+            track: Track = Track(track_id=t.id, transparent=self.transparent)
 
             track_files_value: Optional[str] = track.get(
                 session=session,

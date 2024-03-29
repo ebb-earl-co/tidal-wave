@@ -34,6 +34,7 @@ logger = logging.getLogger("__name__")
 @dataclass
 class Playlist:
     playlist_id: str  # UUID4
+    transparent: bool = False
 
     def __post_init__(self):
         self.playlist_dir: Optional[Path] = None
@@ -42,7 +43,7 @@ class Playlist:
     def set_metadata(self, session: Session):
         """Request from TIDAL API /playlists endpoint"""
         self.metadata: Optional[PlaylistsEndpointResponseJSON] = request_playlists(
-            session=session, playlist_id=self.playlist_id
+            session=session, playlist_id=self.playlist_id, transparent=self.transparent
         )
 
         if self.metadata is None:
@@ -111,7 +112,7 @@ class Playlist:
                 tracks_videos[i] = None
                 continue
             elif isinstance(item, TracksEndpointResponseJSON):
-                track: Track = Track(track_id=item.id)
+                track: Track = Track(track_id=item.id, transparent=self.transparent)
                 track.get(
                     session=session,
                     audio_format=audio_format,
@@ -121,7 +122,7 @@ class Playlist:
                 )
                 tracks_videos[i] = track
             elif isinstance(item, VideosEndpointResponseJSON):
-                video: Video = Video(video_id=item.id)
+                video: Video = Video(video_id=item.id, transparent=self.transparent)
                 video.get(
                     session=session,
                     out_dir=self.playlist_dir,
@@ -245,9 +246,7 @@ class Playlist:
         in order to be able to access self.files
         N.b. the already-written file is temporarily copied to a .mp4 version in a
         temporary directory because .m4a files cannot be read with mutagen."""
-        m3u_text: str = (
-            f"#EXTM3U\n#EXTENC:UTF-8\n#EXTIMG:{str(self.cover_path.absolute())}\n#PLAYLIST:{self.name}\n"
-        )
+        m3u_text: str = f"#EXTM3U\n#EXTENC:UTF-8\n#EXTIMG:{str(self.cover_path.absolute())}\n#PLAYLIST:{self.name}\n"
 
         logger.info(
             f"Creating .m3u8 playlist file for Playlist with ID '{self.playlist_id}'"
@@ -416,7 +415,7 @@ class Playlist:
                 files[i] = {i: None}
                 continue
             elif isinstance(item, TracksEndpointResponseJSON):
-                track: Track = Track(track_id=item.id)
+                track: Track = Track(track_id=item.id, transparent=self.transparent)
                 track_file: Optional[str] = track.get(
                     session=session,
                     audio_format=audio_format,
@@ -426,7 +425,7 @@ class Playlist:
                 )
                 files[i] = {i: track_file}
             elif isinstance(item, VideosEndpointResponseJSON):
-                video: Video = Video(video_id=item.id)
+                video: Video = Video(video_id=item.id, transparent=self.transparent)
                 video_file: Optional[str] = video.get(
                     session=session,
                     out_dir=out_dir,
@@ -489,7 +488,7 @@ class PlaylistsItemsResponseJSON:
 
 
 def playlist_maker(
-    playlists_response: Dict[str, Union[int, List[dict]]]
+    playlists_response: Dict[str, Union[int, List[dict]]],
 ) -> "PlaylistsItemsResponseJSON":
     """This function massages the response from the TIDAL API endpoint
     playlists/items into a format that PlaylistsItemsResponseJSON.from_dict()

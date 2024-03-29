@@ -69,6 +69,13 @@ def main(
             help="Whether to treat playlists or mixes as a list of tracks/videos and, as such, retrieve them independently",
         ),
     ] = False,
+    transparent: Annotated[
+        bool,
+        typer.Option(
+            "--transparent",
+            help="Whether to dump every JSON response from TIDAL API; maximum verbosity",
+        ),
+    ] = False,
 ):
     logging.basicConfig(
         format="%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s",
@@ -93,7 +100,7 @@ def main(
 
     with closing(CacheControl(s)) as session:
         if isinstance(tidal_resource, TidalTrack):
-            track = Track(track_id=tidal_resource.tidal_id)
+            track = Track(track_id=tidal_resource.tidal_id, transparent=transparent)
             track.get(
                 session=session,
                 audio_format=audio_format,
@@ -105,7 +112,7 @@ def main(
                 track.dump()
             raise typer.Exit(code=0)
         elif isinstance(tidal_resource, TidalAlbum):
-            album = Album(album_id=tidal_resource.tidal_id)
+            album = Album(album_id=tidal_resource.tidal_id, transparent=transparent)
             album.get(
                 session=session,
                 audio_format=audio_format,
@@ -117,7 +124,7 @@ def main(
                 album.dump()
             raise typer.Exit(code=0)
         elif isinstance(tidal_resource, TidalArtist):
-            artist = Artist(artist_id=tidal_resource.tidal_id)
+            artist = Artist(artist_id=tidal_resource.tidal_id, transparent=transparent)
             artist.get(
                 session=session,
                 audio_format=audio_format,
@@ -127,14 +134,16 @@ def main(
             )
             raise typer.Exit(code=0)
         elif isinstance(tidal_resource, TidalVideo):
-            video = Video(video_id=tidal_resource.tidal_id)
+            video = Video(video_id=tidal_resource.tidal_id, transparent=transparent)
             video.get(session=session, out_dir=output_directory)
 
             if loglevel == LogLevel.debug:
                 video.dump()
             raise typer.Exit(code=0)
         elif isinstance(tidal_resource, TidalPlaylist):
-            playlist = Playlist(playlist_id=tidal_resource.tidal_id)
+            playlist = Playlist(
+                playlist_id=tidal_resource.tidal_id, transparent=transparent
+            )
             if no_flatten:
                 playlist.get_elements(
                     session=session,
@@ -154,7 +163,7 @@ def main(
                 playlist.dump()
             raise typer.Exit(code=0)
         elif isinstance(tidal_resource, TidalMix):
-            mix = Mix(mix_id=tidal_resource.tidal_id)
+            mix = Mix(mix_id=tidal_resource.tidal_id, transparent=transparent)
             if no_flatten:
                 mix.get_elements(
                     session=session,
