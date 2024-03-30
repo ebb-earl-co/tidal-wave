@@ -542,6 +542,7 @@ class VideosContributorsResponseJSON(dataclass_wizard.JSONWizard):
         self.film_producer: Optional[Tuple[str]] = self.get_contributors(
             "Film Producer"
         )
+        self.location: Optional[Tuple[str]] = self.get_contributors("Studio")
         self.lyricist: Optional[Tuple[str]] = self.get_contributors("Lyricist")
         self.mastering_engineer: Optional[Tuple[str]] = self.get_contributors(
             "Mastering Engineer"
