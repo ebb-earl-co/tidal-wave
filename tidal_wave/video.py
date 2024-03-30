@@ -51,10 +51,10 @@ class Video:
 
     def get_contributors(self, session: Session):
         """Request from TIDAL API /videos/contributors endpoint"""
-        self.contributors: Optional[VideosContributorsResponseJSON] = (
-            request_video_contributors(
-                session=session, video_id=self.video_id, transparent=self.transparent
-            )
+        self.contributors: Optional[
+            VideosContributorsResponseJSON
+        ] = request_video_contributors(
+            session=session, video_id=self.video_id, transparent=self.transparent
         )
 
     def get_stream(self, session: Session, video_format=VideoFormat.high):

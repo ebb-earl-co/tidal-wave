@@ -122,7 +122,7 @@ def requester_maker(
             data = sc.from_dict({"credits": resp.json()})
         else:
             data = sc.from_dict(resp.json())
-        
+
         return data
 
     return function(
@@ -339,7 +339,7 @@ def request_stream(
         },
         url_end="/playbackinfopostpaywall",
         subclass=TracksEndpointStreamResponseJSON,
-        transparent=transparent
+        transparent=transparent,
     )
     return func()
 
@@ -353,7 +353,7 @@ def request_videos(
         identifier=video_id,
         headers={"Accept": "application/json"},
         subclass=VideosEndpointResponseJSON,
-        transparent=transparent
+        transparent=transparent,
     )
 
 
@@ -368,7 +368,7 @@ def request_video_contributors(
         parameters={"limit": 100},
         url_end="/contributors",
         subclass=VideosContributorsResponseJSON,
-        transparent=transparent
+        transparent=transparent,
     )
 
 
@@ -388,7 +388,7 @@ def request_video_stream(
         },
         url_end="/playbackinfopostpaywall",
         subclass=VideosEndpointStreamResponseJSON,
-        transparent=transparent
+        transparent=transparent,
     )
     return func()
 
@@ -402,7 +402,7 @@ def request_playlists(
         identifier=playlist_id,
         headers={"Accept": "application/json"},
         subclass=PlaylistsEndpointResponseJSON,
-        transparent=transparent
+        transparent=transparent,
     )
 
 

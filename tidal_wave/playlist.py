@@ -133,9 +133,9 @@ class Playlist:
                 tracks_videos[i] = None
                 continue
         else:
-            self.tracks_videos: Tuple[Tuple[int, Optional[Union[Track, Video]]]] = (
-                tuple(tracks_videos)
-            )
+            self.tracks_videos: Tuple[
+                Tuple[int, Optional[Union[Track, Video]]]
+            ] = tuple(tracks_videos)
         return tracks_videos
 
     def flatten_playlist_dir(self):
@@ -552,9 +552,9 @@ def get_playlist(
         playlists_response: dict = request_playlist_items(
             session=session, playlist_id=playlist_id
         )
-        playlists_items_response_json: Optional["PlaylistsItemsResponseJSON"] = (
-            playlist_maker(playlists_response=playlists_response)
-        )
+        playlists_items_response_json: Optional[
+            "PlaylistsItemsResponseJSON"
+        ] = playlist_maker(playlists_response=playlists_response)
     except Exception as e:
         logger.exception(TidalPlaylistException(e.args[0]))
     finally:
