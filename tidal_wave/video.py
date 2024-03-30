@@ -183,13 +183,49 @@ class Video:
         tags[tag_map["date"]] = str(self.metadata.release_date.date())
         tags[tag_map["title"]] = self.metadata.title
 
-        for tag in {"composer", "director", "lyricist", "producer"}:
+        # Composer
+        try:
+            _credits_tag: str = ";".join(self.contributors.composer)
+        except (TypeError, AttributeError):  # NoneType problems
+            pass
+        else:
+            tags[tag_map[tag]] = _credits_tag
+
+        # Director
+        for tag in {"director", "film_director"}:
             try:
-                _credits_tag = ";".join(getattr(self.contributors, tag))
+                _credits_tag: str = ";".join(getattr(self.contributors, tag))
             except (TypeError, AttributeError):  # NoneType problems
                 continue
             else:
-                tags[tag_map[tag]] = _credits_tag
+                tags[tag_map["director"]] = _credits_tag
+
+        # Engineer
+        try:
+            # self.contributors.mastering_engineer is Tuple[str]
+            _credits_tag: str = ";".join(self.contributors.mastering_engineer)
+        except (TypeError, AttributeError):  # NoneType problems
+            pass
+        else:
+            tags[tag_map[tag]] = _credits_tag
+
+        # Lyricist
+        try:
+            # self.contributors.lyricist is Tuple[str]
+            _credits_tag: str = ";".join(self.contributors.lyricist)
+        except (TypeError, AttributeError):  # NoneType problems
+            pass
+        else:
+            tags[tag_map[tag]] = _credits_tag
+
+        # Producer
+        for tag in {"film_producer", "producer", "video_producer"}:
+            try:
+                _credits_tag: str = ";".join(getattr(self.contributors, tag))
+            except (TypeError, AttributeError):  # NoneType problems
+                continue
+            else:
+                tags[tag_map["producer"]] = _credits_tag
 
         # Have to convert to bytes the values of the tags starting with '----'
         for k, v in tags.copy().items():
