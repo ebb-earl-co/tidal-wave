@@ -189,7 +189,7 @@ class Video:
         except (TypeError, AttributeError):  # NoneType problems
             pass
         else:
-            tags[tag_map[tag]] = _credits_tag
+            tags[tag_map["composer"]] = _credits_tag
 
         # Director
         for tag in {"director", "film_director"}:
@@ -207,7 +207,7 @@ class Video:
         except (TypeError, AttributeError):  # NoneType problems
             pass
         else:
-            tags[tag_map[tag]] = _credits_tag
+            tags[tag_map["engineer"]] = _credits_tag
 
         # Lyricist
         try:
@@ -216,7 +216,7 @@ class Video:
         except (TypeError, AttributeError):  # NoneType problems
             pass
         else:
-            tags[tag_map[tag]] = _credits_tag
+            tags[tag_map["lyricist"]] = _credits_tag
 
         # Producer
         for tag in {"film_producer", "producer", "video_producer"}:
