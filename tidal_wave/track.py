@@ -523,10 +523,10 @@ class Track:
         tags[tag_map["artist"]] = ";".join((a.name for a in self.metadata.artists))
         tags[tag_map["artists"]] = [a.name for a in self.metadata.artists]
         tags[tag_map["barcode"]] = self.album.upc
-        tags[tag_map["comment"]] = self.metadata.url
         tags[tag_map["copyright"]] = self.metadata.copyright
         tags[tag_map["date"]] = str(self.album.release_date)
         tags[tag_map["isrc"]] = self.metadata.isrc
+        tags[tag_map["media"]] = "Digital Media"
         tags[tag_map["title"]] = self.metadata.name
         tags[tag_map["track_peak_amplitude"]] = f"{self.metadata.peak}"
         tags[tag_map["track_peak_amplitude"]] = (
@@ -554,6 +554,7 @@ class Track:
             tags[tag_map["lyrics"]] = _lyrics
 
         if self.codec == "flac":
+            tags[tag_map["comment"]] = self.metadata.url
             # track and disk
             tags["DISCTOTAL"] = f"{self.album.number_of_volumes}"
             tags["DISC"] = f"{self.metadata.volume_number}"
@@ -563,7 +564,7 @@ class Track:
             #     piano
             try:
                 piano_credits: List[str] = [
-                    f"{pc} (piano)" for pc in self.credits.piano
+                    f"{{{pc}}} (piano)" for pc in self.credits.piano
                 ]
             except (TypeError, AttributeError):  # NoneType problems
                 pass
@@ -571,6 +572,18 @@ class Track:
                 tags["PERFORMER"] = piano_credits
 
         elif self.codec == "m4a":
+            tags["\xa9url"] = self.metadata.url
+            # Whether explicit field, 'rtng', does not have a FLAC counterpart
+            if self.metadata.explicit is None:
+                tags["rtng"] = (0,)
+            elif not self.metadata.explicit:
+                tags["rtng"] = (1,)
+            elif self.metadata.explicit:
+                tags["rtng"] = (2,)
+
+            tags["pcst"] = 0  # I.e. False because we are not working with podcasts here
+            tags["stik"] = (1,)  # Music (https://exiftool.org/TagNames/QuickTime.html)
+
             # Have to convert to bytes the values of the tags starting with '----'
             for k, v in tags.copy().items():
                 if k.startswith("----"):
