@@ -184,6 +184,7 @@ class Video:
         tags[tag_map["title"]] = self.metadata.title
 
         # Composer
+        logger.debug("Adding tag for video composer, if the contributor(s) exist")
         try:
             _credits_tag: str = ";".join(self.contributors.composer)
         except (TypeError, AttributeError):  # NoneType problems
@@ -192,7 +193,8 @@ class Video:
             tags[tag_map["composer"]] = _credits_tag
 
         # Director
-        for tag in {"director", "film_director"}:
+        logger.debug("Adding tag for video director, if the contributor(s) exist")
+        for tag in {"director", "film_director", "video_director"}:
             try:
                 _credits_tag: str = ";".join(getattr(self.contributors, tag))
             except (TypeError, AttributeError):  # NoneType problems
@@ -201,24 +203,47 @@ class Video:
                 tags[tag_map["director"]] = _credits_tag
 
         # Engineer
-        try:
-            # self.contributors.mastering_engineer is Tuple[str]
-            _credits_tag: str = ";".join(self.contributors.mastering_engineer)
-        except (TypeError, AttributeError):  # NoneType problems
-            pass
-        else:
-            tags[tag_map["engineer"]] = _credits_tag
+        logger.debug("Adding tag for video engineer, if the contributor(s) exist")
+        for tag in {"engineer", "mastering_engineer", "vocal_engineer"}:
+            try:
+                # self.contributors.mastering_engineer is Tuple[str]
+                _credits_tag: str = ";".join(getattr(self.contributors, tag))
+            except (TypeError, AttributeError):  # NoneType problems
+                pass
+            else:
+                tags[tag_map["engineer"]] = _credits_tag
 
         # Lyricist
+        logger.debug("Adding tag for video lyricist, if the contributor(s) exist")
         try:
-            # self.contributors.lyricist is Tuple[str]
+            # self.contributors.lyricist is Optional[Tuple[str]]
             _credits_tag: str = ";".join(self.contributors.lyricist)
         except (TypeError, AttributeError):  # NoneType problems
             pass
         else:
             tags[tag_map["lyricist"]] = _credits_tag
 
+        # Mixing
+        logger.debug("Adding tag for video mixer, if the contributor(s) exist")
+        for tag in {"assistant_mixer", "mixer", "mixing_engineer"}:
+            try:
+                _credits_tag: str = ";".join(getattr(self.contributors, tag))
+            except (TypeError, AttributeError):  # NoneType problems
+                continue
+            else:
+                tags[tag_map["mixer"]] = _credits_tag
+        
+        # Performer
+        logger.debug("Adding tag for video performer, if the contributor(s) exist")
+        try:
+            _credits_tag: str = ";".join(self.contributors.associated_performer)
+        except (TypeError, AttributeError):  # NoneType problems
+            pass
+        else:
+            tags[tag_map["performer"]] = _credits_tag
+
         # Producer
+        logger.debug("Adding tag for video producer, if the contributor(s) exist")
         for tag in {"film_producer", "producer", "video_producer"}:
             try:
                 _credits_tag: str = ";".join(getattr(self.contributors, tag))
@@ -226,6 +251,16 @@ class Video:
                 continue
             else:
                 tags[tag_map["producer"]] = _credits_tag
+
+        # Publisher
+        logger.debug("Adding tag for video publisher, if the contributor(s) exist")
+        try:
+            # self.contributors.music_publisher is Optional[Tuple[str]]
+            _credits_tag: str = ";".join(self.contributors.music_publisher)
+        except (TypeError, AttributeError):  # NoneType problems
+            pass
+        else:
+            tags[tag_map["publisher"]] = _credits_tag
 
         # Have to convert to bytes the values of the tags starting with '----'
         for k, v in tags.copy().items():

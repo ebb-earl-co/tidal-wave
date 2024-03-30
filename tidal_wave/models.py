@@ -530,8 +530,12 @@ class VideosContributorsResponseJSON(dataclass_wizard.JSONWizard):
     def __post_init__(self):
         """Try to parse the various Contributors to top-level
         attributes of this class"""
+        self.associated_performer: Optional[Tuple[str]] = self.get_contributors(
+            "Associated Performer"
+        )
         self.composer: Optional[Tuple[str]] = self.get_contributors("Composer")
         self.director: Optional[Tuple[str]] = self.get_contributors("Director")
+        self.engineer: Optional[Tuple[str]] = self.get_contributors("Engineer")
         self.film_director: Optional[Tuple[str]] = self.get_contributors(
             "Film Director"
         )
@@ -542,9 +546,21 @@ class VideosContributorsResponseJSON(dataclass_wizard.JSONWizard):
         self.mastering_engineer: Optional[Tuple[str]] = self.get_contributors(
             "Mastering Engineer"
         )
+        self.mixing_engineer: Optional[Tuple[str]] = self.get_contributors(
+            "Mixing Engineer"
+        )
+        self.music_publisher: Optional[Tuple[str]] = self.get_contributors(
+            "Music Publisher"
+        )
         self.producer: Optional[Tuple[str]] = self.get_contributors("Producer")
+        self.video_director: Optional[Tuple[str]] = self.get_contributors(
+            "Video Director"
+        )
         self.video_producer: Optional[Tuple[str]] = self.get_contributors(
             "Video Producer"
+        )
+        self.vocal_engineer: Optional[Tuple[str]] = self.get_contributors(
+            "Vocal Engineer"
         )
 
 

@@ -28,7 +28,9 @@ TAG_MAPPING: Dict[str, Dict[str, str]] = {
     "lyrics": {"flac": "LYRICS", "m4a": "\xa9lyr"},
     "lyricist": {"flac": "LYRICIST", "m4a": "----:com.apple.iTunes:LYRICIST"},
     "mixer": {"flac": "MIXER", "m4a": "----:com.apple.iTunes:MIXER"},
+    "performer": {"flac": "PERFORMER", "m4a": "perf"},
     "producer": {"flac": "PRODUCER", "m4a": "----:com.apple.iTunes:PRODUCER"},
+    "publisher": {"flac": "PUBLISHER", "m4a": "\xa9pub"},
     "remixer": {"flac": "REMIXER", "m4a": "----:com.apple.iTunes:REMIXER"},
     "album_peak_amplitude": {
         "flac": "REPLAYGAIN_ALBUM_PEAK",
