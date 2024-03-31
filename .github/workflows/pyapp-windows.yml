@@ -45,11 +45,11 @@ jobs:
       - name: Rename just-compiled EXE
         shell: pwsh
         run: |
-          Move-Item "C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe" ${{ github.workspace }}\tidal-wave_py311_pyapp.exe
+          Move-Item "C:\Users\runneradmin\.cargo-install\pyapp\bin\pyapp.exe" "C:\Users\runneradmin\tidal-wave_py311_pyapp.exe"
 
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
         with:
           token: ${{ github.token }}
           fail_on_unmatched_files: true
-          files: ${{ github.workspace }}\tidal-wave_py311_pyapp.exe
+          files: C:\Users\runneradmin\tidal-wave_py311_pyapp.exe
