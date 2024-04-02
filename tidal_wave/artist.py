@@ -62,7 +62,7 @@ class Artist:
 
     def set_videos(self, session: Session):
         """This method requests from TIDAL API endpoint /artists/videos and
-        stores the results in self.albums"""
+        stores the results in self.videos"""
         self.videos: Optional[ArtistsVideosResponseJSON] = request_artists_videos(
             session=session, artist_id=self.artist_id, transparent=self.transparent
         )
@@ -115,15 +115,15 @@ class Artist:
         session: Session,
         out_dir: Path,
     ) -> List[Optional[str]]:
-        """This method sets self.videos by calling self.set_videos()
+        """This method sets self.videos by calling self.set_videos() and
         then, for each video, instantiates a Video object and executes
-        video.get()"""
+        the object's .get() method"""
         self.set_videos(session)
         logger.info(
             f"Starting attempt to get {self.videos.total_number_of_items} videos "
             f"for artist with ID {self.metadata.id}, '{self.name}'"
         )
-        for i, v in enumerate(self.videos.items):
+        for v in self.videos.items:
             video: Video = Video(video_id=v.id, transparent=self.transparent)
             video.get(
                 session=session,
