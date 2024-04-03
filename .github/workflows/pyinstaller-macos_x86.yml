@@ -40,37 +40,56 @@ jobs:
 
       - name: Get FFmpeg dependencies from Homebrew
         id: brew-install-ffmpeg-deps
-        run: brew install yasm
+        run: brew install git yasm
+
+      - name: Make sure that Xcode is set up
+        id: set-up-xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Clone FFmpeg, n6.1.1 tag
+        id: clone-ffmpeg-from-github
+        uses: actions/checkout@v4
+        with:
+          repository: FFmpeg/FFmpeg
+          path: ffmpeg-n6.1.1
+          ref: n6.1.1
+          fetch-depth: 1
 
       - name: Build FFmpeg from source
         run: |
-          mkdir -p ~/ffmpeg_build/ ~/bin/
-          cd FFmpeg-6.1.1
-          PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
-            --arch=x86_64 \
-            --prefix="$HOME/ffmpeg_build" \
-            --pkg-config-flags="--static" \
-            --ld="g++" \
-            --bindir="$HOME/bin" \
-            --disable-everything \
-            --disable-doc \
-            --disable-htmlpages \
-            --disable-podpages \
-            --disable-txtpages \
-            --disable-network \
-            --disable-autodetect \
-            --disable-hwaccels \
-            --disable-ffprobe \
-            --disable-ffplay \
-            --enable-decoder=flac,mjpeg \
-            --enable-demuxer=aac,eac3,flac,image2,mov,mpegts \
-            --enable-encoder=flac,mjpeg \
-            --enable-filter=copy \
-            --enable-muxer=eac3,flac,mjpeg,mpegts,mp4 \
-            --enable-protocol=file \
-            --enable-small
-          PATH="$HOME/bin:$PATH" make -j$(sysctl -n hw.logicalcpu)
-          make install
+          cd ffmpeg-n6.1.1
+          ./configure \
+                --prefix="/usr/local/" \
+                --pkg-config-flags="--static" \
+                --extra-cflags="-march=native" \
+                --extra-cflags="-I/usr/local/include" \
+                --extra-ldflags="-L/usr/local/lib" \
+                --extra-libs="-lpthread -lm" \
+                --ld="g++" \
+                --bindir="/usr/local/bin" \
+                --disable-everything \
+                --disable-doc \
+                --disable-htmlpages \
+                --disable-podpages \
+                --disable-txtpages \
+                --disable-network \
+                --disable-autodetect \
+                --disable-hwaccels \
+                --disable-ffprobe \
+                --disable-ffplay \
+                --enable-bsf=aac_adtstoasc,extract_extradata,h264_metadata,mpeg2_metadata \
+                --enable-decoder=aac,flac,h264,mjpeg \
+                --enable-demuxer=aac,eac3,flac,h264,image2,mov,mpegts \
+                --enable-encoder=aac,flac,h264,mjpeg \
+                --enable-filter=copy \
+                --enable-muxer=eac3,flac,h264,mjpeg,mpegts,mp4 \
+                --enable-parser=aac,h264 \
+                --enable-protocol=file \
+                --enable-small \
+                make -j$(sysctl -n hw.logicalcpu)
+                make install
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -89,11 +108,11 @@ jobs:
           pyinstaller \
             --distpath ./.dist \
             --workpath ./.build \
-            --name tidal-wave_py311_FFmpeg6.1.1_macos_x86_64 \
+            --name tidal-wave_py3.11_FFmpeg6.1.1_macos_amd64 \
             --target-arch=x86_64 \
             --paths tidal_wave \
             --add-data "README.md:." \
-            --add-binary "${HOME}/bin/ffmpeg:." \
+            --add-binary "/usr/local/bin/ffmpeg:." \
             --clean \
             --noupx \
             --onefile \
@@ -102,7 +121,7 @@ jobs:
 
       - name: Test just-compiled binary
         run: |
-          ./.dist/tidal-wave_py311_FFmpeg6.1.1_macos_x86_64 --help
+          ./.dist/tidal-wave_py3.11_FFmpeg6.1.1_macos_amd64 --help
 
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
@@ -110,4 +129,4 @@ jobs:
         with:
           token: ${{ github.token }}
           fail_on_unmatched_files: true
-          files: ./.dist/tidal-wave_py311_FFmpeg6.1.1_macos_x86_64
+          files: ./.dist/tidal-wave_py3.11_FFmpeg6.1.1_macos_amd64
