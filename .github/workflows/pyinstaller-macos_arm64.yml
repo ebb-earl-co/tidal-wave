@@ -40,7 +40,7 @@ jobs:
 
       - name: Get FFmpeg dependencies from Homebrew
         id: brew-install-ffmpeg-deps
-        run: brew install git yasm
+        run: brew install yasm
 
       - name: Make sure that Xcode is set up
         id: set-up-xcode
@@ -85,9 +85,8 @@ jobs:
             --enable-muxer=eac3,flac,h264,mjpeg,mpegts,mp4 \
             --enable-parser=aac,h264 \
             --enable-protocol=file \
-            --enable-small \
+            --enable-small
           make -j$(sysctl -n hw.logicalcpu)
-          make install
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -110,7 +109,7 @@ jobs:
             --target-arch=arm64 \
             --paths tidal_wave \
             --add-data "README.md:." \
-            --add-binary "${HOME}/bin/ffmpeg:." \
+            --add-binary "ffmpeg-n6.1.1/ffmpeg:." \
             --clean \
             --noupx \
             --onefile \
