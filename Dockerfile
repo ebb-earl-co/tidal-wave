@@ -21,6 +21,7 @@ RUN PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./
       --disable-hwaccels \
       --disable-ffprobe \
       --disable-ffplay \
+      --enable-bsf=aac_adtstoasc,extract_extradata,h264_metadata,mpeg2_metadata \
       --enable-decoder=flac,mjpeg \
       --enable-demuxer=aac,eac3,flac,image2,mov,mpegts \
       --enable-encoder=flac,mjpeg \
@@ -28,10 +29,7 @@ RUN PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./
       --enable-muxer=eac3,flac,mjpeg,mpegts,mp4 \
       --enable-protocol=file \
       --enable-small \
-      && \
-    PATH="$HOME/bin:$PATH" make -j$(nproc) && \
-    make install && \
-    hash -r
+      && make -j$(nproc) 
 
 FROM docker.io/library/python:3.11-slim
 
@@ -48,17 +46,17 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     # cache is useless in docker image, so disable to reduce image size
     PIP_NO_CACHE_DIR=1
-RUN useradd --create-home --shell /bin/bash debian
-COPY --from=build_image --chown=debian:debian /root/bin/ffmpeg /usr/local/bin/ffmpeg
+RUN useradd --create-home --shell /bin/bash debian && mkdir -p /home/debian/.local/bin/ && chown -R debian:debian /home/debian/
+COPY --from=build_image --chown=debian:debian /root/FFmpeg-6.1.1/ffmpeg /home/debian/.local/bin/ffmpeg
 USER debian
 WORKDIR /home/debian
-COPY --chown=debian:debian requirements.txt .
+COPY --chown=debian:debian pyproject.toml .
 COPY --chown=debian:debian tidal_wave/ ./tidal_wave/
 RUN pip install --user --upgrade pip setuptools wheel dumb-init && \
-    pip install --user -r requirements.txt && \
+    pip install --user .[all] && \
     mkdir -p /home/debian/.config/tidal-wave/ /home/debian/Music/ && \
     chown -R debian:debian /home/debian/.config/tidal-wave/ /home/debian/Music/
 ENV PATH="/home/debian/.local/bin:$PATH"
 VOLUME /home/debian/.config/tidal-wave /home/debian/Music
-ENTRYPOINT ["dumb-init", "--", "python3", "-m", "tidal_wave"]
+ENTRYPOINT ["dumb-init", "--", "tidal-wave"]
 CMD ["--help"]
