@@ -1,16 +1,20 @@
 # https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
 FROM docker.io/library/debian:bookworm-slim as build_image
-RUN export DEBIAN_FRONTEND=noninteractive && apt-get update -qq && apt-get -y install --no-install-recommends build-essential pkg-config yasm
-COPY FFmpeg-6.1.1/ FFmpeg-6.1.1/
-WORKDIR FFmpeg-6.1.1
-RUN PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
-      --prefix="$HOME/ffmpeg_build" \
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update -qq && \
+    apt-get -y install --no-install-recommends build-essential ca-certificates git pkg-config yasm && \
+    git clone --single-branch --branch n6.1.1 --depth=1 https://github.com/FFmpeg/FFmpeg.git /opt/ffmpeg-n6.1.1
+
+WORKDIR /opt/ffmpeg-n6.1.1
+RUN ./configure \
+      --prefix="/usr/local/" \
       --pkg-config-flags="--static" \
-      --extra-cflags="-I$HOME/ffmpeg_build/include" \
-      --extra-ldflags="-L$HOME/ffmpeg_build/lib" \
+      --extra-cflags="-march=native" \
+      --extra-cflags="-I/usr/local/include" \
+      --extra-ldflags="-L/usr/local/lib" \
       --extra-libs="-lpthread -lm" \
       --ld="g++" \
-      --bindir="$HOME/bin" \
+      --bindir="/usr/local/bin" \
       --disable-everything \
       --disable-doc \
       --disable-htmlpages \
@@ -22,17 +26,17 @@ RUN PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./
       --disable-ffprobe \
       --disable-ffplay \
       --enable-bsf=aac_adtstoasc,extract_extradata,h264_metadata,mpeg2_metadata \
-      --enable-decoder=flac,mjpeg \
-      --enable-demuxer=aac,eac3,flac,image2,mov,mpegts \
-      --enable-encoder=flac,mjpeg \
+      --enable-decoder=aac,flac,h264,mjpeg \
+      --enable-demuxer=aac,eac3,flac,h264,image2,mov,mpegts \
+      --enable-encoder=aac,flac,h264,mjpeg \
       --enable-filter=copy \
-      --enable-muxer=eac3,flac,mjpeg,mpegts,mp4 \
+      --enable-muxer=eac3,flac,h264,mjpeg,mpegts,mp4 \
+      --enable-parser=aac,h264 \
       --enable-protocol=file \
       --enable-small \
-      && make -j$(nproc) 
+      && make -j$(nproc) && make install && hash -r
 
 FROM docker.io/library/python:3.11-slim
-
 LABEL org.opencontainers.image.authors="colinho <github@colin.technology>"
 LABEL org.opencontainers.image.description="Waving at the TIDAL music service with Python"
 LABEL org.opencontainers.image.documentation="https://github.com/ebb-earl-co/tidal-wave/blob/trunk/README.md"
@@ -47,7 +51,7 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
     # cache is useless in docker image, so disable to reduce image size
     PIP_NO_CACHE_DIR=1
 RUN useradd --create-home --shell /bin/bash debian && mkdir -p /home/debian/.local/bin/ && chown -R debian:debian /home/debian/
-COPY --from=build_image --chown=debian:debian /root/FFmpeg-6.1.1/ffmpeg /home/debian/.local/bin/ffmpeg
+COPY --from=build_image --chown=debian:debian /usr/local/bin/ffmpeg /home/debian/.local/bin/ffmpeg
 USER debian
 WORKDIR /home/debian
 COPY --chown=debian:debian pyproject.toml .
