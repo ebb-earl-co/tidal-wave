@@ -1,0 +1,129 @@
+name: Pyinstaller Build for Windows 64-bit on Ubuntu 22.04
+on:
+  release:
+    types: ["published"]
+  push:
+    branches: ["develop", "trunk"]
+
+permissions:
+  contents: write
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          version: 1.0
+          packages: build-essential ca-certificates git mingw-w64 pkg-config yasm
+
+      - name: Clone FFmpeg, n6.1.1 tag
+        id: clone-ffmpeg-from-github
+        uses: actions/checkout@v4
+        with:
+          repository: FFmpeg/FFmpeg
+          path: ffmpeg-n6.1.1
+          ref: n6.1.1
+          fetch-depth: 1
+
+      - name: Build FFmpeg from source (git submodule)
+        run: |
+          cd ffmpeg-n6.1.1
+          ./configure \
+            --arch=x86_64 \
+            --cross-prefix=x86_64-w64-mingw32- \
+            --target-os=mingw32 \
+            --prefix="/usr/local" \
+            --pkg-config-flags="--static" \
+            --extra-cflags="-march=native" \
+            --extra-cflags="-I/usr/local/include" \
+            --extra-ldflags="-L/usr/local/lib" \
+            --extra-libs="-lpthread -lm" \
+            --ld="g++" \
+            --bindir="/usr/local/bin" \
+            --disable-everything \
+            --disable-doc \
+            --disable-htmlpages \
+            --disable-podpages \
+            --disable-txtpages \
+            --disable-network \
+            --disable-autodetect \
+            --disable-hwaccels \
+            --disable-ffprobe \
+            --disable-ffplay \
+            --enable-bsf=aac_adtstoasc,extract_extradata,h264_metadata,mpeg2_metadata \
+            --enable-decoder=aac,flac,h264,mjpeg \
+            --enable-demuxer=aac,eac3,flac,h264,image2,mov,mpegts \
+            --enable-encoder=aac,flac,h264,mjpeg \
+            --enable-filter=copy \
+            --enable-muxer=eac3,flac,h264,mjpeg,mpegts,mp4 \
+            --enable-parser=aac,h264 \
+            --enable-protocol=file \
+            --enable-small
+          make -j$(nproc)
+
+      - name: Upload artifact
+        id: artifact-upload-step
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg.exe
+          path: ffmpeg-n6.1.1/ffmpeg.exe
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 1
+
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip" # caching pip dependencies
+
+      - name: Install dependencies
+        run: |
+          python.exe -m pip install --upgrade pip setuptools wheel
+          python.exe -m pip install -r requirements.txt
+          python.exe -m pip install pyinstaller rich shellingham
+
+      - name: Download cross-compiled ffmpeg.exe artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ffmpeg.exe
+
+      - name: Install UPX tool
+        shell: pwsh
+        run: |
+          Invoke-WebRequest "https://github.com/upx/upx/releases/download/v4.2.3/upx-4.2.3-win64.zip" -OutFile "$ENV:Temp\upx-4.2.3-win64.zip"
+          Expand-Archive "$ENV:Temp\upx-4.2.3-win64.zip" -DestinationPath "$ENV:Temp\upx-4.2.3-win64" 
+
+      - name: Create Executable with Pyinstaller
+        run: |
+          pyinstaller `
+            --name tidal-wave_py3.11_FFmpeg6.1.1_windows.exe `
+            --paths tidal_wave `
+            --add-data "README.md:." `
+            --add-binary "ffmpeg.exe:." `
+            --clean `
+            --upx-dir $ENV:Temp\upx-4.2.3-win64 `
+            --onefile `
+            .\pyinstaller.py
+
+      - name: Test just-compiled binary
+        shell: pwsh
+        run: & ".\dist\tidal-wave_py3.11_FFmpeg6.1.1_windows.exe --help"
+
+      - name: Add artifact to release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          token: ${{ github.token }}
+          fail_on_unmatched_files: true
+          files: ./.dist/tidal-wave_py3.11_FFmpeg6.1.1_linux

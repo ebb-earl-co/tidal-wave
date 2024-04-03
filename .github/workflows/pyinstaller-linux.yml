@@ -35,6 +35,7 @@ jobs:
         run: |
           cd ffmpeg-n6.1.1
           ./configure \
+            --arch=x86_64 \
             --prefix="/usr/local" \
             --pkg-config-flags="--static" \
             --extra-cflags="-march=native" \
