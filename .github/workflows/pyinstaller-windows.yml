@@ -20,7 +20,14 @@ jobs:
           version: 1.0
           packages: build-essential ca-certificates git mingw-w64 pkg-config yasm
 
-      - name: Clone FFmpeg, n6.1.1 tag
+      - uses: actions/cache@v4
+        id: cache-ffmpeg-directory
+        with:
+          path: ffmpeg-n6.1.1
+          key: ffmpeg-n6.1.1-from-github
+      
+      - name: Clone FFmpeg from GitHub mirror if not cached
+        if: steps.cache-ffmpeg-directory.outputs.cache-hit != 'true'
         id: clone-ffmpeg-from-github
         uses: actions/checkout@v4
         with:
@@ -28,8 +35,16 @@ jobs:
           path: ffmpeg-n6.1.1
           ref: n6.1.1
           fetch-depth: 1
+      
+      - name: Cache cross-compiled ffmpeg.exe
+        uses: actions/cache@v4
+        id: cache-ffmpeg-exe
+        with:
+          path: ffmpeg-n6.1.1/ffmpeg.exe
+          key: cross-compiled-ffmpeg-n6.1.1
 
-      - name: Build FFmpeg from source (git submodule)
+      - name: Build FFmpeg from source
+        if: steps.cache-ffmpeg-exe.outputs.cache-hit != 'true'
         run: |
           cd ffmpeg-n6.1.1
           ./configure \
@@ -38,7 +53,6 @@ jobs:
             --target-os=mingw32 \
             --prefix="/usr/local" \
             --pkg-config-flags="--static" \
-            --extra-cflags="-march=native" \
             --extra-cflags="-I/usr/local/include" \
             --extra-ldflags="-L/usr/local/lib" \
             --extra-libs="-lpthread -lm" \
@@ -87,7 +101,7 @@ jobs:
           python-version: "3.11"
           cache: "pip" # caching pip dependencies
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           python.exe -m pip install --upgrade pip setuptools wheel
           python.exe -m pip install -r requirements.txt
@@ -97,12 +111,24 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ffmpeg.exe
+          
+      - name: Cache UPX 4.2.3 zip downloaded from GitHub
+        uses: actions/cache@v4
+        id: cache-upx-423
+        with:
+          path: ~\AppData\Local\upx-4.2.3-win64.zip
+          key: upx-423-from-github
 
+      - name: Download UPX binary if not found
+        if: steps.cache-upx-423.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest "https://github.com/upx/upx/releases/download/v4.2.3/upx-4.2.3-win64.zip" -OutFile "~\AppData\Local\upx-4.2.3-win64.zip"
+          
       - name: Install UPX tool
         shell: pwsh
         run: |
-          Invoke-WebRequest "https://github.com/upx/upx/releases/download/v4.2.3/upx-4.2.3-win64.zip" -OutFile "$ENV:Temp\upx-4.2.3-win64.zip"
-          Expand-Archive "$ENV:Temp\upx-4.2.3-win64.zip" -DestinationPath "$ENV:Temp\upx-4.2.3-win64" 
+          Expand-Archive "~\AppData\Local\upx-4.2.3-win64.zip" -DestinationPath "~\AppData\Local\upx-4.2.3-win64"
 
       - name: Create Executable with Pyinstaller
         run: |
@@ -112,13 +138,14 @@ jobs:
             --add-data "README.md:." `
             --add-binary "ffmpeg.exe:." `
             --clean `
-            --upx-dir $ENV:Temp\upx-4.2.3-win64 `
+            --upx-dir ~\AppData\Local\upx-4.2.3-win64 `
             --onefile `
             .\pyinstaller.py
 
       - name: Test just-compiled binary
         shell: pwsh
-        run: & ".\dist\tidal-wave_py3.11_FFmpeg6.1.1_windows.exe --help"
+        run: |
+          & ".\dist\tidal-wave_py3.11_FFmpeg6.1.1_windows.exe --help"
 
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
@@ -126,4 +153,4 @@ jobs:
         with:
           token: ${{ github.token }}
           fail_on_unmatched_files: true
-          files: ./.dist/tidal-wave_py3.11_FFmpeg6.1.1_linux
+          files: ./.dist/tidal-wave_py3.11_FFmpeg6.1.1_windows.exe
