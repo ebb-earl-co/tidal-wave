@@ -51,7 +51,15 @@ jobs:
           ref: n6.1.1
           fetch-depth: 1
 
+      - name: Cache compiled ffmpeg
+        uses: actions/cache@v4
+        id: cache-ffmpeg-darwin-arm64
+        with:
+          path: ffmpeg-n6.1.1/ffmpeg
+          key: macos-arm64-compiled-ffmpeg-n6.1.1
+
       - name: Build FFmpeg from source
+        if: steps.cache-ffmpeg-darwin-arm64.outputs.cache-hit != 'true'
         id: compile-ffmpeg
         run: |
           cd ffmpeg-n6.1.1
@@ -92,9 +100,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install --user --upgrade pip setuptools wheel
-          python3 -m pip install --user -r requirements.txt
-          python3 -m pip install --user pyinstaller rich shellingham
+          python3 -m pip install --upgrade pip setuptools wheel
+          python3 -m pip install -r requirements.txt
+          python3 -m pip install pyinstaller rich shellingham
 
       - name: Create Executable with Pyinstaller
         run: |
