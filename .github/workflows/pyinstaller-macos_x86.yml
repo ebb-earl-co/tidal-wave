@@ -43,12 +43,6 @@ jobs:
         id: brew-install-ffmpeg-deps
         run: brew install automake libtool nasm shtool xvid
 
-      - name: Make sure that Xcode is set up
-        id: set-up-xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest-stable
-
       - name: Clone FFmpeg, n6.1.1 tag
         id: clone-ffmpeg-from-github
         uses: actions/checkout@v4
@@ -62,14 +56,11 @@ jobs:
         run: |
           cd ffmpeg-n6.1.1
           ./configure \
-            --prefix="/usr/local/" \
             --arch=x86_64 \
+            --target-os=darwin \
             --pkg-config-flags="--static" \
             --extra-cflags="-march=native" \
-            --extra-cflags="-I/usr/local/include" \
-            --extra-ldflags="-L/usr/local/lib" \
-            --ld="g++" \
-            --bindir="/usr/local/bin" \
+            --extra-ldflags="-arch x86_64" \
             --disable-everything \
             --disable-shared \
             --disable-doc \
