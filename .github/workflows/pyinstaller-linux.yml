@@ -20,7 +20,7 @@ jobs:
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
           version: 1.0
-          packages: build-essential ca-certificates git pkg-config yasm
+          packages: cmake g++ gcc git pkg-config yasm
 
       - name: Clone FFmpeg, n6.1.1 tag
         id: clone-ffmpeg-from-github
