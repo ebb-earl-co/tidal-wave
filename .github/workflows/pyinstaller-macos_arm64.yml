@@ -40,13 +40,7 @@ jobs:
 
       - name: Get FFmpeg dependencies from Homebrew
         id: brew-install-ffmpeg-deps
-        run: brew install yasm
-
-      - name: Make sure that Xcode is set up
-        id: set-up-xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest-stable
+        run: brew install automake libtool nasm shtool
 
       - name: Clone FFmpeg, n6.1.1 tag
         id: clone-ffmpeg-from-github
@@ -63,10 +57,11 @@ jobs:
           cd ffmpeg-n6.1.1
           ./configure \
             --arch=arm64 \
-            --prefix="/usr/local/bin" \
+            --target-os=darwin \
             --pkg-config-flags="--static" \
+            --extra-cflags="-march=native" \
+            --extra-ldflags="-arch arm64" \
             --ld="g++" \
-            --bindir="/usr/local/bin" \
             --disable-everything \
             --disable-doc \
             --disable-htmlpages \
@@ -77,6 +72,7 @@ jobs:
             --disable-hwaccels \
             --disable-ffprobe \
             --disable-ffplay \
+            --enable-neon \
             --enable-bsf=aac_adtstoasc,extract_extradata,h264_metadata,mpeg2_metadata \
             --enable-decoder=aac,flac,h264,mjpeg \
             --enable-demuxer=aac,eac3,flac,h264,image2,mov,mpegts \
@@ -96,9 +92,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install --upgrade pip setuptools wheel
-          python3 -m pip install -r requirements.txt
-          python3 -m pip install pyinstaller rich shellingham
+          python3 -m pip install --user --upgrade pip setuptools wheel
+          python3 -m pip install --user -r requirements.txt
+          python3 -m pip install --user pyinstaller rich shellingham
 
       - name: Create Executable with Pyinstaller
         run: |
