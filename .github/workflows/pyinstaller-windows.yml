@@ -1,4 +1,4 @@
-name: Pyinstaller Build for Windows 64-bit on Ubuntu 22.04
+name: Pyinstaller Build for Windows 64-bit on windows-latest
 on:
   release:
     types: ["published"]
@@ -9,25 +9,26 @@ permissions:
   contents: write
 
 jobs:
-  compile:
-    runs-on: ubuntu-latest
-
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
     steps:
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            git
+            mingw-w64-ucrt-x86_64-autotools
+            mingw-w64-ucrt-x86_64-cc
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-dlfcn 
+
       - uses: actions/checkout@v4
 
-      - uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          version: 1.0
-          packages: build-essential ca-certificates git mingw-w64 pkg-config yasm
-
-      - uses: actions/cache@v4
-        id: cache-ffmpeg-directory
-        with:
-          path: ffmpeg-n6.1.1
-          key: ffmpeg-n6.1.1-from-github
-      
-      - name: Clone FFmpeg from GitHub mirror if not cached
-        if: steps.cache-ffmpeg-directory.outputs.cache-hit != 'true'
+      - name: Clone FFmpeg, n6.1.1 tag
         id: clone-ffmpeg-from-github
         uses: actions/checkout@v4
         with:
@@ -35,7 +36,7 @@ jobs:
           path: ffmpeg-n6.1.1
           ref: n6.1.1
           fetch-depth: 1
-      
+
       - name: Cache cross-compiled ffmpeg.exe
         uses: actions/cache@v4
         id: cache-ffmpeg-exe
@@ -47,18 +48,15 @@ jobs:
         if: steps.cache-ffmpeg-exe.outputs.cache-hit != 'true'
         run: |
           cd ffmpeg-n6.1.1
-          ./configure \
+          .ffmpeg-n6.1.1\configure \
             --arch=x86_64 \
             --cross-prefix=x86_64-w64-mingw32- \
             --target-os=mingw32 \
-            --prefix="/usr/local" \
-            --pkg-config-flags="--static" \
-            --extra-cflags="-I/usr/local/include" \
-            --extra-ldflags="-L/usr/local/lib" \
-            --extra-libs="-lpthread -lm" \
-            --ld="g++" \
-            --bindir="/usr/local/bin" \
+            --pkg-config-flags=--static \
             --disable-everything \
+            --disable-debug \
+            --disable-stripping \
+            --disable-shared \
             --disable-doc \
             --disable-htmlpages \
             --disable-podpages \
@@ -68,6 +66,7 @@ jobs:
             --disable-hwaccels \
             --disable-ffprobe \
             --disable-ffplay \
+            --enable-static \
             --enable-bsf=aac_adtstoasc,extract_extradata,h264_metadata,mpeg2_metadata \
             --enable-decoder=aac,flac,h264,mjpeg \
             --enable-demuxer=aac,eac3,flac,h264,image2,mov,mpegts \
@@ -76,29 +75,13 @@ jobs:
             --enable-muxer=eac3,flac,h264,mjpeg,mpegts,mp4 \
             --enable-parser=aac,h264 \
             --enable-protocol=file \
-            --enable-small
-          make -j$(nproc)
-
-      - name: Upload artifact
-        id: artifact-upload-step
-        uses: actions/upload-artifact@v4
-        with:
-          name: ffmpeg.exe
-          path: ffmpeg-n6.1.1/ffmpeg.exe
-          compression-level: 0
-          if-no-files-found: error
-          retention-days: 1
-
-  build:
-    runs-on: windows-latest
-
-    steps:
-      - uses: actions/checkout@v4
+          make
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          architecture: "x64"
           cache: "pip" # caching pip dependencies
 
       - name: Install Python dependencies
@@ -107,11 +90,6 @@ jobs:
           python.exe -m pip install -r requirements.txt
           python.exe -m pip install pyinstaller rich shellingham
 
-      - name: Download cross-compiled ffmpeg.exe artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ffmpeg.exe
-          
       - name: Cache UPX 4.2.3 zip downloaded from GitHub
         uses: actions/cache@v4
         id: cache-upx-423
@@ -136,7 +114,7 @@ jobs:
             --name tidal-wave_py3.11_FFmpeg6.1.1_windows.exe `
             --paths tidal_wave `
             --add-data "README.md:." `
-            --add-binary "ffmpeg.exe:." `
+            --add-binary "ffmpeg-n6.1.1\\ffmpeg.exe:." `
             --clean `
             --upx-dir ~\AppData\Local\upx-4.2.3-win64 `
             --onefile `
