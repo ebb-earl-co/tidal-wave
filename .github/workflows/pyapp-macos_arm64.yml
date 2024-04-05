@@ -48,6 +48,9 @@ jobs:
         run: |
           mv /Users/runner/.cargo-install/pyapp/bin/pyapp ${{ github.workspace }}/tidal-wave_py311_macos_arm64.pyapp
 
+      - name: Test just-compiled binary
+        run: ${{ github.workspace }}/tidal-wave_py311_macos_arm64.pyapp --help
+
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
         with:
