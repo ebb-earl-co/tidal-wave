@@ -19,14 +19,14 @@ jobs:
         uses: actions/cache@v4
         id: cache-ffmpeg-exe
         with:
-          path: ~\AppData\Local\ffmpeg.exe
+          path: ffmpeg.exe
           key: ffmpeg-n6.1.1-from-media-autobuild-suite
 
       - name: Download ffmpeg binary if not found
         if: steps.cache-ffmpeg-exe.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          Invoke-WebRequest "https://github.com/ebb-earl-co/media-autobuild_suite/releases/download/n6.1.1/ffmpeg.exe" -OutFile "~\AppData\Local\ffmpeg.exe"
+          Invoke-WebRequest "https://github.com/ebb-earl-co/media-autobuild_suite/releases/download/n6.1.1/ffmpeg.exe" -OutFile "ffmpeg.exe"
 
       - name: Cache UPX 4.2.3 zip downloaded from GitHub
         uses: actions/cache@v4
@@ -68,7 +68,7 @@ jobs:
             --name tidal-wave_py3.11_FFmpeg6.1.1_windows.exe `
             --paths tidal_wave `
             --add-data "README.md:." `
-            --add-binary "~\AppData\Local\ffmpeg.exe:." `
+            --add-binary "ffmpeg.exe:." `
             --clean `
             --upx-dir "~\AppData\Local\upx-4.2.3-win64" `
             --onefile `
