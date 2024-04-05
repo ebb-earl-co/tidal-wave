@@ -77,7 +77,7 @@ jobs:
       - name: Test just-compiled binary
         shell: pwsh
         run: |
-          & ".\dist\tidal-wave_py3.11_FFmpeg6.1.1_windows.exe --help"
+          & .\dist\tidal-wave_py3.11_FFmpeg6.1.1_windows.exe --help
 
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
