@@ -28,19 +28,6 @@ jobs:
         run: |
           Invoke-WebRequest "https://github.com/ebb-earl-co/media-autobuild_suite/releases/download/n6.1.1/ffmpeg.exe" -OutFile "~\AppData\Local\ffmpeg.exe"
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          architecture: "x64"
-          cache: "pip" # caching pip dependencies
-
-      - name: Install Python dependencies
-        run: |
-          python.exe -m pip install --upgrade pip setuptools wheel
-          python.exe -m pip install -r requirements.txt 
-          python.exe -m pip install pypiwin32==223  # PyInstaller necessity
-
       - name: Cache UPX 4.2.3 zip downloaded from GitHub
         uses: actions/cache@v4
         id: cache-upx-423
@@ -59,9 +46,24 @@ jobs:
         run: |
           Expand-Archive "~\AppData\Local\upx-4.2.3-win64.zip" -DestinationPath "~\AppData\Local\upx-4.2.3-win64"
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          architecture: "x64"
+          cache: "pip" # caching pip dependencies
+
+      - name: Install Python dependencies
+        shell: pwsh
+        run: |
+          python.exe -m venv .\venv
+          & .\venv\Scripts\activate
+          pip install --upgrade pip pyinstaller pypiwin32==223 setuptools wheel
+          pip install -r requirements.txt
+
       - name: Create Executable with Pyinstaller
         run: |
-          python.exe -m pyinstaller `
+          pyinstaller `
             --name tidal-wave_py3.11_FFmpeg6.1.1_windows.exe `
             --paths tidal_wave `
             --add-data "README.md:." `
