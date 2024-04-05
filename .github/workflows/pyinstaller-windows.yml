@@ -11,71 +11,22 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-    steps:
-      - uses: msys2/setup-msys2@v2
-        with:
-          msystem: UCRT64
-          update: true
-          install: >-
-            git
-            mingw-w64-ucrt-x86_64-autotools
-            mingw-w64-ucrt-x86_64-cc
-            mingw-w64-ucrt-x86_64-pkgconf
-            mingw-w64-ucrt-x86_64-dlfcn 
 
+    steps:
       - uses: actions/checkout@v4
 
-      - name: Clone FFmpeg, n6.1.1 tag
-        id: clone-ffmpeg-from-github
-        uses: actions/checkout@v4
-        with:
-          repository: FFmpeg/FFmpeg
-          path: ffmpeg-n6.1.1
-          ref: n6.1.1
-          fetch-depth: 1
-
-      - name: Cache cross-compiled ffmpeg.exe
+      - name: Cache downloaded ffmpeg.exe
         uses: actions/cache@v4
         id: cache-ffmpeg-exe
         with:
-          path: ffmpeg-n6.1.1/ffmpeg.exe
-          key: cross-compiled-ffmpeg-n6.1.1
+          path: ~\AppData\Local\ffmpeg.exe
+          key: ffmpeg-n6.1.1-from-media-autobuild-suite
 
-      - name: Build FFmpeg from source
+      - name: Download ffmpeg binary if not found
         if: steps.cache-ffmpeg-exe.outputs.cache-hit != 'true'
+        shell: pwsh
         run: |
-          cd ffmpeg-n6.1.1
-          .ffmpeg-n6.1.1\configure \
-            --arch=x86_64 \
-            --cross-prefix=x86_64-w64-mingw32- \
-            --target-os=mingw32 \
-            --pkg-config-flags=--static \
-            --disable-everything \
-            --disable-debug \
-            --disable-stripping \
-            --disable-shared \
-            --disable-doc \
-            --disable-htmlpages \
-            --disable-podpages \
-            --disable-txtpages \
-            --disable-network \
-            --disable-autodetect \
-            --disable-hwaccels \
-            --disable-ffprobe \
-            --disable-ffplay \
-            --enable-static \
-            --enable-bsf=aac_adtstoasc,extract_extradata,h264_metadata,mpeg2_metadata \
-            --enable-decoder=aac,flac,h264,mjpeg \
-            --enable-demuxer=aac,eac3,flac,h264,image2,mov,mpegts \
-            --enable-encoder=aac,flac,h264,mjpeg \
-            --enable-filter=copy \
-            --enable-muxer=eac3,flac,h264,mjpeg,mpegts,mp4 \
-            --enable-parser=aac,h264 \
-            --enable-protocol=file \
-          make
+          Invoke-WebRequest "https://github.com/ebb-earl-co/media-autobuild_suite/releases/download/n6.1.1/ffmpeg.exe" -OutFile "~\AppData\Local\ffmpeg.exe"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -87,8 +38,8 @@ jobs:
       - name: Install Python dependencies
         run: |
           python.exe -m pip install --upgrade pip setuptools wheel
-          python.exe -m pip install -r requirements.txt
-          python.exe -m pip install pyinstaller rich shellingham
+          python.exe -m pip install -r requirements.txt 
+          python.exe -m pip install pypiwin32==223  # PyInstaller necessity
 
       - name: Cache UPX 4.2.3 zip downloaded from GitHub
         uses: actions/cache@v4
@@ -114,9 +65,9 @@ jobs:
             --name tidal-wave_py3.11_FFmpeg6.1.1_windows.exe `
             --paths tidal_wave `
             --add-data "README.md:." `
-            --add-binary "ffmpeg-n6.1.1\\ffmpeg.exe:." `
+            --add-binary "~\AppData\Local\ffmpeg.exe:." `
             --clean `
-            --upx-dir ~\AppData\Local\upx-4.2.3-win64 `
+            --upx-dir "~\AppData\Local\upx-4.2.3-win64" `
             --onefile `
             .\pyinstaller.py
 
