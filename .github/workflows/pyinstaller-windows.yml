@@ -1,0 +1,88 @@
+name: Pyinstaller Build for Windows 64-bit on windows-latest
+on:
+  release:
+    types: ["published"]
+  push:
+    branches: ["develop", "trunk"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache downloaded ffmpeg.exe
+        uses: actions/cache@v4
+        id: cache-ffmpeg-exe
+        with:
+          path: ffmpeg.exe
+          key: ffmpeg-n6.1.1-from-media-autobuild-suite
+
+      - name: Download ffmpeg binary if not found
+        if: steps.cache-ffmpeg-exe.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest "https://github.com/ebb-earl-co/media-autobuild_suite/releases/download/n6.1.1/ffmpeg.exe" -OutFile "ffmpeg.exe"
+
+      - name: Cache UPX 4.2.3 zip downloaded from GitHub
+        uses: actions/cache@v4
+        id: cache-upx-423
+        with:
+          path: ~\AppData\Local\upx-4.2.3-win64.zip
+          key: upx-423-from-github
+
+      - name: Download UPX binary if not found
+        if: steps.cache-upx-423.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest "https://github.com/upx/upx/releases/download/v4.2.3/upx-4.2.3-win64.zip" -OutFile "~\AppData\Local\upx-4.2.3-win64.zip"
+          
+      - name: Install UPX tool
+        shell: pwsh
+        run: |
+          Expand-Archive "~\AppData\Local\upx-4.2.3-win64.zip" -DestinationPath "~\AppData\Local\upx-4.2.3-win64"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          architecture: "x64"
+          cache: "pip" # caching pip dependencies
+
+      - name: Install Python dependencies
+        shell: pwsh
+        run: |
+          python.exe -m venv .\venv
+          & .\venv\Scripts\activate
+          pip install --upgrade pip pyinstaller pypiwin32==223 setuptools wheel
+          pip install -r requirements.txt
+
+      - name: Create Executable with Pyinstaller
+        run: |
+          & .\venv\Scripts\activate
+          pyinstaller `
+            --name tidal-wave_py3.11_FFmpeg6.1.1_windows.exe `
+            --paths tidal_wave `
+            --add-data "README.md:." `
+            --add-binary "ffmpeg.exe:." `
+            --clean `
+            --upx-dir "~\AppData\Local\upx-4.2.3-win64" `
+            --onefile `
+            .\pyinstaller.py
+
+      - name: Test just-compiled binary
+        shell: pwsh
+        run: |
+          & .\dist\tidal-wave_py3.11_FFmpeg6.1.1_windows.exe --help
+
+      - name: Add artifact to release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          token: ${{ github.token }}
+          fail_on_unmatched_files: true
+          files: ./.dist/tidal-wave_py3.11_FFmpeg6.1.1_windows.exe

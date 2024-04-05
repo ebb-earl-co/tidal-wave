@@ -38,21 +38,31 @@ jobs:
         run: |
           brew update --preinstall
 
+      # https://trac.ffmpeg.org/wiki/CompilationGuide/macOS#InstallingdependencieswithHomebrew
       - name: Get FFmpeg dependencies from Homebrew
         id: brew-install-ffmpeg-deps
-        run: brew install yasm
+        run: brew install automake libtool nasm shtool xvid
+
+      - name: Clone FFmpeg, n6.1.1 tag
+        id: clone-ffmpeg-from-github
+        uses: actions/checkout@v4
+        with:
+          repository: FFmpeg/FFmpeg
+          path: ffmpeg-n6.1.1
+          ref: n6.1.1
+          fetch-depth: 1
 
       - name: Build FFmpeg from source
         run: |
-          mkdir -p ~/ffmpeg_build/ ~/bin/
-          cd FFmpeg-6.1.1
-          PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
+          cd ffmpeg-n6.1.1
+          ./configure \
             --arch=x86_64 \
-            --prefix="$HOME/ffmpeg_build" \
+            --target-os=darwin \
             --pkg-config-flags="--static" \
-            --ld="g++" \
-            --bindir="$HOME/bin" \
+            --extra-cflags="-march=native" \
+            --extra-ldflags="-arch x86_64" \
             --disable-everything \
+            --disable-shared \
             --disable-doc \
             --disable-htmlpages \
             --disable-podpages \
@@ -62,15 +72,16 @@ jobs:
             --disable-hwaccels \
             --disable-ffprobe \
             --disable-ffplay \
-            --enable-decoder=flac,mjpeg \
-            --enable-demuxer=aac,eac3,flac,image2,mov,mpegts \
-            --enable-encoder=flac,mjpeg \
+            --enable-bsf=aac_adtstoasc,extract_extradata,h264_metadata,mpeg2_metadata \
+            --enable-decoder=aac,flac,h264,mjpeg \
+            --enable-demuxer=aac,eac3,flac,h264,image2,mov,mpegts \
+            --enable-encoder=aac,flac,h264,mjpeg \
             --enable-filter=copy \
-            --enable-muxer=eac3,flac,mjpeg,mpegts,mp4 \
+            --enable-muxer=eac3,flac,h264,mjpeg,mpegts,mp4 \
+            --enable-parser=aac,h264 \
             --enable-protocol=file \
             --enable-small
-          PATH="$HOME/bin:$PATH" make -j$(sysctl -n hw.logicalcpu)
-          make install
+            make -j$(sysctl -n hw.logicalcpu)
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -89,11 +100,11 @@ jobs:
           pyinstaller \
             --distpath ./.dist \
             --workpath ./.build \
-            --name tidal-wave_py311_FFmpeg6.1.1_macos_x86_64 \
+            --name tidal-wave_py3.11_FFmpeg6.1.1_macos_amd64 \
             --target-arch=x86_64 \
             --paths tidal_wave \
             --add-data "README.md:." \
-            --add-binary "${HOME}/bin/ffmpeg:." \
+            --add-binary "ffmpeg-n6.1.1/ffmpeg:." \
             --clean \
             --noupx \
             --onefile \
@@ -102,7 +113,7 @@ jobs:
 
       - name: Test just-compiled binary
         run: |
-          ./.dist/tidal-wave_py311_FFmpeg6.1.1_macos_x86_64 --help
+          ./.dist/tidal-wave_py3.11_FFmpeg6.1.1_macos_amd64 --help
 
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
@@ -110,4 +121,4 @@ jobs:
         with:
           token: ${{ github.token }}
           fail_on_unmatched_files: true
-          files: ./.dist/tidal-wave_py311_FFmpeg6.1.1_macos_x86_64
+          files: ./.dist/tidal-wave_py3.11_FFmpeg6.1.1_macos_amd64
