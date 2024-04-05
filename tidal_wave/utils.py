@@ -1,9 +1,10 @@
 import base64
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from io import BytesIO
 import logging
 import os
 from pathlib import Path
+import socket
 import tempfile
 from typing import Optional, Tuple, Union
 
@@ -118,3 +119,35 @@ def decrypt_manifest_key_id(manifest_key_id: str) -> Tuple[bytes, bytes]:
 
     key, nonce = decrypted_manifest_key_bytes[:16], decrypted_manifest_key_bytes[16:24]
     return key, nonce
+
+
+def is_tidal_api_reachable(hostname: str = "api.tidal.com") -> bool:
+    """Using stdlib 'socket' library, test if a few conditions are all
+    met: whether the user has a connection to the larger Internet;
+    whether the user can resolve the primary URL for this service,
+    api.tidal.com, and whether api.tidal.com is responding to requests"""
+    try:
+        s = closing(socket.create_connection((hostname, 80)))
+    except ConnectionRefusedError:
+        logger.critical("It seems that 'api.tidal.com' is unreachable!")
+        return False
+    except socket.gaierror as g:
+        logger.critical(
+            f"tidal-wave is unable to find the IP address of {hostname}: "
+            "Please ensure that Internet connectivity is established, "
+            "particularly DNS resolution"
+        )
+        return False
+    except OSError as ose:
+        if "[Errno 101] Network is unreachable" in ose.msg:
+            logger.critical(
+                "tidal-wave appears to be unable to reach the Internet. "
+                "Please ensure that connectivity to (at least) api.tidal.com "
+                "is possible"
+            )
+            return False
+    except Exception as e:
+        logger.exception(e)
+        return False
+    else:
+        return True

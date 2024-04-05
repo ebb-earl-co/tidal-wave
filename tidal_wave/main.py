@@ -3,13 +3,10 @@ import logging
 from pathlib import Path
 from typing import Optional, Union
 
-from .login import login, AudioFormat, LogLevel
 from .album import Album
 from .artist import Artist
+from .login import login, AudioFormat, LogLevel
 from .mix import Mix
-from .playlist import Playlist
-from .track import Track
-from .video import Video
 from .models import (
     match_tidal_url,
     TidalAlbum,
@@ -19,6 +16,10 @@ from .models import (
     TidalTrack,
     TidalVideo,
 )
+from .playlist import Playlist
+from .track import Track
+from .video import Video
+from .utils import is_tidal_api_reachable
 
 from cachecontrol import CacheControl
 from platformdirs import user_music_path
@@ -93,6 +94,15 @@ def main(
             f"Cannot parse '{tidal_url}' as a TIDAL album, artist, mix, playlist, track, or video URL"
         )
         raise typer.Exit(code=1)
+
+    # Check Internet connectivity, and whether api.tidal.com is up
+    if not is_tidal_api_reachable():
+        user_wishes_to_continue: bool = typer.confirm(
+            "\nEven though tidal-wave cannot seem to connect to the Internet, "
+            "would you like program execution to continue?"
+        )
+        if not user_wishes_to_continue:
+            raise typer.Exit(code=1)
 
     s, audio_format = login(audio_format=audio_format)
     if s is None:

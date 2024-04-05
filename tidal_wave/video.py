@@ -51,10 +51,10 @@ class Video:
 
     def get_contributors(self, session: Session):
         """Request from TIDAL API /videos/contributors endpoint"""
-        self.contributors: Optional[VideosContributorsResponseJSON] = (
-            request_video_contributors(
-                session=session, video_id=self.video_id, transparent=self.transparent
-            )
+        self.contributors: Optional[
+            VideosContributorsResponseJSON
+        ] = request_video_contributors(
+            session=session, video_id=self.video_id, transparent=self.transparent
         )
 
     def get_stream(self, session: Session, video_format=VideoFormat.high):
@@ -98,7 +98,7 @@ class Video:
 
     def set_filename(self, out_dir: Path):
         """Set self.filename, which is constructed from self.metadata.name
-        and self.stream.video_quality"""
+        and self.stream.video_quality and self.codec"""
         self.filename: str = (
             f"{self.metadata.name} [{self.stream.video_quality}].{self.codec}"
         )
@@ -106,7 +106,7 @@ class Video:
     def set_outfile(self):
         """Uses self.artist_dir and self.metadata and self.filename
         to craft the pathlib.Path object, self.outfile, that is a
-        reference to where the track will be written on disk."""
+        reference to where the video will be written on disk."""
         self.outfile: Path = self.artist_dir / self.filename
         self.absolute_outfile: str = str(self.outfile.absolute())
 
