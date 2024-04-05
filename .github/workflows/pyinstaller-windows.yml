@@ -63,6 +63,7 @@ jobs:
 
       - name: Create Executable with Pyinstaller
         run: |
+          & .\venv\Scripts\activate
           pyinstaller `
             --name tidal-wave_py3.11_FFmpeg6.1.1_windows.exe `
             --paths tidal_wave `
