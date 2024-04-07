@@ -98,7 +98,7 @@ jobs:
 
       - name: Test just-compiled binary
         run: |
-          chmod +x ./.dist/tidal-wave_py311_FFmpeg611_linux
+          chmod +x ./dist/tidal-wave_py311_FFmpeg611_linux
           ./dist/tidal-wave_py311_FFmpeg611_linux --help
 
       - name: Add artifact to release
@@ -107,4 +107,4 @@ jobs:
         with:
           token: ${{ github.token }}
           fail_on_unmatched_files: true
-          files: ./.dist/tidal-wave_py311_FFmpeg611_linux
+          files: ./dist/tidal-wave_py311_FFmpeg611_linux
