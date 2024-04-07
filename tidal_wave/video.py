@@ -129,7 +129,7 @@ class Video:
             f"Writing video {self.video_id} to '{str(self.outfile.absolute())}'"
         )
 
-        with temporary_file(suffix=".mp4") as ntf:
+        with temporary_file(suffix=".m2t") as tf:
             request_headers: Dict[str, str] = (
                 {"sessionId": session.session_id}
                 if session.session_id is not None
@@ -146,10 +146,10 @@ class Video:
                         logger.warning(f"Could not download {self}")
                         return
                     else:
-                        ntf.write(download_response.content)
+                        tf.write(download_response.content)
             else:
-                ntf.seek(0)
-            self.outfile.write_bytes(Path(ntf.name).read_bytes())
+                tf.seek(0)
+            self.outfile.write_bytes(Path(tf.name).read_bytes())
 
             if self.outfile.exists() and self.outfile.stat().st_size > 0:
                 logger.info(
@@ -157,11 +157,12 @@ class Video:
                 )
 
             try:
-                ffmpeg.input(ntf.name, hide_banner=None, y=None).output(
+                ffmpeg.input(tf.name, hide_banner=None, y=None).output(
                     self.absolute_outfile,
                     vcodec="copy",
                     acodec="copy",
                     loglevel="quiet",
+                    **{"movflags": "+faststart"}
                 ).run()
             except ffmpeg.Error:
                 logger.warning(
