@@ -70,10 +70,10 @@ class Album:
         """This method requests the album's top-level credits (separate from
         each track's credits) and writes them to AlbumCredits.json in
         self.album_dir"""
-        self.album_credits: Optional[
-            AlbumsCreditsResponseJSON
-        ] = request_albums_credits(
-            session=session, album_id=self.album_id, transparent=self.transparent
+        self.album_credits: Optional[AlbumsCreditsResponseJSON] = (
+            request_albums_credits(
+                session=session, album_id=self.album_id, transparent=self.transparent
+            )
         )
         if self.album_credits is not None:
             num_credit: int = len(self.album_credits.credit)

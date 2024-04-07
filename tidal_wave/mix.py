@@ -112,9 +112,9 @@ class Mix:
                 tracks_videos[i] = None
                 continue
         else:
-            self.tracks_videos: Tuple[
-                Tuple[int, Optional[Union[Track, Video]]]
-            ] = tuple(tracks_videos)
+            self.tracks_videos: Tuple[Tuple[int, Optional[Union[Track, Video]]]] = (
+                tuple(tracks_videos)
+            )
         return tracks_videos
 
     def flatten_mix_dir(self):
