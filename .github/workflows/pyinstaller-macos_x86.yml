@@ -3,7 +3,7 @@ on:
   release:
     types: ["published"]
   push:
-    branches: ["develop", "trunk"]
+    branches: ["138-standardize-github-actions-around-pyinstaller", "develop", "trunk"]
 
 permissions:
   contents: write
@@ -91,20 +91,17 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install --upgrade pip setuptools wheel
+          python3 -m pip install --upgrade pip pyinstaller setuptools wheel
           python3 -m pip install -r requirements.txt
-          python3 -m pip install pyinstaller rich shellingham
 
       - name: Create Executable with Pyinstaller
         run: |
           pyinstaller \
-            --distpath ./.dist \
-            --workpath ./.build \
-            --name tidal-wave_py3.11_FFmpeg6.1.1_macos_amd64 \
+            --name tidal-wave_py311_FFmpeg611_macos_amd64 \
             --target-arch=x86_64 \
             --paths tidal_wave \
             --add-data "README.md:." \
-            --add-binary "ffmpeg-n6.1.1/ffmpeg:." \
+            --add-binary "ffmpeg-n611/ffmpeg:." \
             --clean \
             --noupx \
             --onefile \
@@ -113,7 +110,7 @@ jobs:
 
       - name: Test just-compiled binary
         run: |
-          ./.dist/tidal-wave_py3.11_FFmpeg6.1.1_macos_amd64 --help
+          ./dist/tidal-wave_py311_FFmpeg611_macos_amd64 --help
 
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
@@ -121,4 +118,4 @@ jobs:
         with:
           token: ${{ github.token }}
           fail_on_unmatched_files: true
-          files: ./.dist/tidal-wave_py3.11_FFmpeg6.1.1_macos_amd64
+          files: ./dist/tidal-wave_py311_FFmpeg611_macos_amd64
