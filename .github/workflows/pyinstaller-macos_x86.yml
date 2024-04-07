@@ -101,7 +101,7 @@ jobs:
             --target-arch=x86_64 \
             --paths tidal_wave \
             --add-data "README.md:." \
-            --add-binary "ffmpeg-n611/ffmpeg:." \
+            --add-binary "ffmpeg-n6.1.1/ffmpeg:." \
             --clean \
             --noupx \
             --onefile \
