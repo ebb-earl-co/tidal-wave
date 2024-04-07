@@ -51,10 +51,10 @@ class Video:
 
     def get_contributors(self, session: Session):
         """Request from TIDAL API /videos/contributors endpoint"""
-        self.contributors: Optional[
-            VideosContributorsResponseJSON
-        ] = request_video_contributors(
-            session=session, video_id=self.video_id, transparent=self.transparent
+        self.contributors: Optional[VideosContributorsResponseJSON] = (
+            request_video_contributors(
+                session=session, video_id=self.video_id, transparent=self.transparent
+            )
         )
 
     def get_stream(self, session: Session, video_format=VideoFormat.high):
@@ -289,9 +289,9 @@ class Video:
         for k, v in tags.copy().items():
             if k.startswith("----"):
                 if isinstance(v, str):
-                    tags[k]: bytes = v.encode("UTF-8")
+                    tags[k] = v.encode("UTF-8")
                 elif isinstance(v, list):
-                    tags[k]: List[bytes] = [s.encode("UTF-8") for s in v]
+                    tags[k] = [s.encode("UTF-8") for s in v]
 
         self.tags: dict = {k: v for k, v in tags.items() if v is not None}
 

@@ -70,15 +70,21 @@ class Album:
         """This method requests the album's top-level credits (separate from
         each track's credits) and writes them to AlbumCredits.json in
         self.album_dir"""
-        self.album_credits: Optional[
-            AlbumsCreditsResponseJSON
-        ] = request_albums_credits(
-            session=session, album_id=self.album_id, transparent=self.transparent
+        self.album_credits: Optional[AlbumsCreditsResponseJSON] = (
+            request_albums_credits(
+                session=session, album_id=self.album_id, transparent=self.transparent
+            )
         )
         if self.album_credits is not None:
-            f: str = str((self.album_dir / "AlbumCredits.json").absolute())
-            with open(f, "w") as fp:
-                json.dump(obj=self.album_credits.credit, fp=fp)
+            num_credit: int = len(self.album_credits.credit)
+            if num_credit == 0:
+                logger.warning(
+                    f"No album credits returned from TIDAL API for album {self.album_id}"
+                )
+            else:
+                ac_file: str = str((self.album_dir / "AlbumCredits.json").absolute())
+                with open(ac_file, "w") as fp:
+                    json.dump(obj=self.album_credits.credit, fp=fp)
 
     def set_album_dir(self, out_dir: Path):
         """This method populates self.album_dir as a sub-subdirectory of
@@ -91,6 +97,9 @@ class Album:
         )
         self.album_dir = out_dir / artist_substring / album_substring
         self.album_dir.mkdir(parents=True, exist_ok=True)
+        # Create cover_path here, even if the API
+        # does not return a cover, to avoid AttributeError later
+        self.cover_path: Path = self.album_dir / "cover.jpg"
 
         if self.metadata.number_of_volumes > 1:
             for v in range(1, self.metadata.number_of_volumes + 1):
@@ -105,7 +114,6 @@ class Album:
         then self.album_cover_saved takes the value True"""
         if self.album_dir is None:
             self.set_album_dir(out_dir=out_dir)
-        self.cover_path: Path = self.album_dir / "cover.jpg"
         if not self.cover_path.exists():
             download_cover_image(
                 session=session,
