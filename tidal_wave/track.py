@@ -659,7 +659,7 @@ class Track:
 
         elif self.codec == "m4a":
             _cmd: str = f"""ffmpeg -hide_banner -loglevel quiet -y -i "{self.absolute_outfile}"
-                -map 0:a:0 -map 0:v:0 -map_metadata 0 -c:a copy -c:v copy "%s" """
+                -map 0:a:0 -map 0:v:0 -map_metadata 0 -c:a copy -c:v copy -movflags +faststart "%s" """
             if self.mutagen.get("covr") is not None:
                 if isinstance(self.mutagen["covr"], list):
                     if len(self.mutagen["covr"]) == 1:
