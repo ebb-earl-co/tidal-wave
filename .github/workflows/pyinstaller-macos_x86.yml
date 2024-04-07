@@ -3,7 +3,7 @@ on:
   release:
     types: ["published"]
   push:
-    branches: ["138-standardize-github-actions-around-pyinstaller", "develop", "trunk"]
+    branches: ["develop", "trunk"]
 
 permissions:
   contents: write
