@@ -159,6 +159,10 @@ class Track:
         self.album_dir: Path = out_dir / artist_substring / album_substring
         self.album_dir.mkdir(parents=True, exist_ok=True)
 
+        # Create cover_path here, even if the API
+        # does not return a cover, to avoid AttributeError later
+        self.cover_path: Path = self.album_dir / "cover.jpg"
+
         if self.album.number_of_volumes > 1:
             volume_substring: str = f"Volume {self.metadata.volume_number}"
             (self.album_dir / volume_substring).mkdir(parents=True, exist_ok=True)
@@ -284,7 +288,6 @@ class Track:
     def save_album_cover(self, session: Session):
         """This method saves cover.jpg to self.album_dir; the bytes for cover.jpg
         come from self.album.cover"""
-        self.cover_path: Path = self.album_dir / "cover.jpg"
         if not self.cover_path.exists():
             download_cover_image(
                 session=session, cover_uuid=self.album.cover, output_dir=self.album_dir
@@ -588,9 +591,9 @@ class Track:
             for k, v in tags.copy().items():
                 if k.startswith("----"):
                     if isinstance(v, str):
-                        tags[k]: bytes = v.encode("UTF-8")
+                        tags[k] = v.encode("UTF-8")
                     elif isinstance(v, list):
-                        tags[k]: List[bytes] = [s.encode("UTF-8") for s in v]
+                        tags[k] = [s.encode("UTF-8") for s in v]
 
             tags["trkn"] = [(self.metadata.track_number, self.album.number_of_tracks)]
             tags["disk"] = [(self.metadata.volume_number, self.album.number_of_volumes)]
