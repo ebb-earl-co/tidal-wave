@@ -2,7 +2,7 @@
 FROM docker.io/library/debian:bookworm-slim as build_image
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update -qq && \
-    apt-get -y install --no-install-recommends g++ gcc git make pkg-config yasm && \
+    apt-get -y install --no-install-recommends ca-certificates g++ gcc git make pkg-config yasm && \
     git clone --single-branch --branch n6.1.1 --depth=1 https://github.com/FFmpeg/FFmpeg.git /opt/ffmpeg-n6.1.1
 
 WORKDIR /opt/ffmpeg-n6.1.1
