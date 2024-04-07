@@ -128,4 +128,4 @@ jobs:
         with:
           token: ${{ github.token }}
           fail_on_unmatched_files: true
-          files: ./dist/tidal-wave_py.311_FFmpeg611_macos_arm64
+          files: ./dist/tidal-wave_py311_FFmpeg611_macos_arm64
