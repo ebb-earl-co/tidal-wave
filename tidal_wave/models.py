@@ -211,8 +211,8 @@ class AlbumsCreditsResponseJSON(dataclass_wizard.JSONWizard):
             return
 
     def __post_init__(self):
-        """Try to parse the various Contributors into a dict
-        that will be JSON-format amenable"""
+        """Try to parse the various Contributors into a dict,
+        self.credit, that will be JSON-format amenable"""
 
         _credit: Dict[str, Union[str, List[str]]] = {
             c: self.get_contributors(c)
