@@ -20,14 +20,14 @@ jobs:
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
           version: 1.0
-          packages: cmake g++ gcc git pkg-config yasm
+          packages: g++ gcc git make pkg-config yasm
 
       - name: Cache FFmpeg n6.1.1 in /opt
         id: cache-ffmpeg
         uses: actions/cache@v3
         with:
-          path: /opt/ffmpeg-n6.1.1
-          key: ffmpeg-${{ hashFiles('/opt/ffmpeg-n6.1.1') }}
+          path: ${{ github.workspace }}/ffmpeg-n6.1.1
+          key: ffmpeg-${{ hashFiles('ffmpeg-n6.1.1') }}
 
       - name: Clone FFmpeg, n6.1.1 tag
         if: ${{ steps.cache-ffmpeg.outputs.cache-hit != 'true' }}
@@ -41,7 +41,7 @@ jobs:
 
       - name: Build FFmpeg from source (git submodule)
         run: |
-          cd /opt/ffmpeg-n6.1.1
+          cd ffmpeg-n6.1.1
           ./configure \
             --arch=x86_64 \
             --pkg-config-flags="--static" \
