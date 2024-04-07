@@ -35,6 +35,7 @@ jobs:
 
       - name: Update Homebrew
         id: update-homebrew
+        continue-on-error: true
         run: |
           brew update --preinstall
 
