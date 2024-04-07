@@ -3,7 +3,7 @@ on:
   release:
     types: ["published"]
   push:
-    branches: ["develop", "trunk"]
+    branches: ["138-standardize-github-actions-around-pyinstaller", "develop", "trunk"]
 
 permissions:
   contents: write
@@ -49,9 +49,9 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
           architecture: "x64"
-          cache: "pip" # caching pip dependencies
+          cache: "pip"
+          python-version: "3.11"
 
       - name: Install Python dependencies
         shell: pwsh
@@ -65,7 +65,7 @@ jobs:
         run: |
           & .\venv\Scripts\activate
           pyinstaller `
-            --name tidal-wave_py3.11_FFmpeg6.1.1_windows.exe `
+            --name tidal-wave_py311_FFmpeg611_windows.exe `
             --paths tidal_wave `
             --add-data "README.md:." `
             --add-binary "ffmpeg.exe:." `
@@ -77,12 +77,12 @@ jobs:
       - name: Test just-compiled binary
         shell: pwsh
         run: |
-          & .\dist\tidal-wave_py3.11_FFmpeg6.1.1_windows.exe --help
+          & .\dist\tidal-wave_py311_FFmpeg611_windows.exe --help
 
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          token: ${{ github.token }}
           fail_on_unmatched_files: true
-          files: ./.dist/tidal-wave_py3.11_FFmpeg6.1.1_windows.exe
+          files: .\.dist\tidal-wave_py311_FFmpeg611_windows.exe
+          token: ${{ github.token }}
