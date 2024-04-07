@@ -2,7 +2,7 @@
 FROM docker.io/library/debian:bookworm-slim as build_image
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update -qq && \
-    apt-get -y install --no-install-recommends build-essential ca-certificates git pkg-config yasm && \
+    apt-get -y install --no-install-recommends g++ gcc git make pkg-config yasm && \
     git clone --single-branch --branch n6.1.1 --depth=1 https://github.com/FFmpeg/FFmpeg.git /opt/ffmpeg-n6.1.1
 
 WORKDIR /opt/ffmpeg-n6.1.1
@@ -16,6 +16,7 @@ RUN ./configure \
       --ld="g++" \
       --bindir="/usr/local/bin" \
       --disable-everything \
+      --disable-shared \
       --disable-doc \
       --disable-htmlpages \
       --disable-podpages \
@@ -57,7 +58,7 @@ WORKDIR /home/debian
 COPY --chown=debian:debian pyproject.toml .
 COPY --chown=debian:debian tidal_wave/ ./tidal_wave/
 RUN pip install --user --upgrade pip setuptools wheel dumb-init && \
-    pip install --user .[all] && \
+    pip install --user . && \
     mkdir -p /home/debian/.config/tidal-wave/ /home/debian/Music/ && \
     chown -R debian:debian /home/debian/.config/tidal-wave/ /home/debian/Music/
 ENV PATH="/home/debian/.local/bin:$PATH"
