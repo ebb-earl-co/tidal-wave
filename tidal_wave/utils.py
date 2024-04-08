@@ -127,11 +127,11 @@ def is_tidal_api_reachable(hostname: str = "api.tidal.com") -> bool:
     whether the user can resolve the primary URL for this service,
     api.tidal.com, and whether api.tidal.com is responding to requests"""
     try:
-        s = closing(socket.create_connection((hostname, 80)))
+        _ = closing(socket.create_connection((hostname, 80)))
     except ConnectionRefusedError:
         logger.critical("It seems that 'api.tidal.com' is unreachable!")
         return False
-    except socket.gaierror as g:
+    except socket.gaierror:
         logger.critical(
             f"tidal-wave is unable to find the IP address of {hostname}: "
             "Please ensure that Internet connectivity is established, "
