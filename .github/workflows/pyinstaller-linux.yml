@@ -22,26 +22,26 @@ jobs:
           version: 1.0
           packages: g++ gcc git make pkg-config yasm
 
-      - name: Cache FFmpeg n6.1.1
+      - name: Cache FFmpeg n7.0
         id: cache-ffmpeg
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/ffmpeg-n6.1.1
-          key: ffmpeg-${{ hashFiles('ffmpeg-n6.1.1') }}
+          path: ${{ github.workspace }}/ffmpeg-n7.0
+          key: ffmpeg-${{ hashFiles('ffmpeg-n7.0') }}
 
-      - name: Clone FFmpeg, n6.1.1 tag
+      - name: Clone FFmpeg, n7.0 tag
         if: ${{ steps.cache-ffmpeg.outputs.cache-hit != 'true' }}
         id: clone-ffmpeg-from-github
         uses: actions/checkout@v4
         with:
           repository: FFmpeg/FFmpeg
-          path: ffmpeg-n6.1.1
-          ref: n6.1.1
+          path: ffmpeg-n7.0
+          ref: n7.0
           fetch-depth: 1
 
       - name: Build FFmpeg from source (git submodule)
         run: |
-          cd ffmpeg-n6.1.1
+          cd ffmpeg-n7.0
           ./configure \
             --arch=x86_64 \
             --pkg-config-flags="--static" \
@@ -75,21 +75,23 @@ jobs:
         with:
           architecture: "x64"
           cache: "pip"
-          check-latest: true
-          python-version: "3.11.8"
+          check-latest: false
+          python-version: "3.12.2"
 
       - name: Install dependencies
         run: |
-          python3 -m pip install --upgrade pip pyinstaller setuptools wheel
+          python3 -m pip install --upgrade pip setuptools wheel
+          python3 -m pip install pyinstaller==6.5.0
           python3 -m pip install -r requirements.txt
 
-      - name: Create Executable with Pyinstaller
+      - name: Create Executable with PyInstaller
         run: |
           pyinstaller \
-            --name tidal-wave_py311_FFmpeg611_linux \
+            --name tidal-wave_ubuntu_amd64 \
             --paths tidal_wave \
+            --copy-metadata tidal-wave \
             --add-data "README.md:." \
-            --add-binary "./ffmpeg-n6.1.1/ffmpeg:." \
+            --add-binary "ffmpeg-n7.0/ffmpeg:." \
             --clean \
             --noupx \
             --onefile \
@@ -98,13 +100,13 @@ jobs:
 
       - name: Test just-compiled binary
         run: |
-          chmod +x ./dist/tidal-wave_py311_FFmpeg611_linux
-          ./dist/tidal-wave_py311_FFmpeg611_linux --help
+          chmod +x ./dist/tidal-wave_ubuntu_amd64
+          ./dist/tidal-wave_ubuntu_amd64 --help
 
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          token: ${{ github.token }}
           fail_on_unmatched_files: true
-          files: ./dist/tidal-wave_py311_FFmpeg611_linux
+          files: ./dist/tidal-wave_ubuntu_amd64
+          token: ${{ github.token }}

@@ -3,9 +3,9 @@ FROM docker.io/library/debian:bookworm-slim as build_image
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update -qq && \
     apt-get -y install --no-install-recommends ca-certificates g++ gcc git make pkg-config yasm && \
-    git clone --single-branch --branch n6.1.1 --depth=1 https://github.com/FFmpeg/FFmpeg.git /opt/ffmpeg-n6.1.1
+    git clone --single-branch --branch n7.0 --depth=1 https://github.com/FFmpeg/FFmpeg.git /opt/ffmpeg-n7.0
 
-WORKDIR /opt/ffmpeg-n6.1.1
+WORKDIR /opt/ffmpeg-n7.0
 RUN ./configure \
       --prefix="/usr/local/" \
       --pkg-config-flags="--static" \
@@ -37,7 +37,7 @@ RUN ./configure \
       --enable-small \
       && make -j$(nproc) && make install && hash -r
 
-FROM docker.io/library/python:3.11-slim
+FROM docker.io/library/python:3.12-slim
 LABEL org.opencontainers.image.authors="colinho <github@colin.technology>"
 LABEL org.opencontainers.image.description="Waving at the TIDAL music service with Python"
 LABEL org.opencontainers.image.documentation="https://github.com/ebb-earl-co/tidal-wave/blob/trunk/README.md"

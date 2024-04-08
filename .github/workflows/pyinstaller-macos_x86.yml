@@ -43,18 +43,26 @@ jobs:
         id: brew-install-ffmpeg-deps
         run: brew install automake libtool nasm shtool xvid
 
-      - name: Clone FFmpeg, n6.1.1 tag
+      - name: Cache FFmpeg n7.0
+        id: cache-ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/ffmpeg-n7.0
+          key: ffmpeg-${{ hashFiles('ffmpeg-n7.0') }}
+
+      - name: Clone FFmpeg, n7.0 tag
+        if: ${{ steps.cache-ffmpeg.outputs.cache-hit != 'true' }}
         id: clone-ffmpeg-from-github
         uses: actions/checkout@v4
         with:
           repository: FFmpeg/FFmpeg
-          path: ffmpeg-n6.1.1
-          ref: n6.1.1
+          path: ffmpeg-n7.0
+          ref: n7.0
           fetch-depth: 1
 
       - name: Build FFmpeg from source
         run: |
-          cd ffmpeg-n6.1.1
+          cd ffmpeg-n7.0
           ./configure \
             --arch=x86_64 \
             --target-os=darwin \
@@ -86,22 +94,26 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-          cache: "pip" # caching pip dependencies
+          architecture: "x64"
+          cache: "pip"
+          check-latest: false
+          python-version: "3.12.2"
 
       - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip pyinstaller setuptools wheel
+          python3 -m pip install pyinstaller==6.5.0
           python3 -m pip install -r requirements.txt
 
       - name: Create Executable with Pyinstaller
         run: |
           pyinstaller \
-            --name tidal-wave_py311_FFmpeg611_macos_amd64 \
+            --name tidal-wave_macos_amd64 \
             --target-arch=x86_64 \
             --paths tidal_wave \
+            --exclude-module pyinstaller \
             --add-data "README.md:." \
-            --add-binary "ffmpeg-n6.1.1/ffmpeg:." \
+            --add-binary "ffmpeg-n7.0/ffmpeg:." \
             --clean \
             --noupx \
             --onefile \
@@ -110,7 +122,7 @@ jobs:
 
       - name: Test just-compiled binary
         run: |
-          ./dist/tidal-wave_py311_FFmpeg611_macos_amd64 --help
+          ./dist/tidal-wave_macos_amd64 --help
 
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
@@ -118,4 +130,4 @@ jobs:
         with:
           token: ${{ github.token }}
           fail_on_unmatched_files: true
-          files: ./dist/tidal-wave_py311_FFmpeg611_macos_amd64
+          files: ./dist/tidal-wave_macos_amd64
