@@ -89,7 +89,7 @@ jobs:
           pyinstaller \
             --name tidal-wave_ubuntu_amd64 \
             --paths tidal_wave \
-            --copy-metadata tidal-wave \
+            --exclude-module pyinstaller \
             --add-data "README.md:." \
             --add-binary "ffmpeg-n7.0/ffmpeg:." \
             --clean \
