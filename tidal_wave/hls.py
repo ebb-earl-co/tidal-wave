@@ -65,7 +65,7 @@ def playlister(
         with session.get(url=url, params=download_params) as m3u8_response:
             try:
                 m3u8_response.raise_for_status()
-            except HTTPError as he:
+            except HTTPError:
                 raise TidalM3U8Exception(
                     f"Could not retrieve variant streams from manifest for "
                     f"video {vesrj.video_id}, video mode {vesrj.video_quality}"

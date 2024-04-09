@@ -3,6 +3,10 @@
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/tidal-wave)](https://pypi.org/project/tidal-wave/)
 [![Build Python package](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/python-build.yml/badge.svg?branch=trunk&event=release)](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/python-build.yml)
 [![Docker Image CI](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/docker-image.yml/badge.svg?branch=trunk)](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/docker-image.yml)
+[![GNU/Linux amd64 Executable](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/pyinstaller-linux.yml/badge.svg?branch=trunk)](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/pyinstaller-linux.yml)
+[![macOS amd64 Executable](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/pyinstaller-macos_x86.yml/badge.svg?branch=trunk)](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/pyinstaller-macos_x86.yml)
+[![macOS aarch64 (Apple Silicon) Executable](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/pyinstaller-macos_arm64.yml/badge.svg?branch=trunk)](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/pyinstaller-macos_arm64.yml)
+[![Windows amd64 Executable](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/pyinstaller-windows.yml/badge.svg?branch=trunk)](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/pyinstaller-windows.yml)
 
 # tidal-wave &#x1F3B6; &#x1F30A;
 Waving at the [TIDAL](https://tidal.com) music service with [Python](https://www.python.org/). Runs on (at least) Windows, macOS, and GNU/Linux.
@@ -35,12 +39,12 @@ A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to ret
 
 ### Requirements
  - As resources will be fetched from the World Wide Web, an Internet connection is required
- - The venerable [FFmpeg](http://ffmpeg.org/download.html) is necessary for audio and video data manipulation. This project's [container image](https://github.com/ebb-earl-co/tidal-wave/blob/trunk/Dockerfile) as well as its [`pyinstaller`](https://pyinstaller.org/en/stable/)-created [binary for GNU/Linux](https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_py311_FFmpeg6.1.1_linux), [binary for Apple Silicon macOS](https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_py311_FFmpeg6.1.1_macos_arm64), and [binary for x86\_64 macOS](https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_py311_FFmpeg6.1.1_macos_x86_64) build FFmpeg from source, so separate installation is unnecessary.
+ - The venerable [FFmpeg](http://ffmpeg.org/download.html) is necessary for audio and video data manipulation. This project's [container image](https://github.com/ebb-earl-co/tidal-wave/blob/trunk/Dockerfile) as well as its [PyInstaller](https://pyinstaller.org/en/stable/)-created [binary for Ubuntu GNU/Linux](https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_ubuntu_amd64), [binary for Apple Silicon macOS](https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_macos_aarch64), and [binary for x86\_64 macOS](https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_macos_amd64), and [binary for x86\_64 macOS](https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_windows.exe) build FFmpeg from source, so separate installation is unnecessary.
    - Static builds of FFmpeg are available from [John Van Sickle](https://www.johnvansickle.com/ffmpeg/) for GNU/Linux, or most package managers feature `ffmpeg`.
    - For macOS, the [FFmpeg download page](http://ffmpeg.org/download.html#build-mac) links to [this download source](https://evermeet.cx/ffmpeg/); or there is always [Homebrew](https://formulae.brew.sh/formula/ffmpeg)
    - For Windows, the [FFmpeg download page](http://ffmpeg.org/download.html#build-windows) lists 2 resources; or [`chocolatey`](https://community.chocolatey.org/packages/ffmpeg) is an option
  - This is a Python package, so **to use it in the default manner** you will need [Python 3](https://www.python.org/downloads/), version 3.8 or newer, on your system.
-   - *However*, as of December 2023, an [OCI container image](https://github.com/ebb-earl-co/tidal-wave/pkgs/container/tidal-wave); `pyapp`-compiled binaries; and [`pyinstaller`](https://pyinstaller.org/en/stable/)-created binaries for x86\_64 GNU/Linux, Apple Silicon macOS, and x86\_64 macOS are provided for download and use that *do not require Python to be installed*
+   - *However*, as of December 2023, an [OCI container image](https://github.com/ebb-earl-co/tidal-wave/pkgs/container/tidal-wave); and [PyInstaller](https://pyinstaller.org/en/stable/)-created binaries for x86\_64 GNU/Linux, Apple Silicon macOS, x86\_64 macOS, and x86\_64 Windows are provided for download and use that *do not require Python to be installed*
  - Only a handful of Python libraries are dependencies:
    - [`backoff`](https://pypi.org/project/backoff/)
    - [`cachecontrol`](https://pypi.org/project/CacheControl/)
@@ -79,28 +83,14 @@ $ git clone --depth=1 https://github.com/ebb-earl-co/tidal-wave.git
 $ cd tidal-wave
 $ python3 -m venv .venv
 $ source .venv/bin/activate
-$ (.venv) pip install .  # or, pip install .[all]
+$ (.venv) pip install .
 ```
-### `Pyinstaller` executable
-This is the preferred release artifact, compiled with [`pyinstaller`](https://pyinstaller.org). It bundles Python 3.11, FFmpeg 6.1.1, and the `tidal-wave` program into one binary, licensed under the terms of FFmpeg: with the [GNU Lesser General Public License (LGPL) version 2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html). Installation is as simple as downloading the correct binary for your platform (currently, GNU/Linux x86\_64; macOS x86\_64; or macOS arm64), giving it execute permissions, and running it.
+### PyInstaller executable
+These release artifacts are created with [PyInstaller](https://pyinstaller.org). It bundles Python 3.12.2, FFmpeg 7.0, and the `tidal-wave` program into one binary, licensed under the terms of FFmpeg: with the [GNU Lesser General Public License (LGPL) version 2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html). Installation is as simple as downloading the correct binary for your platform giving it execute permissions, and running it.
 ```bash
-$ wget https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_py311_FFmpeg6.1.1_linux
-$ chmod +x ./tidal-wave_py311_FFmpeg6.1.1_linux
-# optionally, rename the binary because the name is descriptive, but unwieldy
-$ mv ./tidal-wave_py311_FFmpeg6.1.1_linux ./tidal-wave_linux
-$ ./tidal-wave_linux --help
-```
-### `pyapp` executable
-Download the Rust-compiled binary from [the Releases](https://github.com/ebb-earl-co/tidal-wave/releases/latest), and, on macOS or GNU/Linux, make it executable
-```bash
-$ wget https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_py311.pyapp
-$ chmod +x ./tidal-wave_py311.pyapp
-$ ./tidal-wave_py311.pyapp --help
-```
-Or, on Windows, once the .exe file is downloaded, you might have to allow a security exception for an unknown developer, then:
-```powershell
-PS > Invoke-WebRequest https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_py311_pyapp.exe
-PS > & "tidal-wave_py311_pyapp.exe" --help
+$ wget https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_ubuntu_amd64
+$ chmod +x ./tidal-wave_ubuntu_amd64
+$ ./tidal-wave_ubuntu_amd64 --help
 ```
 
 ### Docker
@@ -212,7 +202,7 @@ $ ls ~/Music/Playlists/New Arrivals [1b418bb8-90a7-4f87-901d-707993838346]/
 '002 - Kissing Strangers [CD].flac'
 '003 - Sunday Service [CD].flac'
 ```
-If this is not the desired behavior, pass the `--no-flatten` flag. This flag instructs `tidal-wave` to leave the tracks and/or videos in the directory where they would be written if they had been passed to `tidal-wave` independently. E.g.
+If this is not the desired behavior, pass the `--no-flatten` flag. This flag instructs `tidal-wave` to leave the tracks and/or videos in the directory where they would have been written if they had been passed to `tidal-wave` independently. E.g.
 ```bash
 (.venv) $ tidal-wave https://listen.tidal.com/playlist/1b418bb8-90a7-4f87-901d-707993838346 --no-flatten
 

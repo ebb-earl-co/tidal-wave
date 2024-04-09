@@ -10,7 +10,9 @@ permissions:
 
 jobs:
   build:
-    runs-on: flyci-macos-large-latest-m1
+    # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+    # runs-on: flyci-macos-large-latest-m1
+    runs-on: macos-14
 
     steps:
       - uses: actions/checkout@v4
@@ -39,31 +41,32 @@ jobs:
         run: |
           brew update --preinstall
 
+      # https://trac.ffmpeg.org/wiki/CompilationGuide/macOS#InstallingdependencieswithHomebrew
       - name: Get FFmpeg dependencies from Homebrew
         id: brew-install-ffmpeg-deps
         run: brew install automake libtool nasm shtool xvid
 
-      - name: Clone FFmpeg, n6.1.1 tag
+      - name: Clone FFmpeg, n7.0 tag
         id: clone-ffmpeg-from-github
         uses: actions/checkout@v4
         with:
           repository: FFmpeg/FFmpeg
-          path: ffmpeg-n6.1.1
-          ref: n6.1.1
+          path: ffmpeg-n7.0
+          ref: n7.0
           fetch-depth: 1
 
       - name: Cache compiled ffmpeg
         uses: actions/cache@v4
         id: cache-ffmpeg-darwin-arm64
         with:
-          path: ffmpeg-n6.1.1/ffmpeg
-          key: macos-arm64-compiled-ffmpeg-n6.1.1
+          path: ffmpeg-n7.0/ffmpeg
+          key: macos-arm64-compiled-ffmpeg-n7.0
 
       - name: Build FFmpeg from source
         if: steps.cache-ffmpeg-darwin-arm64.outputs.cache-hit != 'true'
         id: compile-ffmpeg
         run: |
-          cd ffmpeg-n6.1.1
+          cd ffmpeg-n7.0
           ./configure \
             --arch=arm64 \
             --target-os=darwin \
@@ -72,6 +75,7 @@ jobs:
             --extra-ldflags="-arch arm64" \
             --ld="g++" \
             --disable-everything \
+            --disable-shared \
             --disable-doc \
             --disable-htmlpages \
             --disable-podpages \
@@ -96,22 +100,25 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-          cache: "pip" # caching pip dependencies
+          cache: "pip"
+          check-latest: false
+          python-version: "3.12.2"
 
       - name: Install dependencies
         run: |
-          python3 -m pip install --upgrade pip pyinstaller setuptools wheel
+          python3 -m pip install --upgrade pip setuptools wheel
+          python3 -m pip install pyinstaller==6.5.0
           python3 -m pip install -r requirements.txt
 
       - name: Create Executable with Pyinstaller
         run: |
           pyinstaller \
-            --name=tidal-wave_py311_FFmpeg611_macos_arm64 \
+            --name=tidal-wave_macos_aarch64 \
             --target-arch=arm64 \
             --paths tidal_wave \
+            --exclude-module pyinstaller \
             --add-data "README.md:." \
-            --add-binary "ffmpeg-n6.1.1/ffmpeg:." \
+            --add-binary "ffmpeg-n7.0/ffmpeg:." \
             --clean \
             --noupx \
             --onefile \
@@ -120,7 +127,7 @@ jobs:
 
       - name: Test just-compiled binary
         run: |
-          ./dist/tidal-wave_py311_FFmpeg611_macos_arm64 --help
+          ./dist/tidal-wave_macos_aarch64 --help
 
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
@@ -128,4 +135,4 @@ jobs:
         with:
           token: ${{ github.token }}
           fail_on_unmatched_files: true
-          files: ./dist/tidal-wave_py311_FFmpeg611_macos_arm64
+          files: ./dist/tidal-wave_macos_aarch64
