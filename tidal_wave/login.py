@@ -301,7 +301,7 @@ def login(
         _input: str = ""
         while _input not in options:
             _input = typer.prompt(
-                "For which of Android [a] or Windows [w] would you like to provide an API token?"
+                "For which of Android [a], macOS [m], or Windows [w] would you like to provide an API token?"
             ).lower()
         else:
             if _input in {"android", "a"}:
