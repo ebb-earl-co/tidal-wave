@@ -35,7 +35,7 @@ class Mix:
 
     def set_metadata(self, session: Session):
         """Request from TIDAL API /mixes endpoint"""
-        self.metadata: Optional[SimpleNamespace] = request_mixes(
+        self.metadata: Optional[SimpleNamespace] = request_mix(
             session=session, mix_id=self.mix_id
         )
 
@@ -47,13 +47,18 @@ class Mix:
     def set_items(self, session: Session):
         """Uses data from TIDAL API /mixes/items endpoint to
         populate self.items"""
-        mix_items: Optional[MixesItemsResponseJSON] = get_mix(
-            session=session, mix_id=self.mix_id
-        )
-        if mix_items is None:
+        try:
+            mix_items: Optional[MixesItemsResponseJSON] = retrieve_mix_items(
+                session=session, mix_id=self.mix_id
+            )
+        except TidalMixException as tme:
+            logger.exception(tme.args[0])
             self.items = tuple()
         else:
-            self.items: Tuple[Optional[MixItem]] = tuple(filter(None, mix_items.items))
+            if mix_items is None:
+                self.items = tuple()
+            else:
+                self.items: Tuple[Optional[MixItem]] = tuple(filter(None, mix_items.items))
 
     def set_mix_dir(self, out_dir: Path):
         """Populates self.mix_dir based on self.name, self.mix_id"""
@@ -66,6 +71,7 @@ class Mix:
         if self.mix_dir is None:
             self.set_mix_dir(out_dir=out_dir)
         self.cover_path: Path = self.mix_dir / "cover.jpg"
+
         if not self.cover_path.exists():
             with session.get(
                 url=self.metadata.image, params={k: None for k in session.params}
@@ -74,18 +80,19 @@ class Mix:
 
             self.mix_cover_saved = True
         else:
-            self.mix_cover_saved = True
+            if self.cover_path.stat().st_size > 0:
+                self.mix_cover_saved = True
 
     def get_items(
         self, session: Session, audio_format: AudioFormat, no_extra_files: bool
-    ):
+    ) -> Tuple[Optional[Union[Track, Video]]]:
         """Using either Track.get() or Video.get(), attempt to request
         the data for each track or video in self.items."""
         if len(self.items) == 0:
             self.files = {}
             return
 
-        tracks_videos: list = [None] * len(self.items)
+        tracks_videos: List[Optional[Union[Track, Video]]] = [None] * len(self.items)
         for i, item in enumerate(self.items):
             if item is None:
                 tracks_videos[i] = None
@@ -112,7 +119,7 @@ class Mix:
                 tracks_videos[i] = None
                 continue
         else:
-            self.tracks_videos: Tuple[Tuple[int, Optional[Union[Track, Video]]]] = (
+            self.tracks_videos: Tuple[Optional[Union[Track, Video]]] = (
                 tuple(tracks_videos)
             )
         return tracks_videos
@@ -127,8 +134,8 @@ class Mix:
         files: List[Dict[int, Optional[str]]] = [None] * len(self.tracks_videos)
         if len(self.tracks_videos) == 0:
             return
-        subdirs: Set[Path] = set()
 
+        subdirs: Set[Path] = set()
         for i, tv in enumerate(self.tracks_videos, 1):
             if getattr(tv, "outfile") is None:
                 try:
@@ -318,7 +325,7 @@ class TidalMixException(Exception):
     pass
 
 
-def request_mixes(session: Session, mix_id: str) -> Optional[SimpleNamespace]:
+def request_mix(session: Session, mix_id: str) -> Optional[SimpleNamespace]:
     """Request from TIDAL API /pages/mix endpoint. If an error occurs from
     session.get(), None is returned. Otherwise, a typing.SimpleNamespace
     object is returned with some metadata to do with the mix: title,
@@ -327,7 +334,7 @@ def request_mixes(session: Session, mix_id: str) -> Optional[SimpleNamespace]:
     kwargs: dict = {"url": url}
     kwargs["headers"] = {"Accept": "application/json"}
 
-    logger.info(f"Requesting from TIDAL API: mixes/{mix_id}/items")
+    logger.info(f"Requesting from TIDAL API: mixes/{mix_id}")
     with session.get(**kwargs) as resp:
         try:
             resp.raise_for_status()
@@ -340,9 +347,11 @@ def request_mixes(session: Session, mix_id: str) -> Optional[SimpleNamespace]:
                 logger.exception(he)
             return
 
-        d = dict()
-        d["title"] = resp.json().get("title")
-        d["description"] = resp.json().get("rows")[0]["modules"][0]["mix"]["subTitle"]
+        # TODO: add logic for 'transparent' flag
+        d: Dict[str, str] = {
+            "title": resp.json().get("title"),
+            "description": resp.json().get("rows")[0]["modules"][0]["mix"]["subTitle"],
+        }
         d["image"] = (
             resp.json()
             .get("rows", [{}])[0]
@@ -355,15 +364,18 @@ def request_mixes(session: Session, mix_id: str) -> Optional[SimpleNamespace]:
         return SimpleNamespace(**d)
 
 
-def request_mix_items(session: Session, mix_id: str) -> Optional[Dict]:
+def request_mixes_items(
+    session: Session, mix_id: str, offset: Optional[int] = None
+) -> Optional[Dict]:
     """Request from TIDAL API /mixes/items endpoint. If error arises when
     requesting with 'session'.get(), None is returned. Otherwise, the
     dict object returned by requests.Response.json() is returned."""
     url: str = f"{TIDAL_API_URL}/mixes/{mix_id}/items"
     kwargs: dict = {"url": url}
-    kwargs["params"] = {"limit": 100}
+    kwargs["params"] = {"limit": 100} if offset is None else {"limit": 100, "offset": offset}
     kwargs["headers"] = {"Accept": "application/json"}
 
+    # TODO: add logic for 'transparent' flag
     data: Optional[dict] = None
     logger.info(f"Requesting from TIDAL API: mixes/{mix_id}/items")
     with session.get(**kwargs) as resp:
@@ -398,7 +410,7 @@ class MixesItemsResponseJSON:
     ]
 
 
-def mix_maker(
+def mix_items_response_json_maker(
     mixes_response: Dict[str, Union[int, List[dict]]],
 ) -> "MixesItemsResponseJSON":
     """This function massages the response from the TIDAL API endpoint
@@ -452,15 +464,65 @@ def mix_maker(
     return MixesItemsResponseJSON(**init_args)
 
 
-def get_mix(session: Session, mix_id: str) -> Optional["MixesItemsResponseJSON"]:
+def retrieve_mix_items(session: Session, mix_id: str) -> Optional["MixesItemsResponseJSON"]:
     """The pattern for mix items retrieval does not follow the
-    requesting.request_* functions, hence its implementation here.
+    requesting.request_* functions, hence its implementation here. N.b.
+    if the first response from /mixes/<ID>/items endpoint indicates that
+    the playlist contains more than 100 items, multiple requests will be
+    sent until all N > 100 items are retrieved.
     """
     mixes_items_response_json: Optional["MixesItemsResponseJSON"] = None
+    mixes_response: Optional[dict] = request_mixes_items(
+        session=session, mix_id=mix_id
+    )
+    if mixes_response is None:
+        raise TidalMixException(f"Could not retrieve the items in mix '{mix_id}'")
+
+    total_number_of_items: Optional[int] = mixes_response.get("totalNumberOfItems")
+    if total_number_of_items is None:
+        raise TidalMixException(
+            f"TIDAL API did not respond with number of items in mix '{mix_id}'"
+        )
+    else:
+        logger.info(f"Mix '{mix_id}' is comprised of {total_number_of_items} items")
+    
+    num_items: int = len(mixes_response.get("items", []))
+    if num_items == 0:
+        raise TidalMixException(
+            f"TIDAL API did not return any mix items for mix '{mix_id}'"
+        )
+
+    if num_items < total_number_of_items:
+        items_to_retrieve: int = total_number_of_items
+        all_items_mixes_response: dict = mixes_response
+        if total_number_of_items > 100:
+            items_list: List[dict] = mixes_response.pop("items")
+            offset: int = 100
+            while items_to_retrieve > 0:
+                mr: Optional[dict] = request_mixes_items(
+                    session=session, mix_id=mix_id, offset=offset
+                )
+                if (mr is not None) and ((mr_items := mr.get("items")) is not None):
+                    items_list += mr_items
+                    offset += 100
+                    items_to_retrieve -= 100
+                else:
+                    logger.exception(
+                        TidalPlaylistException(
+                            f"Could not retrieve more than {len(items_list)} "
+                            f"elements of mix '{mix_id}'. Continuing "
+                            "without the remaining "
+                            f"{total_number_of_items - len(items_list)}"
+                        )
+                    )
+        else:
+            all_items_mixes_response = mixes_response
+    else:
+        all_items_mixes_response = mixes_response
+
     try:
-        mixes_response: dict = request_mix_items(session=session, mix_id=mix_id)
-        mixes_items_response_json: Optional["MixesItemsResponseJSON"] = mix_maker(
-            mixes_response=mixes_response
+        mixes_items_response_json: Optional["MixesItemsResponseJSON"] = mix_items_response_json_maker(
+            mixes_response=all_items_mixes_response
         )
     except Exception as e:
         logger.exception(TidalMixException(e.args[0]))
