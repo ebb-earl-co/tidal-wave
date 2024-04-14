@@ -62,15 +62,10 @@ class Playlist:
         )
         if playlist_items is None:
             self.items = tuple()
-
-        # For now, if playlist size, N, exceeds 100 items,
-        # N items are returned, and all those between 101 and N
-        # are simply None. It's a temporary fix before properly
-        # handling paginated API requests, but it should stop
-        # NoneType errors!
-        self.items: Tuple[Optional[PlaylistItem]] = tuple(
-            filter(None, playlist_items.items)
-        )
+        else:
+            self.items: Tuple[Optional[PlaylistItem]] = tuple(
+                filter(None, playlist_items.items)
+            )
 
     def set_playlist_dir(self, out_dir: Path):
         """Populates self.playlist_dir based on self.name, self.playlist_id"""
@@ -136,7 +131,7 @@ class Playlist:
                 tracks_videos[i] = None
                 continue
         else:
-            self.tracks_videos: Tuple[Tuple[int, Optional[Union[Track, Video]]]] = (
+            self.tracks_videos: Tuple[Optional[Union[Track, Video]]] = (
                 tuple(tracks_videos)
             )
         return tracks_videos
@@ -195,7 +190,6 @@ class Playlist:
             self.files: List[Dict[int, Optional[str]]] = files
 
         # Find all subdirectories written to
-        subdirs: Set[Path] = set()
         for tv in self.tracks_videos:
             if isinstance(tv, Track):
                 try:
