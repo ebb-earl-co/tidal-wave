@@ -7,6 +7,7 @@ import shutil
 import sys
 from types import SimpleNamespace
 from typing import Dict, List, Optional, Set, Tuple, Union
+from uuid import uuid4
 
 from .media import AudioFormat
 from .models import (
@@ -53,18 +54,15 @@ class Playlist:
 
     def set_items(self, session: Session):
         """Uses data from TIDAL API /playlists/items endpoint to
-        populate self.items"""
-        playlist_items: Optional[PlaylistsItemsResponseJSON] = get_playlist(
+        populate self.items.  If 'totalNumberOfItems' field returned
+        has value greater than 100, multiple requests of size <= 100 will be
+        sent to the endpoint until all items for the playlist are retrieved."""
+        playlist_items: Optional[PlaylistsItemsResponseJSON] = retrieve_playlist_items(
             session=session, playlist_id=self.playlist_id
         )
         if playlist_items is None:
             self.items = tuple()
         else:
-            # For now, if playlist size, N, exceeds 100 items,
-            # N items are returned, and all those between 101 and N
-            # are simply None. It's a temporary fix before properly
-            # handling paginated API requests, but it should stop
-            # NoneType errors!
             self.items: Tuple[Optional[PlaylistItem]] = tuple(
                 filter(None, playlist_items.items)
             )
@@ -133,7 +131,7 @@ class Playlist:
                 tracks_videos[i] = None
                 continue
         else:
-            self.tracks_videos: Tuple[Tuple[int, Optional[Union[Track, Video]]]] = (
+            self.tracks_videos: Tuple[Optional[Union[Track, Video]]] = (
                 tuple(tracks_videos)
             )
         return tracks_videos
@@ -192,7 +190,6 @@ class Playlist:
             self.files: List[Dict[int, Optional[str]]] = files
 
         # Find all subdirectories written to
-        subdirs: Set[Path] = set()
         for tv in self.tracks_videos:
             if isinstance(tv, Track):
                 try:
@@ -445,15 +442,22 @@ class TidalPlaylistException(Exception):
     pass
 
 
-def request_playlist_items(session: Session, playlist_id: str) -> Optional[dict]:
+def request_playlists_items(
+    session: Session,
+    playlist_id: str,
+    offset: Optional[int] = None,
+    transparent: bool = False,
+) -> Optional[dict]:
     """Request from TIDAL API /playlists/items endpoint. If requests.HTTPError
     arises, warning is logged; upon this or any other exception, None is returned.
     If no exception arises from 'session'.get(), the requests.Response.json()
-    object is returned."""
+    object is returned. If transparent is True, all JSON responses from the API
+    are written to disk"""
     url: str = f"{TIDAL_API_URL}/playlists/{playlist_id}/items"
     kwargs: dict = {"url": url}
-    kwargs["params"] = {"limit": 100}
+    kwargs["params"] = {"limit": 100} if offset is None else {"limit": 100, "offset": offset}
     kwargs["headers"] = {"Accept": "application/json"}
+    json_name: str = f"playlists-{playlist_id}-items_{uuid4().hex}.json"
 
     data: Optional[dict] = None
     logger.info(f"Requesting from TIDAL API: playlists/{playlist_id}/items")
@@ -468,10 +472,19 @@ def request_playlist_items(session: Session, playlist_id: str) -> Optional[dict]
             else:
                 logger.exception(he)
         else:
-            data = resp.json()
-            logger.debug(
-                f"{resp.status_code} response from TIDAL API to request: playlists/{playlist_id}/items"
-            )
+            if transparent:
+                Path(json_name).write_text(
+                    json.dumps(resp.json(), ensure_ascii=True, indent=4, sort_keys=True)
+                )
+                data = resp.json()
+                logger.debug(
+                    f"{resp.status_code} response from TIDAL API to request: playlists/{playlist_id}/items"
+                )
+            else:
+                data = resp.json()
+                logger.debug(
+                    f"{resp.status_code} response from TIDAL API to request: playlists/{playlist_id}/items"
+                )                
         finally:
             return data
 
@@ -489,16 +502,17 @@ class PlaylistsItemsResponseJSON:
     ]
 
 
-def playlist_maker(
+def playlists_items_response_json_maker(
     playlists_response: Dict[str, Union[int, List[dict]]],
 ) -> "PlaylistsItemsResponseJSON":
     """This function massages the response from the TIDAL API endpoint
-    playlists/items into a format that PlaylistsItemsResponseJSON.from_dict()
-    can ingest. Returns a PlaylistsItemsResponseJSON instance"""
-    init_args: dict = {}
-    init_args["limit"] = playlists_response.get("limit")
-    init_args["offset"] = playlists_response.get("offset")
-    init_args["total_number_of_items"] = playlists_response.get("totalNumberOfItems")
+    /playlists/items into a format that PlaylistsItemsResponseJSON.__init__()
+    can ingest, and then returns a PlaylistsItemsResponseJSON instance"""
+    init_args: Dict[str, Optional[int]] = {
+        "limit": playlists_response.get("limit"),
+        "offset": playlists_response.get("offset"),
+        "total_number_of_items": playlists_response.get("totalNumberOfItems")
+    }
 
     items: Tuple[SimpleNamespace] = tuple(
         SimpleNamespace(**d) for d in playlists_response["items"]
@@ -543,19 +557,62 @@ def playlist_maker(
     return PlaylistsItemsResponseJSON(**init_args)
 
 
-def get_playlist(
-    session: Session, playlist_id: str
+def retrieve_playlist_items(
+    session: Session, playlist_id: str, transparent: bool = False,
 ) -> Optional["PlaylistsItemsResponseJSON"]:
     """The pattern for playlist items retrieval does not follow the
-    requesting.request_* functions, hence its implementation here.
-    """
+    requesting.request_* functions, hence its implementation here. N.b.
+    if the first response from /playlists/items endpoint indicates that
+    the playlist contains more than 100 items, multiple requests will be
+    sent until all N > 100 items are retrieved."""
     playlists_items_response_json: Optional["PlaylistsItemsResponseJSON"] = None
-    try:
-        playlists_response: dict = request_playlist_items(
-            session=session, playlist_id=playlist_id
+    playlists_response: Optional[dict] = request_playlists_items(
+        session=session, playlist_id=playlist_id, transparent=transparent
+    )
+    if playlists_response is None:
+        raise TidalPlaylistException(
+            f"Could not retrieve the items in playlist '{playlist_id}'"
         )
+
+    total_number_of_items: Optional[int] = playlists_response.get("totalNumberOfItems")
+    logger.info(f"Playlist '{playlist_id}' is comprised of {total_number_of_items} items")
+    if total_number_of_items is None:
+        raise TidalPlaylistException(
+            f"TIDAL API did not respond with number of items in playlist '{playlist_id}'"
+        )
+    else:
+        items_to_retrieve: int = total_number_of_items
+    
+    all_items_playlist_response: dict = playlists_response
+
+    if total_number_of_items > 100:
+        items_list: List[dict] = playlists_response.pop("items")
+        offset: int = 100
+        while items_to_retrieve > 0:
+            pr: Optional[dict] = request_playlists_items(
+                session=session, playlist_id=playlist_id, offset=offset
+            )
+
+            if (pr is not None) and ((pr_items := pr.get("items")) is not None):
+                items_list += pr_items
+                offset += 100
+                items_to_retrieve -= 100
+            else:
+                logger.exception(
+                    TidalPlaylistException(
+                        f"Could not retrieve more than {len(items_list)} "
+                        f"elements of playlist '{playlist_id}'. Continuing "
+                        "without the remaining "
+                        f"{total_number_of_items - len(items_list)}"
+                    )
+                )
+        else:
+            all_items_playlist_response["items"] = items_list
+            
+
+    try:
         playlists_items_response_json: Optional["PlaylistsItemsResponseJSON"] = (
-            playlist_maker(playlists_response=playlists_response)
+            playlists_items_response_json_maker(playlists_response=all_items_playlist_response)
         )
     except Exception as e:
         logger.exception(TidalPlaylistException(e.args[0]))
