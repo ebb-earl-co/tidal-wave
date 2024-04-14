@@ -528,7 +528,7 @@ def retrieve_mix_items(
                     items_to_retrieve -= 100
                 else:
                     logger.exception(
-                        TidalPlaylistException(
+                        TidalMixException(
                             f"Could not retrieve more than {len(items_list)} "
                             f"elements of mix '{mix_id}'. Continuing "
                             "without the remaining "
