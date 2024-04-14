@@ -18,7 +18,7 @@ from .models import (
 from .requesting import (
     request_albums,
     request_albums_credits,
-    request_album_items,
+    request_albums_items,
     request_album_review,
 )
 from .track import Track
@@ -39,10 +39,32 @@ class Album:
     def set_tracks(self, session: Session):
         """This method populates self.tracks by requesting from
         TIDAL albums/items endpoint."""
-        album_items: AlbumsItemsResponseJSON = request_album_items(
+        album_items: Optional[AlbumsItemsResponseJSON] = request_albums_items(
             session=session, album_id=self.album_id, transparent=self.transparent
         )
-        _items = album_items.items if album_items is not None else ()
+        _items = album_items.items if album_items is not None else []
+        if self.metadata.number_of_tracks > len(_items):
+            items_to_retrieve: int = self.metadata.number_of_tracks - len(_items)
+            offset: int = 100
+            while items_to_retrieve > 0:
+                airj: Optional[AlbumsItemsResponseJSON] = request_albums_items(
+                    session=session,
+                    album_id=self.album_id,
+                    transparent=self.transparent,
+                    offset=offset
+                )
+                if (airj is not None) and (airj.items is not None):
+                    _items += airj.items
+                    offset += 100
+                    items_to_retrieve -= 100
+                else:
+                    logger.warning(
+                        f"Could not retrieve more than {len(_items)} "
+                        f"tracks of album '{self.album_id}'. Continuing "
+                        "without the remaining "
+                        f"{self.metadata.number_of_tracks - len(_items)}"
+                     )
+
         self.tracks: Tuple[TracksEndpointResponseJSON] = tuple(
             _item.item for _item in _items
         )

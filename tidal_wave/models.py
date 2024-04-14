@@ -260,7 +260,7 @@ class SubscriptionEndpointResponseJSON(dataclass_wizard.JSONWizard):
 class AlbumsItemsResponseJSONItem:
     """A sub-object of the response from the TIDAL API endpoint
     /albums/<ID>/items. It simply denotes the type of item, which is surely
-    going to be 'track', and the same object that is returned from the TIDAL
+    going to be 'track', and is the same object that is returned from the TIDAL
     API /tracks endpoint."""
 
     item: "TracksEndpointResponseJSON"
