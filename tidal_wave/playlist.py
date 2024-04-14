@@ -7,6 +7,7 @@ import shutil
 import sys
 from types import SimpleNamespace
 from typing import Dict, List, Optional, Set, Tuple, Union
+from uuid import uuid4
 
 from .media import AudioFormat
 from .models import (
@@ -448,16 +449,21 @@ class TidalPlaylistException(Exception):
 
 
 def request_playlists_items(
-    session: Session, playlist_id: str, offset: Optional[int] = None
+    session: Session,
+    playlist_id: str,
+    offset: Optional[int] = None,
+    transparent: bool = False,
 ) -> Optional[dict]:
     """Request from TIDAL API /playlists/items endpoint. If requests.HTTPError
     arises, warning is logged; upon this or any other exception, None is returned.
     If no exception arises from 'session'.get(), the requests.Response.json()
-    object is returned."""
+    object is returned. If transparent is True, all JSON responses from the API
+    are written to disk"""
     url: str = f"{TIDAL_API_URL}/playlists/{playlist_id}/items"
     kwargs: dict = {"url": url}
     kwargs["params"] = {"limit": 100} if offset is None else {"limit": 100, "offset": offset}
     kwargs["headers"] = {"Accept": "application/json"}
+    json_name: str = f"playlists-{playlist_id}-items_{uuid4().hex}.json"
 
     data: Optional[dict] = None
     logger.info(f"Requesting from TIDAL API: playlists/{playlist_id}/items")
@@ -472,10 +478,19 @@ def request_playlists_items(
             else:
                 logger.exception(he)
         else:
-            data = resp.json()
-            logger.debug(
-                f"{resp.status_code} response from TIDAL API to request: playlists/{playlist_id}/items"
-            )
+            if transparent:
+                Path(json_name).write_text(
+                    json.dumps(resp.json(), ensure_ascii=True, indent=4, sort_keys=True)
+                )
+                data = resp.json()
+                logger.debug(
+                    f"{resp.status_code} response from TIDAL API to request: playlists/{playlist_id}/items"
+                )
+            else:
+                data = resp.json()
+                logger.debug(
+                    f"{resp.status_code} response from TIDAL API to request: playlists/{playlist_id}/items"
+                )                
         finally:
             return data
 
@@ -549,7 +564,7 @@ def playlists_items_response_json_maker(
 
 
 def retrieve_playlist_items(
-    session: Session, playlist_id: str
+    session: Session, playlist_id: str, transparent: bool = False,
 ) -> Optional["PlaylistsItemsResponseJSON"]:
     """The pattern for playlist items retrieval does not follow the
     requesting.request_* functions, hence its implementation here. N.b.
@@ -558,7 +573,7 @@ def retrieve_playlist_items(
     sent until all N > 100 items are retrieved."""
     playlists_items_response_json: Optional["PlaylistsItemsResponseJSON"] = None
     playlists_response: Optional[dict] = request_playlists_items(
-        session=session, playlist_id=playlist_id
+        session=session, playlist_id=playlist_id, transparent=transparent
     )
     if playlists_response is None:
         raise TidalPlaylistException(
@@ -576,7 +591,6 @@ def retrieve_playlist_items(
     
     all_items_playlist_response: dict = playlists_response
 
-    # TODO: some more clever, perhaps recursive solution is warranted here
     if total_number_of_items > 100:
         items_list: List[dict] = playlists_response.pop("items")
         offset: int = 100
@@ -584,8 +598,7 @@ def retrieve_playlist_items(
             pr: Optional[dict] = request_playlists_items(
                 session=session, playlist_id=playlist_id, offset=offset
             )
-            # TODO: some better error checking here. Depending on the
-            # robustness of the TIDAL API...
+
             if (pr is not None) and ((pr_items := pr.get("items")) is not None):
                 items_list += pr_items
                 offset += 100
