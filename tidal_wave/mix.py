@@ -6,6 +6,7 @@ import shutil
 import sys
 from types import SimpleNamespace
 from typing import Dict, List, Optional, Set, Tuple, Union
+from uuid import uuid4
 
 from .media import AudioFormat
 from .models import (
@@ -36,7 +37,7 @@ class Mix:
     def set_metadata(self, session: Session):
         """Request from TIDAL API /mixes endpoint"""
         self.metadata: Optional[SimpleNamespace] = request_mix(
-            session=session, mix_id=self.mix_id
+            session=session, mix_id=self.mix_id, transparent=self.transparent
         )
 
         if self.metadata is None:
@@ -49,7 +50,7 @@ class Mix:
         populate self.items"""
         try:
             mix_items: Optional[MixesItemsResponseJSON] = retrieve_mix_items(
-                session=session, mix_id=self.mix_id
+                session=session, mix_id=self.mix_id, transparent=self.transparent
             )
         except TidalMixException as tme:
             logger.exception(tme.args[0])
@@ -325,7 +326,9 @@ class TidalMixException(Exception):
     pass
 
 
-def request_mix(session: Session, mix_id: str) -> Optional[SimpleNamespace]:
+def request_mix(
+    session: Session, mix_id: str, transparent: bool = False
+) -> Optional[SimpleNamespace]:
     """Request from TIDAL API /pages/mix endpoint. If an error occurs from
     session.get(), None is returned. Otherwise, a typing.SimpleNamespace
     object is returned with some metadata to do with the mix: title,
@@ -333,6 +336,8 @@ def request_mix(session: Session, mix_id: str) -> Optional[SimpleNamespace]:
     url: str = f"{TIDAL_API_URL}/pages/mix?mixId={mix_id}"
     kwargs: dict = {"url": url}
     kwargs["headers"] = {"Accept": "application/json"}
+
+    json_name: str = f"pages-mix-{mix_id}_{uuid4().hex}.json"
 
     logger.info(f"Requesting from TIDAL API: mixes/{mix_id}")
     with session.get(**kwargs) as resp:
@@ -346,8 +351,12 @@ def request_mix(session: Session, mix_id: str) -> Optional[SimpleNamespace]:
             else:
                 logger.exception(he)
             return
+        else:
+            if transparent:
+                Path(json_name).write_text(
+                    json.dumps(resp.json(), ensure_ascii=True, indent=4, sort_keys=True)
+                )
 
-        # TODO: add logic for 'transparent' flag
         d: Dict[str, str] = {
             "title": resp.json().get("title"),
             "description": resp.json().get("rows")[0]["modules"][0]["mix"]["subTitle"],
@@ -365,7 +374,7 @@ def request_mix(session: Session, mix_id: str) -> Optional[SimpleNamespace]:
 
 
 def request_mixes_items(
-    session: Session, mix_id: str, offset: Optional[int] = None
+    session: Session, mix_id: str, offset: Optional[int] = None, transparent: bool = False
 ) -> Optional[Dict]:
     """Request from TIDAL API /mixes/items endpoint. If error arises when
     requesting with 'session'.get(), None is returned. Otherwise, the
@@ -374,8 +383,8 @@ def request_mixes_items(
     kwargs: dict = {"url": url}
     kwargs["params"] = {"limit": 100} if offset is None else {"limit": 100, "offset": offset}
     kwargs["headers"] = {"Accept": "application/json"}
+    json_name: str = f"mixes-{mix_id}-items_{uuid4().hex}.json"
 
-    # TODO: add logic for 'transparent' flag
     data: Optional[dict] = None
     logger.info(f"Requesting from TIDAL API: mixes/{mix_id}/items")
     with session.get(**kwargs) as resp:
@@ -389,10 +398,19 @@ def request_mixes_items(
             else:
                 logger.exception(he)
         else:
-            data = resp.json()
-            logger.debug(
-                f"{resp.status_code} response from TIDAL API to request: mixes/{mix_id}/items"
-            )
+            if transparent:
+                Path(json_name).write_text(
+                    json.dumps(resp.json(), ensure_ascii=True, indent=4, sort_keys=True)
+                )
+                data = resp.json()
+                logger.debug(
+                    f"{resp.status_code} response from TIDAL API to request: mixes/{mix_id}/items"
+                )
+            else:
+                data = resp.json()
+                logger.debug(
+                    f"{resp.status_code} response from TIDAL API to request: mixes/{mix_id}/items"
+                )
         finally:
             return data
 
@@ -464,7 +482,9 @@ def mix_items_response_json_maker(
     return MixesItemsResponseJSON(**init_args)
 
 
-def retrieve_mix_items(session: Session, mix_id: str) -> Optional["MixesItemsResponseJSON"]:
+def retrieve_mix_items(
+    session: Session, mix_id: str, transparent: bool = False
+) -> Optional["MixesItemsResponseJSON"]:
     """The pattern for mix items retrieval does not follow the
     requesting.request_* functions, hence its implementation here. N.b.
     if the first response from /mixes/<ID>/items endpoint indicates that
@@ -473,7 +493,7 @@ def retrieve_mix_items(session: Session, mix_id: str) -> Optional["MixesItemsRes
     """
     mixes_items_response_json: Optional["MixesItemsResponseJSON"] = None
     mixes_response: Optional[dict] = request_mixes_items(
-        session=session, mix_id=mix_id
+        session=session, mix_id=mix_id, transparent=transparent
     )
     if mixes_response is None:
         raise TidalMixException(f"Could not retrieve the items in mix '{mix_id}'")
