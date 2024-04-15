@@ -162,7 +162,7 @@ class Video:
                     vcodec="copy",
                     acodec="copy",
                     loglevel="quiet",
-                    **{"movflags": "+faststart"}
+                    **{"movflags": "+faststart"},
                 ).run()
             except ffmpeg.Error:
                 logger.warning(
