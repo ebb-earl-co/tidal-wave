@@ -33,16 +33,21 @@ This software uses libraries from the [FFmpeg](http://ffmpeg.org) project under 
 * Artist's entire works retrieval support (video and audio; albums or albums and EPs and singles)
 * Because of the use of the `requests` package, system proxies are respected (HTTP, HTTPs, Socks); or can be specified by typical environment variable
 * Also because of the use of `requests`, very simple [`Cache-Control`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control) request caching occurs via `CacheControl`
+* If desired, all JSON responses from the TIDAL API can be saved for inspection or posterity or debugging
 
 ## Getting Started
-A [HiFi Plus](https://tidal.com/pricing) account is **required** in order to retrieve HiRes FLAC, Dolby Atmos, and Sony 360 Reality Audio tracks. Simply a [HiFi](https://tidal.com/pricing) plan is sufficient to retrieve in 16-bit, 44.1 kHz (i.e., lossless) or lower quality as well as videos. More information on sound quality at [TIDAL's site here](https://tidal.com/sound-quality).
+A current, valid TIDAL subscription is required in order to run `tidal-wave`. Previously, TIDAL segmented the available audio qualities into HiFi and HiFi Plus plans: now, 
+> All current TIDAL plans feature Max sound quality formats such as full lossless, HiRes FLAC, and Dolby Atmos (up to 24-bit, 192 kHz).
+
+More information on sound quality at [TIDAL's site here](https://tidal.com/sound-quality).
 
 ### Requirements
  - As resources will be fetched from the World Wide Web, an Internet connection is required
- - The venerable [FFmpeg](http://ffmpeg.org/download.html) is necessary for audio and video data manipulation. This project's [container image](https://github.com/ebb-earl-co/tidal-wave/blob/trunk/Dockerfile) as well as its [PyInstaller](https://pyinstaller.org/en/stable/)-created [binary for Ubuntu GNU/Linux](https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_ubuntu_amd64), [binary for Apple Silicon macOS](https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_macos_aarch64), [binary for x86\_64 macOS](https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_macos_amd64), and [binary for x86\_64 Windows](https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_windows.exe) build FFmpeg from source, so separate installation is unnecessary.
+ - The venerable [FFmpeg](http://ffmpeg.org/download.html) is necessary for audio and video data manipulation. This project's [container image](https://github.com/ebb-earl-co/tidal-wave/blob/trunk/Dockerfile) as well as its [PyInstaller](https://pyinstaller.org/en/stable/)-created [binaries](https://github.com/ebb-earl-co/tidal-wave/releases/latest) build FFmpeg from source, so separate installation is unnecessary.
    - Static builds of FFmpeg are available from [John Van Sickle](https://www.johnvansickle.com/ffmpeg/) for GNU/Linux, or most package managers feature `ffmpeg`.
    - For macOS, the [FFmpeg download page](http://ffmpeg.org/download.html#build-mac) links to [this download source](https://evermeet.cx/ffmpeg/); or there is always [Homebrew](https://formulae.brew.sh/formula/ffmpeg)
    - For Windows, the [FFmpeg download page](http://ffmpeg.org/download.html#build-windows) lists 2 resources; or [`chocolatey`](https://community.chocolatey.org/packages/ffmpeg) is an option
+   - If a minimal FFmpeg, compiled from source, is desired, take a look at this project's [BUILDME.md](https://github.com/ebb-earl-co/tidal-wave/blob/trunk/BUILDME.md) file for decent instructions
  - This is a Python package, so **to use it in the default manner** you will need [Python 3](https://www.python.org/downloads/), version 3.8 or newer, on your system.
    - *However*, as of December 2023, an [OCI container image](https://github.com/ebb-earl-co/tidal-wave/pkgs/container/tidal-wave); and [PyInstaller](https://pyinstaller.org/en/stable/)-created binaries for x86\_64 GNU/Linux, Apple Silicon macOS, x86\_64 macOS, and x86\_64 Windows are provided for download and use that *do not require Python to be installed*
  - Only a handful of Python libraries are dependencies:
@@ -69,13 +74,6 @@ $ python3 -m pip install tidal-wave
 PS > python.exe -m pip install tidal-wave
 ```
 
-Optionally, to get the full `typer` experience when using this utility, add `[all]` to the end of the `pip install command`:
-```bash
-$ python3 -m pip install tidal-wave[all]
-```
-```powershell
-PS > python.exe -m pip install tidal-wave[all]
-```
 ### `pip` Install from the Repository
 Alternatively, you can clone this repository; `cd` into it; and install from there:
 ```bash
@@ -88,9 +86,9 @@ $ (.venv) pip install .
 ### PyInstaller executable
 These release artifacts are created with [PyInstaller](https://pyinstaller.org). It bundles Python 3.12.2, FFmpeg 7.0, and the `tidal-wave` program into one binary, licensed under the terms of FFmpeg: with the [GNU Lesser General Public License (LGPL) version 2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html). Installation is as simple as downloading the correct binary for your platform giving it execute permissions, and running it.
 ```bash
-$ wget https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_ubuntu_amd64
-$ chmod +x ./tidal-wave_ubuntu_amd64
-$ ./tidal-wave_ubuntu_amd64 --help
+$ wget https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_ubuntu_22.04_amd64
+$ chmod +x ./tidal-wave_ubuntu_22.04_amd64
+$ ./tidal-wave_ubuntu_22.04_amd64 --help
 ```
 
 ### Docker
@@ -125,7 +123,7 @@ Usage: python -m tidal_wave [OPTIONS] TIDAL_URL [OUTPUT_DIRECTORY]
 ## Usage
 Invocation of this tool will store credentials in a particular directory in the user's "home" directory: for Unix-like systems, this will be `/home/${USER}/.config/tidal-wave`: for Windows, it varies: in either OS situation, the exact directory is determined by the `user_config_path()` function of the `platformdirs` package.
 
-Similarly, by default, all media retrieved is placed in subdirectories of the user's default music directory: for Unix-like systems, this probably is `/home/${USER}/Music`; for Windows it is probably `C:\Users\<USER>\Music`. This directory is determined by `platformdirs.user_music_path()`. 
+Similarly, by default, all media retrieved is placed in subdirectories of the user's default music directory: for Unix-like systems, this probably is `/home/${USER}/Music`; for Windows it is probably `C:\Users\<USER>\Music`. This directory is determined by [`platformdirs.user_music_path()`](https://github.com/platformdirs/platformdirs?tab=readme-ov-file#platformdirs-to-the-rescue). 
  - If a different path is passed to the second CLI argument, `output_directory`, then all media is written to subdirectories of that directory.
 
 ### Which Audio Formats Are Available to Which Clients
@@ -254,6 +252,7 @@ $ docker exec -it tidal-wave tidal-wave https://tidal.com/browse/mix/...
 $ docker exec -it tidal-wave tidal-wave https://tidal.com/browse/playlist/...
 $ docker exec -it tidal-wave tidal-wave https://tidal.com/browse/track/...
 ```
+Note: the first `tidal-wave` is whatever `--name` you give the container, so that can be whatever your heart desires, but the second `tidal-wave` is invoking the Python program *inside* the container and needs to exactly `tidal-wave`.
 ## Development
 The easiest way to start working on development is to fork this project on GitHub, or clone the repository to your local machine and do the pull requesting on GitHub later. In any case, there will need to be some getting from GitHub first, so, roughly, the process is:
   1. Get Python 3.8+ on your system
