@@ -131,8 +131,8 @@ class Playlist:
                 tracks_videos[i] = None
                 continue
         else:
-            self.tracks_videos: Tuple[Optional[Union[Track, Video]]] = (
-                tuple(tracks_videos)
+            self.tracks_videos: Tuple[Optional[Union[Track, Video]]] = tuple(
+                tracks_videos
             )
         return tracks_videos
 
@@ -455,7 +455,9 @@ def request_playlists_items(
     are written to disk"""
     url: str = f"{TIDAL_API_URL}/playlists/{playlist_id}/items"
     kwargs: dict = {"url": url}
-    kwargs["params"] = {"limit": 100} if offset is None else {"limit": 100, "offset": offset}
+    kwargs["params"] = (
+        {"limit": 100} if offset is None else {"limit": 100, "offset": offset}
+    )
     kwargs["headers"] = {"Accept": "application/json"}
     json_name: str = f"playlists-{playlist_id}-items_{uuid4().hex}.json"
 
@@ -484,7 +486,7 @@ def request_playlists_items(
                 data = resp.json()
                 logger.debug(
                     f"{resp.status_code} response from TIDAL API to request: playlists/{playlist_id}/items"
-                )                
+                )
         finally:
             return data
 
@@ -511,7 +513,7 @@ def playlists_items_response_json_maker(
     init_args: Dict[str, Optional[int]] = {
         "limit": playlists_response.get("limit"),
         "offset": playlists_response.get("offset"),
-        "total_number_of_items": playlists_response.get("totalNumberOfItems")
+        "total_number_of_items": playlists_response.get("totalNumberOfItems"),
     }
 
     items: Tuple[SimpleNamespace] = tuple(
@@ -558,7 +560,9 @@ def playlists_items_response_json_maker(
 
 
 def retrieve_playlist_items(
-    session: Session, playlist_id: str, transparent: bool = False,
+    session: Session,
+    playlist_id: str,
+    transparent: bool = False,
 ) -> Optional["PlaylistsItemsResponseJSON"]:
     """The pattern for playlist items retrieval does not follow the
     requesting.request_* functions, hence its implementation here. N.b.
@@ -575,14 +579,16 @@ def retrieve_playlist_items(
         )
 
     total_number_of_items: Optional[int] = playlists_response.get("totalNumberOfItems")
-    logger.info(f"Playlist '{playlist_id}' is comprised of {total_number_of_items} items")
+    logger.info(
+        f"Playlist '{playlist_id}' is comprised of {total_number_of_items} items"
+    )
     if total_number_of_items is None:
         raise TidalPlaylistException(
             f"TIDAL API did not respond with number of items in playlist '{playlist_id}'"
         )
     else:
         items_to_retrieve: int = total_number_of_items
-    
+
     all_items_playlist_response: dict = playlists_response
 
     if total_number_of_items > 100:
@@ -608,11 +614,12 @@ def retrieve_playlist_items(
                 )
         else:
             all_items_playlist_response["items"] = items_list
-            
 
     try:
         playlists_items_response_json: Optional["PlaylistsItemsResponseJSON"] = (
-            playlists_items_response_json_maker(playlists_response=all_items_playlist_response)
+            playlists_items_response_json_maker(
+                playlists_response=all_items_playlist_response
+            )
         )
     except Exception as e:
         logger.exception(TidalPlaylistException(e.args[0]))
