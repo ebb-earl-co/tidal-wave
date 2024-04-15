@@ -64,17 +64,22 @@ def requester_maker(
     subclass: Optional["ResponseJSON"] = None,
     credits_flag: bool = False,
     transparent: bool = False,
+    offset: Optional[int] = None,
 ) -> Callable:
     """This function is a function factory: it crafts nearly identical
     versions of the same logic: send a GET request to a certain endpoint;
     if a requests.HTTPError arises, return None; else, transform the
     JSON response into an instance of a subclass of JSONWizard."""
 
-    def function(s, e, i, u, h, p, sc, cf, t):
+    def function(s, e, i, u, h, p, sc, cf, t, o):
         url: str = f"{TIDAL_API_URL}/{e}/{i}{u}"
         kwargs: dict = {"url": url}
         if p is not None:
-            kwargs["params"] = p
+            kwargs["params"] = p if offset is None else p | {"offset": offset}
+        else:
+            if offset is not None:
+                kwargs["params"] = {"offset": offset}
+
         if h is not None:
             kwargs["headers"] = h
 
@@ -86,7 +91,7 @@ def requester_maker(
             logger=logger,
         )
         def _get(s: Session, request_kwargs: dict) -> Response:
-            """Return a requests.Response object, from having passed request_kwargs
+            """Return a requests.Response object from having passed request_kwargs
             to s.get(), optionally retrying if 429 error occurs."""
             with s.get(**request_kwargs) as r:
                 return r
@@ -135,6 +140,7 @@ def requester_maker(
         sc=subclass,
         cf=credits_flag,
         t=transparent,
+        o=offset,
     )
 
 
@@ -142,11 +148,12 @@ def requester_maker(
 # don't change during runtime, and session is only available once the __main__
 # process (on the happy path) creates a requests.Session object. Identifier
 # varies with the media type, etc.
-
-
 def request_albums(
     session: Session, album_id: int, transparent: bool = False
 ) -> Optional[AlbumsEndpointResponseJSON]:
+    """Send a GET request to the /albums endpoint of the TIDAL API. If an
+    Exception occurs, return None. Else, return an instance of
+    AlbumsEndpointResponseJSON"""
     return requester_maker(
         session=session,
         endpoint="albums",
@@ -157,9 +164,16 @@ def request_albums(
     )
 
 
-def request_album_items(
-    session: Session, album_id: int, transparent: bool = False
+def request_albums_items(
+    session: Session,
+    album_id: int,
+    transparent: bool = False,
+    offset: Optional[int] = None,
 ) -> Optional[AlbumsItemsResponseJSON]:
+    """Send a GET request to the /albums/<album ID>/items
+    endpoint of the TIDAL API. If an Exception occurs,
+    return None. Else, return an instance of
+    AlbumsItemsResponseJSON"""
     return requester_maker(
         session=session,
         endpoint="albums",
@@ -169,12 +183,16 @@ def request_album_items(
         url_end="/items",
         subclass=AlbumsItemsResponseJSON,
         transparent=transparent,
+        offset=offset,
     )
 
 
 def request_album_review(
     session: Session, album_id: int, transparent: bool = False
 ) -> Optional[AlbumsReviewResponseJSON]:
+    """Send a GET request to the /albums/<album ID>/review
+    endpoint of the TIDAL API. If an Exception occurs, return None.
+    Else, return an instance of AlbumsReviewResponseJSON"""
     return requester_maker(
         session=session,
         endpoint="albums",
@@ -189,6 +207,9 @@ def request_album_review(
 def request_artist_bio(
     session: Session, artist_id: int, transparent: bool = False
 ) -> Optional[ArtistsBioResponseJSON]:
+    """Send a GET request to the /artists/<artist ID>/bio
+    endpoint of the TIDAL API. If an Exception occurs, return None.
+    Else, return an instance of ArtistsBioResponseJSON"""
     return requester_maker(
         session=session,
         endpoint="artists",
@@ -203,6 +224,9 @@ def request_artist_bio(
 def request_artists(
     session: Session, artist_id: int, transparent: bool = False
 ) -> Optional[ArtistsEndpointResponseJSON]:
+    """Send a GET request to the /artists endpoint of the TIDAL API.
+    If an Exception occurs, return None. Else, return an instance of
+    ArtistsEndpointResponseJSON"""
     return requester_maker(
         session=session,
         endpoint="artists",
@@ -216,6 +240,9 @@ def request_artists(
 def request_artists_albums(
     session: Session, artist_id: int, transparent: bool = False
 ) -> Optional[ArtistsAlbumsResponseJSON]:
+    """Send a GET request to the /artists/<artist ID>/albums
+    endpoint of the TIDAL API. If an Exception occurs, return None.
+    Else, return an instance of ArtistsAlbumsResponseJSON"""
     return requester_maker(
         session=session,
         endpoint="artists",
@@ -230,6 +257,9 @@ def request_artists_albums(
 def request_artists_audio_works(
     session: Session, artist_id: int, transparent: bool = False
 ) -> Optional[ArtistsAlbumsResponseJSON]:
+    """Send a GET request to the /artists/<artist ID>/albums
+    endpoint of the TIDAL API. If an Exception occurs, return None.
+    Else, return an instance of ArtistsAlbumsResponseJSON"""
     return requester_maker(
         session=session,
         endpoint="artists",
@@ -245,6 +275,9 @@ def request_artists_audio_works(
 def request_artists_videos(
     session: Session, artist_id: int, transparent: bool = False
 ) -> Optional[ArtistsVideosResponseJSON]:
+    """Send a GET request to the /artists/<artist ID>/videos
+    endpoint of the TIDAL API. If an Exception occurs, return None.
+    Else, return an instance of ArtistsVideosResponseJSON"""
     return requester_maker(
         session=session,
         endpoint="artists",
@@ -259,6 +292,9 @@ def request_artists_videos(
 def request_tracks(
     session: Session, track_id: int, transparent: bool = False
 ) -> Optional[TracksEndpointResponseJSON]:
+    """Send a GET request to the /tracks endpoint of the TIDAL API.
+    If an Exception occurs, return None. Else, return an instance of
+    TracksEndpointResponseJSON"""
     return requester_maker(
         session=session,
         endpoint="tracks",
@@ -275,6 +311,9 @@ def request_tracks(
 def request_credits(
     session: Session, track_id: int, transparent: bool = False
 ) -> Optional[TracksCreditsResponseJSON]:
+    """Send a GET request to the /tracks/<track ID>/credits endpoint of the
+    TIDAL API. If an Exception occurs, return None. Else, return an instance
+    of TracksCreditsResponseJSON"""
     return requester_maker(
         session=session,
         endpoint="tracks",
@@ -294,6 +333,9 @@ def request_credits(
 def request_albums_credits(
     session: Session, album_id: int, transparent: bool = False
 ) -> Optional[AlbumsCreditsResponseJSON]:
+    """Send a GET request to the /albums/<album ID>/credits endpoint of the
+    TIDAL API. If an Exception occurs, return None. Else, return an instance
+    of AlbumsCreditsResponseJSON"""
     return requester_maker(
         session=session,
         endpoint="albums",
@@ -310,6 +352,9 @@ def request_albums_credits(
 def request_lyrics(
     session: Session, track_id: int, transparent: bool = False
 ) -> Optional[TracksLyricsResponseJSON]:
+    """Send a GET request to the /tracks/<track ID>/lyrics endpoint of the
+    TIDAL API. If an Exception occurs, return None. Else, return an instance
+    of TracksLyricsResponseJSON"""
     return requester_maker(
         session=session,
         endpoint="tracks",
@@ -326,6 +371,9 @@ def request_lyrics(
 def request_stream(
     session: Session, track_id: int, audio_quality: str, transparent: bool = False
 ) -> Optional[TracksEndpointStreamResponseJSON]:
+    """Send a GET request to the /tracks/<track ID>/playbackinfopostpaywall
+    endpoint of the TIDAL API. If an Exception occurs, return None. Else,
+    return an instance of TracksEndpointStreamResponseJSON"""
     func = partial(
         requester_maker,
         session=session,
@@ -347,6 +395,9 @@ def request_stream(
 def request_videos(
     session: Session, video_id: int, transparent: bool = False
 ) -> Optional[VideosEndpointResponseJSON]:
+    """Send a GET request to the /videos endpoint of the TIDAL API.
+    If an Exception occurs, return None. Else, return an instance of
+    VideosEndpointResponseJSON"""
     return requester_maker(
         session=session,
         endpoint="videos",
@@ -360,6 +411,9 @@ def request_videos(
 def request_video_contributors(
     session: Session, video_id: int, transparent: bool = False
 ) -> Optional[VideosContributorsResponseJSON]:
+    """Send a GET request to the /videos/<video ID>/contributors endpoint of the
+    TIDAL API. If an Exception occurs, return None. Else, return an instance
+    of VideosContributorsResponseJSON"""
     return requester_maker(
         session=session,
         endpoint="videos",
@@ -375,6 +429,9 @@ def request_video_contributors(
 def request_video_stream(
     session: Session, video_id: int, video_quality: str, transparent: bool = False
 ) -> Optional[VideosEndpointStreamResponseJSON]:
+    """Send a GET request to the /videos/<video ID>/playbackinfopostpaywall
+    endpoint of the TIDAL API. If an Exception occurs, return None. Else,
+    return an instance of VideosEndpointStreamResponseJSON"""
     func = partial(
         requester_maker,
         session=session,
@@ -396,6 +453,9 @@ def request_video_stream(
 def request_playlists(
     session: Session, playlist_id: int, transparent: bool = False
 ) -> Optional[PlaylistsEndpointResponseJSON]:
+    """Send a GET request to the /playlists endpoint of the TIDAL API.
+    If an Exception occurs, return None. Else, return an instance of
+    PlaylistsEndpointResponseJSON"""
     return requester_maker(
         session=session,
         endpoint="playlists",

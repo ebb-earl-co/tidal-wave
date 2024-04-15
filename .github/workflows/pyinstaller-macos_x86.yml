@@ -114,6 +114,7 @@ jobs:
             --paths tidal_wave \
             --exclude-module pyinstaller \
             --add-data "README.md:." \
+            --add-data "BUILDME.md:." \
             --add-binary "ffmpeg-n7.0/ffmpeg:." \
             --clean \
             --noupx \

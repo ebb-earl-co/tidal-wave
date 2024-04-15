@@ -87,10 +87,12 @@ jobs:
       - name: Create Executable with PyInstaller
         run: |
           pyinstaller \
-            --name tidal-wave_ubuntu_amd64 \
+            --name tidal-wave_ubuntu_22.04_amd64 \
+            --target-arch=x86_64 \
             --paths tidal_wave \
             --exclude-module pyinstaller \
             --add-data "README.md:." \
+            --add-data "BUILDME.md:." \
             --add-binary "ffmpeg-n7.0/ffmpeg:." \
             --clean \
             --noupx \
@@ -100,8 +102,8 @@ jobs:
 
       - name: Test just-compiled binary
         run: |
-          chmod +x ./dist/tidal-wave_ubuntu_amd64
-          ./dist/tidal-wave_ubuntu_amd64 --help
+          chmod +x ./dist/tidal-wave_ubuntu_22.04_amd64
+          ./dist/tidal-wave_ubuntu_22.04_amd64 --help
 
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2

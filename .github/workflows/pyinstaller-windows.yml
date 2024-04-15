@@ -69,6 +69,7 @@ jobs:
             --name tidal-wave_windows.exe `
             --paths tidal_wave `
             --add-data "README.md:." `
+            --add-data "BUILDME.md:." `
             --add-binary "ffmpeg.exe:." `
             --exclude-module pyinstaller `
             --clean `
