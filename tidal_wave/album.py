@@ -51,7 +51,7 @@ class Album:
                     session=session,
                     album_id=self.album_id,
                     transparent=self.transparent,
-                    offset=offset
+                    offset=offset,
                 )
                 if (airj is not None) and (airj.items is not None):
                     _items += airj.items
@@ -63,7 +63,7 @@ class Album:
                         f"tracks of album '{self.album_id}'. Continuing "
                         "without the remaining "
                         f"{self.metadata.number_of_tracks - len(_items)}"
-                     )
+                    )
 
         self.tracks: Tuple[TracksEndpointResponseJSON] = tuple(
             _item.item for _item in _items
