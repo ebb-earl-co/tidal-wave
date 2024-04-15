@@ -1,12 +1,12 @@
 # Python Package
 
 `tidal-wave` is, first and foremost, a Python project that is built and uploaded to PyPi. Indeed, that is the sole purpose of `pyproject.toml` and `setup.py` at the root of the repository. No frameworks are used for this process such as `poetry` or `pipenv`, just the standard Python `setuptools` and `build`. To that end, the process of building a Python package for a given release is 
-  1. change the line `version = ` in `pyproject.toml` to a new version. At the time of writing this, that would be `"2024.1.14"`. This is because PyPi disallows package name/version duplicates.
+  1. change the line `version = ` in `pyproject.toml` to a new version. At the time of writing this, that would be `"2024.4.3"`. This is because PyPi disallows package name/version duplicates.
   2. With a Python virtual environment, or, e.g. on a Debian-based OS, install the APT package `python3-build`, or, with the OS's system-wide Python3 installation, install the `build` package. 
     - I like to have a Python3 virtual environment created with the system Python3 in my home directory for all the bits and bobs required in development: `~/.venv`
   3. From the repository root, simply run `$ python3 -m build` (or, on Windows, `> venv\Scripts\python.exe -m build`) and let the process run its course.
-  4. Once that process has finished, there will be two new files in the `dist` subdirectory of the repository root: `dist/tidal-wave-2024.1.14.tar.gz`, and `tidal_wave-2024.1.14-py3-none-any.whl`.
-  5. These binaries are uploaded to PyPi using GitHub Actions: in particular, the `.github/workflows/python-build.yml` file
+  4. Once that process has finished, there will be two new files in the `dist` subdirectory of the repository root: `dist/tidal-wave-2024.4.3.tar.gz`, and `tidal_wave-2024.4.3-py3-none-any.whl`.
+  5. These binaries are uploaded to PyPi using GitHub Actions: in particular, the [`.github/workflows/python-build.yml`](https://github.com/ebb-earl-co/tidal-wave/blob/trunk/.github/workflows/python-build.yml) file
 
 # `pyinstaller`-Created Binaries
 Perhaps *the* tried and true method of packaging up a Python project into a single executable comes from the [PyInstaller](https://pyinstaller.org) project. It is the long-term preferred packaging format for `tidal-wave` as it allows for inclusion of arbitrary binary files into the executable apart from Python 3 itself. This is appealing, as `tidal-wave` fundamentally relies on FFmpeg for its successful execution, and it is desired to ship Python 3, FFmpeg, and the `tidal-wave` package as **one binary executable for each platform**.
@@ -15,7 +15,7 @@ However, PyInstaller wants to package up a single Python script into an easily-d
   1. Create virtual environment in repository root: `$ "$(command -v python3)" -m venv ./venv` and install `tidal-wave`'s dependencies
    - `$ ./venv/bin/python3 -m pip install --upgrade pip setuptools wheel`
    - `$ ./venv/bin/python3 -m pip install -r requirements.txt`
-   - `$ ./venv/bin/python3 -m pip install pyinstaller`
+   - `$ ./venv/bin/python3 -m pip install pyinstaller==6.5.0`
   2. Without compiling FFmpeg from source, the command is very simple:
   ```bash
   ./venv/bin/pyinstaller \
@@ -23,6 +23,7 @@ However, PyInstaller wants to package up a single Python script into an easily-d
     --paths tidal_wave \
     --exclude-modules pyinstaller \
     --add-data "README.md:." \
+    --add-data "BUILDME.md:." \
     --clean \
     --noupx \
     --onefile \
@@ -38,6 +39,7 @@ However, PyInstaller wants to package up a single Python script into an easily-d
     --paths tidal_wave \
     --exclude-modules pyinstaller \
     --add-data "README.md:." \
+    --add-data "BUILDME.md:." \
     --add-binary "ffmpeg-n7.0/ffmpeg:." \
     --clean \
     --noupx \
@@ -102,10 +104,14 @@ configure \
     --enable-muxer=eac3,flac,h264,mjpeg,mpegts,mp4 \
     --enable-parser=aac,h264 \
     --enable-protocol=file \
-    --enable-small \
+    --enable-small && \
 make -j$(nproc) && make -j$(nproc) install
 ```
 
-The resulting binary, `/usr/local/bin/ffmpeg` will be around 5 MB in size. The above example is for Intel CPU-based Mac machines. An analagous invocation for the newer, Apple Silicon-based Mac machines is found in the file `.github/workflows/pyinstaller-macos_arm64.yml`.
+The resulting binary, `/usr/local/bin/ffmpeg` will be around 4 MB in size. The above example is for Debian-based GNU/Linux x86\_64 systems. An analagous invocation for macOS, both x86\_64 and aarch64, is found in the [workflows](https://github.com/ebb-earl-co/tidal-wave/tree/trunk/.github/workflows) directory of this repository.
+### Building FFmpeg on Windows
+Because FFmpeg is a program that is designed for --and primarily used in-- Unix-like environments, getting the C and C++ tools necessary to compile it on Windows is difficult. There is the [Mingw-w64](https://www.mingw-w64.org/) project that brings the GCC (GNU C compiler) toolchain to Windows, and that is what `tidal-wave` leans on. Some wonderfully generous person took the Mingw-w64 project and created the [Media autobuild suite project](https://github.com/m-ab-s/media-autobuild_suite) for Windows that simplifies all of the sharp edges of cross-platform compiling into one, simple process. Indeed, `tidal-wave` simply uses a [fork of the media autobuild suite project](https://github.com/ebb-earl-co/media-autobuild_suite/releases/tag/n7.0) to provide `ffmpeg.exe` for [`tidal-wave` Windows release artifacts](https://github.com/ebb-earl-co/tidal-wave/blob/trunk/.github/workflows/pyinstaller-windows.yml#L29).
+
+If you want to replicate this process on your own Windows machine, take a look at the [configuration file](https://github.com/ebb-earl-co/media-autobuild_suite/blob/master/build/media-autobuild_suite.ini) used for `tidal-wave`, and the accompanying [FFmpeg options](https://github.com/ebb-earl-co/media-autobuild_suite/blob/master/build/ffmpeg_options.txt)
 ## Licensing
 By not passing `--enable-nonfree` and `--enable-gpl` when configuring FFmpeg, the resulting binary is licensed under the LGPLv2.1, *not* the GPL. This may be a minor distinction, but it is important to highlight. Videos retrieved from TIDAL using one of the PyInstaller-created binaries **will only** remux the file and add metadata: to re-encode the video would require the GPL-licensed `x264` library, which would render the binaries for all platforms under that license, not the LGPLv2.1.
