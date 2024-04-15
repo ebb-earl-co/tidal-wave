@@ -59,7 +59,9 @@ class Mix:
             if mix_items is None:
                 self.items = tuple()
             else:
-                self.items: Tuple[Optional[MixItem]] = tuple(filter(None, mix_items.items))
+                self.items: Tuple[Optional[MixItem]] = tuple(
+                    filter(None, mix_items.items)
+                )
 
     def set_mix_dir(self, out_dir: Path):
         """Populates self.mix_dir based on self.name, self.mix_id"""
@@ -120,8 +122,8 @@ class Mix:
                 tracks_videos[i] = None
                 continue
         else:
-            self.tracks_videos: Tuple[Optional[Union[Track, Video]]] = (
-                tuple(tracks_videos)
+            self.tracks_videos: Tuple[Optional[Union[Track, Video]]] = tuple(
+                tracks_videos
             )
         return tracks_videos
 
@@ -374,14 +376,19 @@ def request_mix(
 
 
 def request_mixes_items(
-    session: Session, mix_id: str, offset: Optional[int] = None, transparent: bool = False
+    session: Session,
+    mix_id: str,
+    offset: Optional[int] = None,
+    transparent: bool = False,
 ) -> Optional[Dict]:
     """Request from TIDAL API /mixes/items endpoint. If error arises when
     requesting with 'session'.get(), None is returned. Otherwise, the
     dict object returned by requests.Response.json() is returned."""
     url: str = f"{TIDAL_API_URL}/mixes/{mix_id}/items"
     kwargs: dict = {"url": url}
-    kwargs["params"] = {"limit": 100} if offset is None else {"limit": 100, "offset": offset}
+    kwargs["params"] = (
+        {"limit": 100} if offset is None else {"limit": 100, "offset": offset}
+    )
     kwargs["headers"] = {"Accept": "application/json"}
     json_name: str = f"mixes-{mix_id}-items_{uuid4().hex}.json"
 
@@ -505,7 +512,7 @@ def retrieve_mix_items(
         )
     else:
         logger.info(f"Mix '{mix_id}' is comprised of {total_number_of_items} items")
-    
+
     num_items: int = len(mixes_response.get("items", []))
     if num_items == 0:
         raise TidalMixException(
@@ -541,8 +548,8 @@ def retrieve_mix_items(
         all_items_mixes_response = mixes_response
 
     try:
-        mixes_items_response_json: Optional["MixesItemsResponseJSON"] = mix_items_response_json_maker(
-            mixes_response=all_items_mixes_response
+        mixes_items_response_json: Optional["MixesItemsResponseJSON"] = (
+            mix_items_response_json_maker(mixes_response=all_items_mixes_response)
         )
     except Exception as e:
         logger.exception(TidalMixException(e.args[0]))
