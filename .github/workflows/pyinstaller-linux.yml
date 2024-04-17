@@ -105,7 +105,7 @@ jobs:
       
       - name: Create SHA256 checksum file of just-compiled binary
         run: |
-          python3 -c "from hashlib import sha256;from pathlib import Path;Path("tidal-wave_ubuntu_22.04_amd64.sha256").write_text(f'''{sha256(Path("./dist/tidal-wave_ubuntu_22.04_amd64").read_bytes()).hexdigest()}\ttidal-wave_ubuntu_22.04_amd64''')"
+          python3 -c "from hashlib import sha256;from pathlib import Path;Path('tidal-wave_ubuntu_22.04_amd64.sha256').write_text(f'''{sha256(Path('./dist/tidal-wave_ubuntu_22.04_amd64').read_bytes()).hexdigest()}\ttidal-wave_ubuntu_22.04_amd64''')"
 
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
