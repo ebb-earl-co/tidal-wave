@@ -83,7 +83,7 @@ jobs:
       - name: Create SHA256 checksum file of just-compiled binary
         shell: pwsh
         run: |
-          python.exe -c "from hashlib import sha256;from pathlib import WindowsPath;WindowsPath('tidal-wave_windows.exe.sha256').write_text(f'''{sha256(WindowsPath('.\dist\tidal-wave_windows.exe').read_bytes()).hexdigest()}\ttidal-wave_windows.exe''')"
+          python.exe -c "from hashlib import sha256;from pathlib import Path;Path('tidal-wave_windows.exe.sha256').write_text(f'''{sha256(Path('./dist/tidal-wave_windows.exe').read_bytes()).hexdigest()}\ttidal-wave_windows.exe''')"
 
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
