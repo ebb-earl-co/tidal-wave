@@ -36,12 +36,12 @@ from .requesting import (
     request_stream,
     request_tracks,
 )
-from .utils import download_cover_image, temporary_file
+from .utils import download_cover_image, temporary_file, IMAGE_URL
 
 import ffmpeg
 import mutagen
 from mutagen.mp4 import MP4Cover
-from requests import Session
+from requests import RequestException, Session
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
 
@@ -292,6 +292,26 @@ class Track:
             download_cover_image(
                 session=session, cover_uuid=self.album.cover, output_dir=self.album_dir
             )
+
+    def original_album_cover(self, session: Session):
+        """For most albums, TIDAL features the "original" album cover, in the highest
+        resolution possible. This JPEG can be too large to be embedded into FLAC tracks,
+        however it is ideal to have for music archiving etc. purposes. This method requests
+        the original cover and overwrites the smaller, 1280x1280 image used to embed into the
+        track file. The filename on the API side is origin.jpg. It is *probably* okay to
+        get this URL as a track.Track method, as HTTP requests are cached, so e.g. executing
+        this method for each track in an album won't result in many redundant GET requests"""
+        origin_jpg_url: str = IMAGE_URL % f"{self.album.cover.replace('-', '/')}/origin"
+        with session.get(url=origin_jpg_url, headers={"Accept": "image/jpeg"}) as resp:
+            try:
+                resp.raise_for_status()
+            except RequestException as re:
+                logger.warning(
+                    "Could not retrieve origin.jpg from TIDAL "
+                    f"due to error '{re.args[0]}'"
+                )
+            else:
+                (self.album_dir / "cover.jpg").write_bytes(resp.content)
 
     def set_urls(self, session: Session):
         """This method sets self.urls based on self.manifest"""
@@ -677,7 +697,7 @@ class Track:
         metadata: Optional[TracksEndpointResponseJSON] = None,
         album: Optional[AlbumsEndpointResponseJSON] = None,
         no_extra_files: bool = True,
-        transparent: bool = False,
+        origin_jpg: bool = True,
     ) -> Optional[str]:
         """This is the main driver method of Track. It executes the other
         methods in order, catching Exceptions and attempting to handle
@@ -806,6 +826,12 @@ class Track:
                 self.save_artist_bio(session)
             except Exception:
                 pass
+
+            if origin_jpg:
+                try:
+                    self.original_album_cover(session)
+                except Exception:
+                    pass
         else:
             try:
                 self.cover_path.unlink()

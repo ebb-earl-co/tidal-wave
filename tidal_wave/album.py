@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 from typing import List, Optional, Tuple
 
-from requests import Session
+from requests import RequestException, Session
 
 from .media import AudioFormat
 from .models import (
@@ -22,7 +22,7 @@ from .requesting import (
     request_album_review,
 )
 from .track import Track
-from .utils import download_cover_image
+from .utils import download_cover_image, IMAGE_URL
 
 logger = logging.getLogger("__name__")
 
@@ -145,6 +145,28 @@ class Album:
         else:
             self.album_cover_saved = True
 
+    def original_album_cover(self, session: Session):
+        """For most albums, TIDAL features the "original" album cover, in the highest
+        resolution possible. This JPEG can be too large to be embedded into FLAC tracks,
+        however it is ideal to have for music archiving etc. purposes. This method requests
+        the original cover and overwrites the smaller, 1280x1280 image used to embed into the
+        track file. The filename on the API side is origin.jpg. It is *probably* okay to
+        get this URL as a track.Track method, as HTTP requests are cached, so e.g. executing
+        this method for each track in an album won't result in many redundant GET requests"""
+        origin_jpg_url: str = (
+            IMAGE_URL % f"{self.metadata.cover.replace('-', '/')}/origin"
+        )
+        with session.get(url=origin_jpg_url, headers={"Accept": "image/jpeg"}) as resp:
+            try:
+                resp.raise_for_status()
+            except RequestException as re:
+                logger.warning(
+                    "Could not retrieve origin.jpg from TIDAL "
+                    f"due to error '{re.args[0]}'"
+                )
+            else:
+                (self.album_dir / "cover.jpg").write_bytes(resp.content)
+
     def get_tracks(
         self,
         session: Session,
@@ -166,6 +188,7 @@ class Album:
                 metadata=t,
                 album=self.metadata,
                 no_extra_files=no_extra_files,
+                origin_jpg=False,
             )
             track_files[i] = {track.metadata.track_number: track_files_value}
         else:
@@ -216,13 +239,14 @@ class Album:
                 f"No cover image was returned from TIDAL API for album {self.album_id}"
             )
 
+        self.get_tracks(session, audio_format, out_dir, no_extra_files)
+
         if not no_extra_files:
             self.set_album_review(session)
             self.set_album_credits(session)
+            self.original_album_cover(session)
         else:
             try:
                 self.cover_path.unlink()
             except FileNotFoundError:
                 pass
-
-        self.get_tracks(session, audio_format, out_dir, no_extra_files)

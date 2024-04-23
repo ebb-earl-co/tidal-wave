@@ -117,6 +117,7 @@ class Playlist:
                     out_dir=self.playlist_dir,
                     metadata=item,
                     no_extra_files=no_extra_files,
+                    origin_jpg=False,
                 )
                 tracks_videos[i] = track
             elif isinstance(item, VideosEndpointResponseJSON):
@@ -421,6 +422,7 @@ class Playlist:
                     out_dir=out_dir,
                     metadata=item,
                     no_extra_files=no_extra_files,
+                    origin_jpg=False,
                 )
                 files[i] = {i: track_file}
             elif isinstance(item, VideosEndpointResponseJSON):
