@@ -21,6 +21,7 @@ This software uses libraries from the [FFmpeg](http://ffmpeg.org) project under 
 * Retrieve [FLAC](https://xiph.org/flac/), [Dolby Atmos](https://www.dolby.com/technologies/dolby-atmos/), [Sony 360 Reality Audio](https://electronics.sony.com/360-reality-audio), or [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) tracks; [AVC/H.264](https://en.wikipedia.org/wiki/Advanced_Video_Coding) (up to 1920x1080) + [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) videos
 * Either a single track or an entire album can be retrieved
 * Album covers are retrieved by default, and embedded into all tracks
+  - Highest-resolution, "original" album covers, which can be up to 6000x6000 pixels resolution, are retrieved if available
 * Support for albums with multiple discs
 * If available, lyrics are added as metadata to tracks
 * If available, album reviews are retrieved as JSON
