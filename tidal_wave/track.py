@@ -300,7 +300,8 @@ class Track:
         the original cover and overwrites the smaller, 1280x1280 image used to embed into the
         track file. The filename on the API side is origin.jpg. It is *probably* okay to
         get this URL as a track.Track method, as HTTP requests are cached, so e.g. executing
-        this method for each track in an album won't result in many redundant GET requests"""
+        this method for each track in an album won't result in many redundant GET requests
+        """
         origin_jpg_url: str = IMAGE_URL % f"{self.album.cover.replace('-', '/')}/origin"
         with session.get(url=origin_jpg_url, headers={"Accept": "image/jpeg"}) as resp:
             try:
