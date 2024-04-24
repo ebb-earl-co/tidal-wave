@@ -48,8 +48,8 @@ def download_cover_image(
     dimension: Union[int, Tuple[int]] = 1280,
 ) -> Optional[Path]:
     """Given a UUID that corresponds to a (JPEG) image on Tidal's servers,
-    download the image file and write it as 'cover.jpeg' or 'cover.png'
-    in the directory `path_to_output_dir`. Returns path to downloaded file"""
+    download the image file and write it as 'cover.jpeg' in the directory
+    'output_dir'. Returns path to downloaded file"""
     cover_url_part: str = cover_uuid.replace("-", "/")
     if isinstance(dimension, int):
         _url: str = IMAGE_URL % f"{cover_url_part}/{dimension}x{dimension}"
@@ -59,7 +59,7 @@ def download_cover_image(
     with session.get(url=_url, headers={"Accept": "image/jpeg"}) as r:
         if not r.ok:
             logger.warning(
-                "Could not retrieve data from Tidal resources/images URL "
+                "Could not retrieve data from TIDAL resources/images URL "
                 f"due to error code: {r.status_code}"
             )
             logger.debug(r.reason)

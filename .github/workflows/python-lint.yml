@@ -10,26 +10,32 @@ jobs:
   build:
     strategy:
       matrix:
-        version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13.0-alpha.6"]
         # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
         os: [ubuntu-latest, windows-latest, macos-13, macos-latest]
     runs-on: ${{ matrix.os }}
+    # Python 3.8 and 3.9 are not available on macOS aarc64 any more
+    # Python 3.13.0-alpha.6 does not work on Windows
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
+        if: ${{ !((matrix.version == '3.8' || matrix.version == '3.9') && matrix.os == 'macos-latest') &&  !(matrix.version == '3.13.0-alpha.6' && matrix.os == 'windows-latest')}}
         with:
           python-version: ${{ matrix.version }}
           cache: "pip"
       - name: Install dependencies
+        if: ${{ !((matrix.version == '3.8' || matrix.version == '3.9') && matrix.os == 'macos-latest') &&  !(matrix.version == '3.13.0-alpha.6' && matrix.os == 'windows-latest')}}
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install black flake8
           pip install -r requirements.txt
       - name: Lint with flake8
+        if: ${{ !((matrix.version == '3.8' || matrix.version == '3.9') && matrix.os == 'macos-latest') &&  !(matrix.version == '3.13.0-alpha.6' && matrix.os == 'windows-latest')}}
         run: |
           # stop the build if there are Python syntax errors or undefined names
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude pyinstaller.py
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude pyinstaller.py
       - name: Format with Black
+        if: ${{ !((matrix.version == '3.8' || matrix.version == '3.9') && matrix.os == 'macos-latest') &&  !(matrix.version == '3.13.0-alpha.6' && matrix.os == 'windows-latest')}}
         run: black tidal_wave

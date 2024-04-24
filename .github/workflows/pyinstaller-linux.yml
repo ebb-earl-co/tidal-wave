@@ -91,8 +91,6 @@ jobs:
             --target-arch=x86_64 \
             --paths tidal_wave \
             --exclude-module pyinstaller \
-            --add-data "README.md:." \
-            --add-data "BUILDME.md:." \
             --add-binary "ffmpeg-n7.0/ffmpeg:." \
             --clean \
             --noupx \
@@ -104,11 +102,18 @@ jobs:
         run: |
           chmod +x ./dist/tidal-wave_ubuntu_22.04_amd64
           ./dist/tidal-wave_ubuntu_22.04_amd64 --help
+      
+      - name: Create SHA256 checksum file of just-compiled binary
+        run: |
+          python3 -c "from hashlib import sha256;from pathlib import Path;Path('tidal-wave_ubuntu_22.04_amd64.sha256').write_text(f'''{sha256(Path('./dist/tidal-wave_ubuntu_22.04_amd64').read_bytes()).hexdigest()}\ttidal-wave_ubuntu_22.04_amd64''')"
+          cat tidal-wave_ubuntu_22.04_amd64.sha256
 
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           fail_on_unmatched_files: true
-          files: ./dist/tidal-wave_ubuntu_amd64
+          files: |
+            ./dist/tidal-wave_ubuntu_amd64
+            tidal-wave_ubuntu_22.04_amd64.sha256
           token: ${{ github.token }}

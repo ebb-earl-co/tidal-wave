@@ -68,8 +68,6 @@ jobs:
           pyinstaller `
             --name tidal-wave_windows.exe `
             --paths tidal_wave `
-            --add-data "README.md:." `
-            --add-data "BUILDME.md:." `
             --add-binary "ffmpeg.exe:." `
             --exclude-module pyinstaller `
             --clean `
@@ -81,11 +79,19 @@ jobs:
         shell: pwsh
         run: |
           & .\dist\tidal-wave_windows.exe --help
+      
+      - name: Create SHA256 checksum file of just-compiled binary
+        shell: pwsh
+        run: |
+          python.exe -c "from hashlib import sha256;from pathlib import Path;Path('tidal-wave_windows.exe.sha256').write_text(f'''{sha256(Path('./dist/tidal-wave_windows.exe').read_bytes()).hexdigest()}\ttidal-wave_windows.exe''')"
+          cat tidal-wave_windows.exe.sha256
 
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           fail_on_unmatched_files: true
-          files: .\dist\tidal-wave_windows.exe
+          files: |
+            .\dist\tidal-wave_windows.exe
+            .\tidal-wave_windows.exe.sha256
           token: ${{ github.token }}

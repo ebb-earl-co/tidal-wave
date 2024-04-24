@@ -10,8 +10,6 @@ permissions:
 
 jobs:
   build:
-    # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
-    # runs-on: flyci-macos-large-latest-m1
     runs-on: macos-14
 
     steps:
@@ -117,8 +115,6 @@ jobs:
             --target-arch=arm64 \
             --paths tidal_wave \
             --exclude-module pyinstaller \
-            --add-data "README.md:." \
-            --add-data "BUILDME.md:." \
             --add-binary "ffmpeg-n7.0/ffmpeg:." \
             --clean \
             --noupx \
@@ -130,10 +126,17 @@ jobs:
         run: |
           ./dist/tidal-wave_macos_aarch64 --help
 
+      - name: Create SHA256 checksum file of just-compiled binary
+        run: |
+          python3 -c "from hashlib import sha256;from pathlib import Path;Path('tidal-wave_macos_aarch64.sha256').write_text(f'''{sha256(Path('./dist/tidal-wave_macos_aarch64').read_bytes()).hexdigest()}\ttidal-wave_macos_aarch64''')"
+          cat tidal-wave_macos_aarch64.sha256
+
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          token: ${{ github.token }}
           fail_on_unmatched_files: true
-          files: ./dist/tidal-wave_macos_aarch64
+          files: |
+            ./dist/tidal-wave_macos_aarch64
+            tidal-wave_macos_aarch64.sha256
+          token: ${{ github.token }}

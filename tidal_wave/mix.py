@@ -108,6 +108,7 @@ class Mix:
                     out_dir=self.mix_dir,
                     metadata=item,
                     no_extra_files=no_extra_files,
+                    origin_jpg=False,
                 )
                 tracks_videos[i] = track
             elif isinstance(item, VideosEndpointResponseJSON):
@@ -307,6 +308,7 @@ class Mix:
                     out_dir=out_dir,
                     metadata=item,
                     no_extra_files=no_extra_files,
+                    origin_jpg=False,
                 )
                 files[i] = track_file
             elif isinstance(item, VideosEndpointResponseJSON):
