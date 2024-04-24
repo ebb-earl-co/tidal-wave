@@ -10,7 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
-        version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13.0-alpha.6", "pypy-3.9", "pypy-3.10"]
+        version: ["3.8", "3.9", "3.10", "3.11", "3.12", "pypy-3.9", "pypy-3.10"]
         # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
         os: [ubuntu-latest, windows-latest, macos-13, macos-latest]
     runs-on: ${{ matrix.os }}
