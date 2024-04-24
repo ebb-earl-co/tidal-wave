@@ -114,6 +114,6 @@ jobs:
         with:
           fail_on_unmatched_files: true
           files: |
-            ./dist/tidal-wave_ubuntu_amd64
+            ./dist/tidal-wave_ubuntu_22.04_amd64
             tidal-wave_ubuntu_22.04_amd64.sha256
           token: ${{ github.token }}
