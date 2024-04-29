@@ -100,7 +100,7 @@ class Video:
         """Set self.filename, which is constructed from self.metadata.name
         and self.stream.video_quality and self.codec"""
         self.filename: str = (
-            f"{self.metadata.name} [{self.stream.video_quality}].{self.codec}"
+            f"{self.metadata.name} [{self.metadata.id}].{self.codec}"
         )
 
     def set_outfile(self):
@@ -120,21 +120,18 @@ class Video:
             return self.outfile
 
     def download(self, session: Session, out_dir: Path) -> Optional[Path]:
-        """Requests the HLS video files that constitute self.video_id.
+        """Requests the HLS video files that constitute self.urls.
         Writes HLS bytes to a temporary file, then uses FFmpeg to write the
         video data to self.outfile"""
         download_params: Dict[str, None] = {k: None for k in session.params}
         # self.outfile should already have been set by self.set_outfile()
+        request_headers: Dict[str, str] = \
+            {"sessionId": session.session_id} if session.session_id is not None else dict()
         logger.info(
             f"Writing video {self.video_id} to '{str(self.outfile.absolute())}'"
         )
 
         with temporary_file(suffix=".m2t") as tf:
-            request_headers: Dict[str, str] = (
-                {"sessionId": session.session_id}
-                if session.session_id is not None
-                else dict()
-            )
             for i, u in enumerate(self.urls, 1):
                 logger.debug(
                     f"\tRequesting part {i} of video {self.video_id}: {u.split('?')[0]}"
@@ -174,8 +171,9 @@ class Video:
 
     def craft_tags(self):
         """Using the TAG_MAPPING dictionary, write the correct values of
-        various metadata tags to the file. Videos are AVC1 + AAC MP4s, so see Kodi
-        reference: https://kodi.wiki/view/Video_file_tagging#Overview_and_Comparison"""
+        various metadata tags to the file. Videos are AVC1 video, AAC audio in
+        MP4 container, so see Kodi reference:
+        https://kodi.wiki/view/Video_file_tagging#Overview_and_Comparison"""
         tags = dict()
         tag_map = {k: v["m4a"] for k, v in TAG_MAPPING.items()}
 
