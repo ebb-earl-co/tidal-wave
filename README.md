@@ -85,11 +85,28 @@ $ source .venv/bin/activate
 $ (.venv) pip install .
 ```
 ### PyInstaller executable
-These release artifacts are created with [PyInstaller](https://pyinstaller.org). It bundles Python 3.12.2, FFmpeg 7.0, and the `tidal-wave` program into one binary, licensed under the terms of FFmpeg: with the [GNU Lesser General Public License (LGPL) version 2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html). Installation is as simple as downloading the correct binary for your platform giving it execute permissions, and running it.
+The release artifacts for this project are created with [PyInstaller](https://pyinstaller.org). It bundles Python 3.12.2, FFmpeg 7.0, and the `tidal-wave` program into one binary, licensed under the terms of FFmpeg: with the [GNU Lesser General Public License (LGPL) version 2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html). Installation is as simple as downloading the correct binary for your platform giving it execute permissions, and running it. **Please make sure that the SHA256 checksum of the file that you have downloaded matches the corresponding `.sha256` file on the releases page!**
+#### On Unix-Like
 ```bash
 $ wget https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_ubuntu_22.04_amd64
+$ wget https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_ubuntu_22.04_amd64.sha256
+$ sha256sum --check tidal-wave_ubuntu_22.04_amd64.sha256
+# ONLY CONTINUE IF THE OUTPUT IS THE FOLLOWING: 'tidal-wave_ubuntu_22.04_amd64.sha256: OK'
+# Otherwise, delete the downloaded binary and try to download it again
 $ chmod +x ./tidal-wave_ubuntu_22.04_amd64
 $ ./tidal-wave_ubuntu_22.04_amd64 --help
+```
+#### On Windows
+```powershell
+# For just the lifetime of this PowerShell process, don't block the download from GitHub
+PS > Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
+PS > Invoke-WebRequest "https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_windows.exe" -OutFile "tidal-wave_windows.exe"
+PS > Invoke-WebRequest "https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_windows.exe.sha256" -OutFile "tidal-wave_windows.exe.sha256"
+# Get the checksum value from the tidal-wave_windows.exe.sha256 file and compare it to the just-downloaded EXE
+# (Get-FileHash .\tidal-wave_windows.exe -Algorithm SHA256).Hash -eq (Get-Content .\tidal-wave_windows.exe.sha256)
+PS > (Get-FileHash .\tidal-wave_windows.exe -Algorithm SHA256).Hash -eq "e02f69eb850a98e6e1df2bc033fd12566cf27305421a36ec5372fd432ccc8e70"  # This checksum is from version 2024.4.3
+# ONLY CONTINUE IF THE OUTPUT OF THE PREVIOUS COMMAND IS 'True'
+PS > & .\tidal-wave_windows.exe --help
 ```
 
 ### Docker
