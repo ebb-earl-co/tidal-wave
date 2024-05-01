@@ -267,7 +267,7 @@ class Track:
                 self.album_dir / f"{a.name.replace('..', '')}.jpg"
             )
             if not track_artist_image.exists():
-                download_artist_image(session, a, self.album_dir)
+                download_artist_image(session, a, self.album_dir, dimension=750)
 
     def save_artist_bio(self, session: Session):
         """This method writes a JSON file with the name of each of
