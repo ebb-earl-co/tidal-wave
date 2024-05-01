@@ -118,7 +118,11 @@ def requester_maker(
                 return
 
         if t:
-            json_name: str = f"{e}-{i}-{u.strip('/')}_{uuid4().hex}.json"
+            json_name: str = (
+                f"{e}-{i}-{u.strip('/')}_{uuid4().hex}.json"
+                if u != ""
+                else f"{e}-{i}_{uuid4().hex}.json"
+            )
             Path(json_name).write_text(
                 json.dumps(resp.json(), ensure_ascii=True, indent=4, sort_keys=True)
             )
