@@ -102,6 +102,7 @@ class Video:
         self.filename: str = (
             f"{self.metadata.name} [{self.metadata.id}].{self.codec}"
         )
+        self.filename: str = f"{self.metadata.name} [{self.metadata.id}].{self.codec}"
 
     def set_outfile(self):
         """Uses self.artist_dir and self.metadata and self.filename
@@ -125,8 +126,11 @@ class Video:
         video data to self.outfile"""
         download_params: Dict[str, None] = {k: None for k in session.params}
         # self.outfile should already have been set by self.set_outfile()
-        request_headers: Dict[str, str] = \
-            {"sessionId": session.session_id} if session.session_id is not None else dict()
+        request_headers: Dict[str, str] = (
+            {"sessionId": session.session_id}
+            if session.session_id is not None
+            else dict()
+        )
         logger.info(
             f"Writing video {self.video_id} to '{str(self.outfile.absolute())}'"
         )
