@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
@@ -76,7 +76,7 @@ jobs:
           architecture: "x64"
           cache: "pip"
           check-latest: false
-          python-version: "3.12.2"
+          python-version: "3.12.3"
 
       - name: Install dependencies
         run: |

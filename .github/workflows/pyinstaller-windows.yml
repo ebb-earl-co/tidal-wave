@@ -51,7 +51,7 @@ jobs:
         with:
           architecture: "x64"
           cache: "pip"
-          python-version: "3.12.2"
+          python-version: "3.12.3"
 
       - name: Install Python dependencies
         shell: pwsh
