@@ -98,7 +98,7 @@ jobs:
           architecture: "x64"
           cache: "pip"
           check-latest: false
-          python-version: "3.12.2"
+          python-version: "3.12.3"
 
       - name: Install dependencies
         run: |
