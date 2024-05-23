@@ -102,6 +102,7 @@ class Video:
         self.filename: str = (
             f"{self.metadata.name} [{self.metadata.id}].{self.codec}"
         )
+        self.filename: str = f"{self.metadata.name} [{self.metadata.id}].{self.codec}"
 
     def set_outfile(self):
         """Uses self.artist_dir and self.metadata and self.filename
