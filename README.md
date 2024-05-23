@@ -88,13 +88,13 @@ $ (.venv) pip install .
 The release artifacts for this project are created with [PyInstaller](https://pyinstaller.org). It bundles Python 3.12.3, FFmpeg 7.0, and the `tidal-wave` program into one binary, licensed under the terms of FFmpeg: with the [GNU Lesser General Public License (LGPL) version 2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html). Installation is as simple as downloading the correct binary for your platform giving it execute permissions, and running it. **Please make sure that the SHA256 checksum of the file that you have downloaded matches the corresponding `.sha256` file on the releases page!**
 #### On Unix-Like
 ```bash
-$ wget https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_ubuntu_22.04_amd64
-$ wget https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_ubuntu_22.04_amd64.sha256
-$ sha256sum --check tidal-wave_ubuntu_22.04_amd64.sha256
-# ONLY CONTINUE IF THE OUTPUT IS THE FOLLOWING: 'tidal-wave_ubuntu_22.04_amd64.sha256: OK'
+$ wget https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_ubuntu_24.04_amd64
+$ wget https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_ubuntu_24.04_amd64.sha256
+$ sha256sum --check tidal-wave_ubuntu_24.04_amd64.sha256
+# ONLY CONTINUE IF THE OUTPUT IS THE FOLLOWING: 'tidal-wave_ubuntu_24.04_amd64.sha256: OK'
 # Otherwise, delete the downloaded binary and try to download it again
-$ chmod +x ./tidal-wave_ubuntu_22.04_amd64
-$ ./tidal-wave_ubuntu_22.04_amd64 --help
+$ chmod +x ./tidal-wave_ubuntu_24.04_amd64
+$ ./tidal-wave_ubuntu_24.04_amd64 --help
 ```
 #### On Windows
 ```powershell
