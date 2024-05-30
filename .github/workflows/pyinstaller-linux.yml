@@ -1,4 +1,4 @@
-name: Pyinstaller Build on Ubuntu 22.04 for GNU/Linux x86_64
+name: Pyinstaller Build on Ubuntu 24.04 for GNU/Linux x86_64
 on:
   release:
     types: ["published"]
@@ -87,7 +87,7 @@ jobs:
       - name: Create Executable with PyInstaller
         run: |
           pyinstaller \
-            --name tidal-wave_ubuntu_22.04_amd64 \
+            --name tidal-wave_ubuntu_24.04_amd64 \
             --target-arch=x86_64 \
             --paths tidal_wave \
             --exclude-module pyinstaller \
@@ -100,13 +100,13 @@ jobs:
 
       - name: Test just-compiled binary
         run: |
-          chmod +x ./dist/tidal-wave_ubuntu_22.04_amd64
-          ./dist/tidal-wave_ubuntu_22.04_amd64 --help
+          chmod +x ./dist/tidal-wave_ubuntu_24.04_amd64
+          ./dist/tidal-wave_ubuntu_24.04_amd64 --help
       
       - name: Create SHA256 checksum file of just-compiled binary
         run: |
-          python3 -c "from hashlib import sha256;from pathlib import Path;Path('tidal-wave_ubuntu_22.04_amd64.sha256').write_text(f'''{sha256(Path('./dist/tidal-wave_ubuntu_22.04_amd64').read_bytes()).hexdigest()}\ttidal-wave_ubuntu_22.04_amd64''')"
-          cat tidal-wave_ubuntu_22.04_amd64.sha256
+          python3 -c "from hashlib import sha256;from pathlib import Path;Path('tidal-wave_ubuntu_24.04_amd64.sha256').write_text(f'''{sha256(Path('./dist/tidal-wave_ubuntu_24.04_amd64').read_bytes()).hexdigest()}\ttidal-wave_ubuntu_24.04_amd64''')"
+          cat tidal-wave_ubuntu_24.04_amd64.sha256
 
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
@@ -114,6 +114,6 @@ jobs:
         with:
           fail_on_unmatched_files: true
           files: |
-            ./dist/tidal-wave_ubuntu_22.04_amd64
-            tidal-wave_ubuntu_22.04_amd64.sha256
+            ./dist/tidal-wave_ubuntu_24.04_amd64
+            tidal-wave_ubuntu_24.04_amd64.sha256
           token: ${{ github.token }}
