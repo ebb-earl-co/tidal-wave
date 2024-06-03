@@ -551,7 +551,7 @@ class Track:
         tags[tag_map["date"]] = str(self.album.release_date)
         tags[tag_map["isrc"]] = self.metadata.isrc
         tags[tag_map["media"]] = "Digital Media"
-        tags[tag_map["title"]] = self.metadata.name
+        tags[tag_map["title"]] = self.metadata.title
         tags[tag_map["track_peak_amplitude"]] = f"{self.metadata.peak}"
         tags[tag_map["track_peak_amplitude"]] = (
             f"{self.metadata.peak}" if self.metadata.peak is not None else None
