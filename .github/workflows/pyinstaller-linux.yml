@@ -1,34 +1,29 @@
+---
 name: Pyinstaller Build on Ubuntu 24.04 for GNU/Linux x86_64
 on:
   release:
     types: ["published"]
   push:
     branches: ["develop", "trunk"]
-
 permissions:
   contents: write
-
 jobs:
   build:
     runs-on: ubuntu-24.04
-
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
-
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
           version: 1.0
           packages: g++ gcc git make pkg-config yasm
-
       - name: Cache FFmpeg n7.0
         id: cache-ffmpeg
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/ffmpeg-n7.0
           key: ffmpeg-${{ hashFiles('ffmpeg-n7.0') }}
-
       - name: Clone FFmpeg, n7.0 tag
         if: ${{ steps.cache-ffmpeg.outputs.cache-hit != 'true' }}
         id: clone-ffmpeg-from-github
@@ -38,7 +33,6 @@ jobs:
           path: ffmpeg-n7.0
           ref: n7.0
           fetch-depth: 1
-
       - name: Build FFmpeg from source (git submodule)
         run: |
           cd ffmpeg-n7.0
@@ -69,7 +63,6 @@ jobs:
             --enable-protocol=file \
             --enable-small
           make -j$(nproc)
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -77,13 +70,11 @@ jobs:
           cache: "pip"
           check-latest: false
           python-version: "3.12.3"
-
       - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip setuptools wheel
           python3 -m pip install pyinstaller==6.7.0
           python3 -m pip install -r requirements.txt
-
       - name: Create Executable with PyInstaller
         run: |
           pyinstaller \
@@ -97,17 +88,25 @@ jobs:
             --onefile \
             --strip \
             ./pyinstaller.py
-
       - name: Test just-compiled binary
         run: |
           chmod +x ./dist/tidal-wave_ubuntu_24.04_amd64
           ./dist/tidal-wave_ubuntu_24.04_amd64 --help
-      
       - name: Create SHA256 checksum file of just-compiled binary
         run: |
           python3 -c "from hashlib import sha256;from pathlib import Path;Path('tidal-wave_ubuntu_24.04_amd64.sha256').write_text(f'''{sha256(Path('./dist/tidal-wave_ubuntu_24.04_amd64').read_bytes()).hexdigest()}\ttidal-wave_ubuntu_24.04_amd64''')"
           cat tidal-wave_ubuntu_24.04_amd64.sha256
-
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          compression-level: 9
+          name: tidal-wave_ubuntu
+          overwrite: true
+          path: |
+            ./dist/tidal-wave_ubuntu_24.04_amd64
+            tidal-wave_ubuntu_24.04_amd64.sha256
+          retention-days: 7
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')

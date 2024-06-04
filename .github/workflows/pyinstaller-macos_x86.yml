@@ -1,27 +1,23 @@
+---
 name: Pyinstaller Build on macOS for macOS x86_64
 on:
   release:
     types: ["published"]
   push:
     branches: ["develop", "trunk"]
-
 permissions:
   contents: write
-
 jobs:
   build:
     # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
     runs-on: macos-13
-
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
-
       - name: Set up Homebrew
         id: set-up-homebrew
         uses: Homebrew/actions/setup-homebrew@master
-
       - name: Cache Homebrew Bundler RubyGems
         id: cache
         uses: actions/cache@v4
@@ -29,28 +25,23 @@ jobs:
           path: ${{ steps.set-up-homebrew.outputs.gems-path }}
           key: ${{ runner.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
           restore-keys: ${{ runner.os }}-rubygems-
-
       - name: Install Homebrew Bundler RubyGems
         if: steps.cache.outputs.cache-hit != 'true'
         run: brew install-bundler-gems
-
       - name: Update Homebrew
         id: update-homebrew
         run: |
           brew update --preinstall
-
       # https://trac.ffmpeg.org/wiki/CompilationGuide/macOS#InstallingdependencieswithHomebrew
       - name: Get FFmpeg dependencies from Homebrew
         id: brew-install-ffmpeg-deps
         run: brew install automake libtool nasm shtool xvid
-
       - name: Cache FFmpeg n7.0
         id: cache-ffmpeg
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/ffmpeg-n7.0
           key: ffmpeg-${{ hashFiles('ffmpeg-n7.0') }}
-
       - name: Clone FFmpeg, n7.0 tag
         if: ${{ steps.cache-ffmpeg.outputs.cache-hit != 'true' }}
         id: clone-ffmpeg-from-github
@@ -60,7 +51,6 @@ jobs:
           path: ffmpeg-n7.0
           ref: n7.0
           fetch-depth: 1
-
       - name: Build FFmpeg from source
         run: |
           cd ffmpeg-n7.0
@@ -91,7 +81,6 @@ jobs:
             --enable-protocol=file \
             --enable-small
             make -j$(sysctl -n hw.logicalcpu)
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -99,13 +88,11 @@ jobs:
           cache: "pip"
           check-latest: false
           python-version: "3.12.3"
-
       - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip pyinstaller setuptools wheel
           python3 -m pip install pyinstaller==6.7.0
           python3 -m pip install -r requirements.txt
-
       - name: Create Executable with Pyinstaller
         run: |
           pyinstaller \
@@ -119,16 +106,24 @@ jobs:
             --onefile \
             --strip \
             ./pyinstaller.py
-
       - name: Test just-compiled binary
         run: |
           ./dist/tidal-wave_macos_amd64 --help
-
       - name: Create SHA256 checksum file of just-compiled binary
         run: |
           python3 -c "from hashlib import sha256;from pathlib import Path;Path('tidal-wave_macos_amd64.sha256').write_text(f'''{sha256(Path('./dist/tidal-wave_macos_amd64').read_bytes()).hexdigest()}\ttidal-wave_macos_amd64''')"
           cat tidal-wave_macos_amd64.sha256
-
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          compression-level: 9
+          name: tidal-wave_macos_amd64
+          overwrite: true
+          path: |
+            ./dist/tidal-wave_macos_amd64
+            tidal-wave_macos_amd64.sha256
+          retention-days: 7
       - name: Add artifact to release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
