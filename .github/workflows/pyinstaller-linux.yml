@@ -115,5 +115,4 @@ jobs:
           files: |
             ./dist/tidal-wave_ubuntu_24.04_amd64
             tidal-wave_ubuntu_24.04_amd64.sha256
-
           token: ${{ github.token }}
