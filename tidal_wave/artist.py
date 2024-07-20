@@ -70,7 +70,7 @@ class Artist:
     def set_artist_dir(self, out_dir: Path):
         """This method sets self.artist_dir and creates the directory on the file system
         if it does not exist"""
-        self.name: str = self.metadata.name.replace("..", "")
+        self.name: str = self.metadata.name.replace("..", "").replace("/", "and")
         self.artist_dir = out_dir / self.name
         self.artist_dir.mkdir(parents=True, exist_ok=True)
 

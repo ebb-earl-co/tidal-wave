@@ -117,7 +117,7 @@ $ docker pull ghcr.io/ebb-earl-co/tidal-wave:latest
 $ docker pull ghcr.io/ebb-earl-co/tidal-wave:trunk
 ```
 ## Quickstart
-Run `python3 tidal-wave --help` to see the options available. Or, if you followed the repository cloning steps above, run `python3 -m tidal_wave --help` from the repository root directory, `tidal-wave`. In either case, you should see something like the following:
+If your Python installation's location is available on path, run `tidal-wave --help` to see the options available. Otherwise (including if you followed the repository cloning steps above), run `python3 -m tidal_wave --help` from the repository root directory, `tidal-wave`. In either case, you should see something like the following:
 ```bash
 Usage: python -m tidal_wave [OPTIONS] TIDAL_URL [OUTPUT_DIRECTORY]                                                                                                                                                                  
                                                                                                                                                                                                                                      
@@ -164,6 +164,12 @@ $ # the above forces tidal-wave to ask for an access token gleaned from an Andro
 ```
 Otherwise, in order to retrieve the desired audio format for a given track, it is **necessary** to have the access token from a compatible device; e.g. an Android device in order to retrieve Sony 360 Reality Audio tracks
 
+### Version
+It is certainly useful for debugging, and, perhaps, using multiple versions of a software, to know which binary/package invoked is which version. From version 2024.7.1 of `tidal-wave`, this is possible by adding the `--version` flag to any command. This is an _eager_ command, in `typer` parlance, meaning that **any** other flag or argument passed to `tidal-wave` will be ignored and the version will simply be returned. E.g.
+```bash
+$ tidal-wave --version
+tidal-wave 2024.7.1
+```
 ### Example
  - First, find the URL of the album/artist/mix/playlist/track/video desired. Then, simply pass it as the first argument to `tidal-wave` with no other arguments in order to: *retrieve the album/artist/mix/playlist/track in Lossless quality to a subdirectory of user's music directory and INFO-level logging* in the case of audio; *retrieve the video in 1080p, H.264+AAC quality to a subdirectory of user's music directory with INFO-level logging* in the case of a video URL.
  ```bash

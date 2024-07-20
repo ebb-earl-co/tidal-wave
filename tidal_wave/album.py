@@ -112,7 +112,7 @@ class Album:
         """This method populates self.album_dir as a sub-subdirectory of
         out_dir: its parent directory is the name of the (main) artist of
         the album"""
-        artist_substring: str = self.metadata.artist.name.replace("..", "")
+        artist_substring: str = self.metadata.artist.name.replace("..", "").replace("/", "and")
         album_substring: str = (
             f"{self.metadata.name.replace('..', '')} "
             f"[{self.metadata.id}] [{self.metadata.release_date.year}]"
