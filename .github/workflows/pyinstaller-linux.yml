@@ -82,6 +82,7 @@ jobs:
             --target-arch=x86_64 \
             --paths tidal_wave \
             --exclude-module pyinstaller \
+            --exclude-module ruff \
             --add-binary "ffmpeg-n7.0/ffmpeg:." \
             --clean \
             --noupx \
