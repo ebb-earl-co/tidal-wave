@@ -93,7 +93,7 @@ class Video:
     def set_artist_dir(self, out_dir: Path):
         """Set self.artist_dir, which is the subdirectory of `out_dir`
         with name `self.metadata.artist.name`"""
-        self.artist_dir: Path = out_dir / self.metadata.artist.name
+        self.artist_dir: Path = out_dir / self.metadata.artist.name.replace("..", "").replace("/", "and")
         self.artist_dir.mkdir(parents=True, exist_ok=True)
 
     def set_filename(self, out_dir: Path):
