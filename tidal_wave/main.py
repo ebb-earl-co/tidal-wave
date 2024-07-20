@@ -26,6 +26,16 @@ from platformdirs import user_music_path
 import typer
 from typing_extensions import Annotated
 
+__version__ = "2024.7.1"
+
+
+# https://typer.tiangolo.com/tutorial/options/version/#fix-with-is_eager
+def version_callback(value: bool) -> None:
+    if value:
+        print(f"tidal-wave {__version__}")
+        raise typer.Exit()
+
+
 app = typer.Typer()
 
 
@@ -77,6 +87,10 @@ def main(
             help="Whether to dump JSON responses from TIDAL API; maximum verbosity",
         ),
     ] = False,
+    version: Annotated[
+        Optional[bool],
+        typer.Option("--version", callback=version_callback, is_eager=True),
+    ] = None,
 ):
     logging.basicConfig(
         format="%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s",
