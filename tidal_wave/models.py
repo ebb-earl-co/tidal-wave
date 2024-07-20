@@ -635,7 +635,7 @@ class TidalArtist(TidalResource):
     def __post_init__(self):
         self.pattern: str = (
             r"http(?:s)?://(?:listen\.|www\.)?tidal\.com/"
-            r"(?:browse/)?artist/(\d{3,9})(?:.*?)?"
+            r"(?:browse/)?artist/(\d{2,9})(?:.*?)?"
         )
         _id = self.match_url()
 
