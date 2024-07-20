@@ -152,7 +152,9 @@ class Track:
         """This method sets self.album_dir, based on self.album and
         out_dir. In particular, self.album_dir is a subdirectory of out_dir
         based on the name of the album's artist"""
-        artist_substring: str = self.album.artist.name.replace("..", "").replace("/", "and")
+        artist_substring: str = self.album.artist.name.replace("..", "").replace(
+            "/", "and"
+        )
         album_substring: str = (
             f"{self.album.name} " f"[{self.album.id}] [{self.album.release_date.year}]"
         )
