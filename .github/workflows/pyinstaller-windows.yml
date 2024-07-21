@@ -62,6 +62,7 @@ jobs:
             --paths tidal_wave `
             --add-binary "ffmpeg.exe:." `
             --exclude-module pyinstaller `
+            --exclude-module ruff `
             --clean `
             --upx-dir "~\AppData\Local\upx-4.2.3-win64" `
             --onefile `

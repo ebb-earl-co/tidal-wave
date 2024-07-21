@@ -15,15 +15,14 @@ However, PyInstaller wants to package up a single Python script into an easily-d
   1. Create virtual environment in repository root: `$ "$(command -v python3)" -m venv ./venv` and install `tidal-wave`'s dependencies
    - `$ ./venv/bin/python3 -m pip install --upgrade pip setuptools wheel`
    - `$ ./venv/bin/python3 -m pip install -r requirements.txt`
-   - `$ ./venv/bin/python3 -m pip install pyinstaller==6.5.0`
+   - `$ ./venv/bin/python3 -m pip install pyinstaller==6.7.0`
   2. Without compiling FFmpeg from source, the command is very simple:
   ```bash
   ./venv/bin/pyinstaller \
     --name tidal-wave_linux \
     --paths tidal_wave \
     --exclude-modules pyinstaller \
-    --add-data "README.md:." \
-    --add-data "BUILDME.md:." \
+    --exclude-modules ruff \
     --clean \
     --noupx \
     --onefile \
@@ -38,8 +37,7 @@ However, PyInstaller wants to package up a single Python script into an easily-d
     --name tidal-wave_linux \
     --paths tidal_wave \
     --exclude-modules pyinstaller \
-    --add-data "README.md:." \
-    --add-data "BUILDME.md:." \
+    --exclude-modules ruff \
     --add-binary "ffmpeg-n7.0/ffmpeg:." \
     --clean \
     --noupx \
