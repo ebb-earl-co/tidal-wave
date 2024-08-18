@@ -303,7 +303,7 @@ class Album:
             )
             logger.warning(_msg)
 
-        self.get_tracks(session, audio_format, out_dir, no_extra_files)
+        self.get_tracks(session, audio_format, out_dir, no_extra_files=no_extra_files)
 
         if not no_extra_files:
             self.set_album_review(session)
