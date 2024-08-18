@@ -1,16 +1,18 @@
 """The module tidal_wave.album conceptually encapsulates a TIDAL album."""
 
 from __future__ import annotations
+
 import contextlib
 import json
 import logging
 import sys
 from dataclasses import dataclass
-from typing import List, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from io import TextIOWrapper
     from pathlib import Path
+
     from .media import AudioFormat
     from .models import (
         AlbumsCreditsResponseJSON,

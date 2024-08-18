@@ -1,17 +1,12 @@
-from dataclasses import dataclass
-import logging
-from pathlib import Path
-from typing import List, Optional
+"""The module tidal_wave.artist conceptually encapsulates a TIDAL artist."""
 
-from requests import Session
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from .album import Album
-from .media import AudioFormat
-from .models import (
-    ArtistsAlbumsResponseJSON,
-    ArtistsEndpointResponseJSON,
-    ArtistsVideosResponseJSON,
-)
 from .requesting import (
     request_artists,
     request_artists_albums,
@@ -21,55 +16,99 @@ from .requesting import (
 from .utils import download_cover_image
 from .video import Video
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from requests import Session
+
+    from .media import AudioFormat
+    from .models import (
+        ArtistsAlbumsResponseJSON,
+        ArtistsEndpointResponseJSON,
+        ArtistsVideosResponseJSON,
+    )
+
 logger = logging.getLogger("__name__")
 
 
 @dataclass
 class Artist:
+    """Class to represent an artist in the TIDAL API.
+
+    It just needs the artist's ID and a Boolean as arguments to the
+    constructor; the Boolean specifies whether to write all JSON
+    responses from the TIDAL API to disk, for transparency's sake.
+
+    Methods, e.g. `set_audio_works()`, are germane to retrieving data from
+    the TIDAL API.
+    """
+
     artist_id: int
     transparent: bool = False
 
-    def set_metadata(self, session: Session):
-        """This function requests from TIDAL API endpoint /artists and
-        stores the results in self.metadata"""
-        self.metadata: Optional[ArtistsEndpointResponseJSON] = request_artists(
-            session=session, artist_id=self.artist_id, transparent=self.transparent
+    def set_metadata(self, session: Session) -> None:
+        """Request from the TIDAL API endpoint /artists.
+
+        Convert the JSON data returned from the API and store the resulting
+        object as self.metadata.
+        """
+        self.metadata: ArtistsEndpointResponseJSON | None = request_artists(
+            session=session,
+            artist_id=self.artist_id,
+            transparent=self.transparent,
         )
 
-    def save_artist_image(self, session: Session):
-        """This method writes the bytes of self.metadata.picture to
-        the file cover.jpg in self.artist_dir"""
+    def save_artist_image(self, session: Session) -> None:
+        """Write the bytes of self.metadata.picture to disk.
+
+        Specifically, the file cover.jpg in self.artist_dir.
+        """
         artist_image: Path = self.artist_dir / "cover.jpg"
-        if not artist_image.exists():
-            if self.metadata.picture is not None:
-                download_cover_image(
-                    session, self.metadata.picture, self.artist_dir, dimension=750
-                )
+        if (not artist_image.exists()) and (self.metadata.picture is not None):
+            download_cover_image(
+                session,
+                self.metadata.picture,
+                self.artist_dir,
+                dimension=750,
+            )
 
-    def set_albums(self, session: Session):
-        """This method requests from TIDAL API endpoint /artists/albums and
-        stores the results in self.albums"""
-        self.albums: Optional[ArtistsAlbumsResponseJSON] = request_artists_albums(
-            session=session, artist_id=self.artist_id, transparent=self.transparent
+    def set_albums(self, session: Session) -> None:
+        """Populate the attribute `self.albums`.
+
+        The JSON data from the TIDAL API endpoint /artists/albums is
+        converted and stored as self.albums.
+        """
+        self.albums: ArtistsAlbumsResponseJSON | None = request_artists_albums(
+            session=session, artist_id=self.artist_id, transparent=self.transparent,
         )
 
-    def set_audio_works(self, session: Session):
-        """This method requests from TIDAL API endpoint
-        /artists/albums?filter=EPSANDSINGLES and stores the results in self.albums"""
-        self.albums: Optional[ArtistsAlbumsResponseJSON] = request_artists_audio_works(
-            session=session, artist_id=self.artist_id, transparent=self.transparent
+    def set_audio_works(self, session: Session) -> None:
+        """Populate self.albums.
+
+        Request from TIDAL API endpoint /artists/albums?filter=EPSANDSINGLES,
+        convert the JSON data returned, and store the result as self.albums.
+        """
+        self.albums: ArtistsAlbumsResponseJSON | None = request_artists_audio_works(
+            session=session, artist_id=self.artist_id, transparent=self.transparent,
         )
 
-    def set_videos(self, session: Session):
-        """This method requests from TIDAL API endpoint /artists/videos and
-        stores the results in self.videos"""
-        self.videos: Optional[ArtistsVideosResponseJSON] = request_artists_videos(
-            session=session, artist_id=self.artist_id, transparent=self.transparent
+    def set_videos(self, session: Session) -> None:
+        """Populate self.videos.
+
+        Request from TIDAL API endpoint /artists/videos, convert the JSON
+        data returned, and store the results as self.videos.
+        """
+        self.videos: ArtistsVideosResponseJSON | None = request_artists_videos(
+            session=session, artist_id=self.artist_id, transparent=self.transparent,
         )
 
-    def set_artist_dir(self, out_dir: Path):
-        """This method sets self.artist_dir and creates the directory on the file system
-        if it does not exist"""
+    def set_artist_dir(self, out_dir: Path) -> None:
+        """Populate self.artist_dir.
+
+        Set self.artist_dir as the subdirectory of `out_dir` simply named the
+        value of `self.name`. N.b., a side effect is that the subdirectory on
+        the file system is created if it does not exist.
+        """
         self.name: str = self.metadata.name.replace("..", "").replace("/", "and")
         self.artist_dir = out_dir / self.name
         self.artist_dir.mkdir(parents=True, exist_ok=True)
@@ -79,28 +118,31 @@ class Artist:
         session: Session,
         audio_format: AudioFormat,
         out_dir: Path,
+        *,
         include_eps_singles: bool,
         no_extra_files: bool,
-    ) -> List[Optional[str]]:
-        """This method first fetches the total albums on TIDAL's service
-        corresponding to the artist with ID self.artist_id. Then, each of
-        the albums (and, optionally, EPs and singles) is requested and
-        written to subdirectories of out_dir"""
+    ) -> list[str | None]:
+        """First, fetch all of the albums for `self.artist_id`.
+
+        Then, each of the albums (and, optionally, EPs and singles) is requested and
+        written to subdirectories of out_dir.
+        """
         if include_eps_singles:
             self.set_audio_works(session)
-            logger.info(
+            _msg: str = (
                 f"Starting attempt to get {self.albums.total_number_of_items} "
                 "albums, EPs, and singles for artist with ID "
                 f"{self.metadata.id},  '{self.name}'"
             )
         else:
             self.set_albums(session)
-            logger.info(
+            _msg: str = (
                 f"Starting attempt to get {self.albums.total_number_of_items} albums "
                 f"for artist with ID {self.metadata.id}, '{self.name}'"
             )
+        logger.info(_msg)
 
-        for i, a in enumerate(self.albums.items):
+        for a in self.albums.items:
             album: Album = Album(album_id=a.id)
             album.get(
                 session=session,
@@ -114,15 +156,18 @@ class Artist:
         self,
         session: Session,
         out_dir: Path,
-    ) -> List[Optional[str]]:
-        """This method sets self.videos by calling self.set_videos() and
-        then, for each video, instantiates a Video object and executes
-        the object's .get() method"""
+    ) -> list[str | None]:
+        """Populate `self.videos` by calling self.set_videos().
+
+        Then, for each video, instantiates a Video object and execute
+        the object's .get() method.
+        """
         self.set_videos(session)
-        logger.info(
+        _msg: str = (
             f"Starting attempt to get {self.videos.total_number_of_items} videos "
             f"for artist with ID {self.metadata.id}, '{self.name}'"
         )
+        logger.info(_msg)
         for v in self.videos.items:
             video: Video = Video(video_id=v.id, transparent=self.transparent)
             video.get(
@@ -136,11 +181,12 @@ class Artist:
         session: Session,
         audio_format: AudioFormat,
         out_dir: Path,
+        *,
         include_eps_singles: bool,
         no_extra_files: bool,
-    ):
-        """This is the driver method of the class. It executes the other
-        methods in order:
+    ) -> None:
+        """Execute other methods in sequence.
+
             1. set_metadata()
             2. set_artist_dir()
             3. get_videos()
