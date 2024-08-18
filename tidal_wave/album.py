@@ -1,53 +1,78 @@
-from dataclasses import dataclass
+"""The module tidal_wave.album conceptually encapsulates a TIDAL album."""
+
+from __future__ import annotations
+import contextlib
 import json
 import logging
-from pathlib import Path
 import sys
-from typing import List, Optional, Tuple
+from dataclasses import dataclass
+from typing import List, Optional, Tuple, TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from io import TextIOWrapper
+    from pathlib import Path
+    from .media import AudioFormat
+    from .models import (
+        AlbumsCreditsResponseJSON,
+        AlbumsEndpointResponseJSON,
+        AlbumsItemsResponseJSON,
+        AlbumsReviewResponseJSON,
+        TracksEndpointResponseJSON,
+    )
 from requests import RequestException, Session
 
-from .media import AudioFormat
-from .models import (
-    AlbumsCreditsResponseJSON,
-    AlbumsEndpointResponseJSON,
-    AlbumsItemsResponseJSON,
-    AlbumsReviewResponseJSON,
-    TracksEndpointResponseJSON,
-)
 from .requesting import (
+    request_album_review,
     request_albums,
     request_albums_credits,
     request_albums_items,
-    request_album_review,
 )
 from .track import Track
-from .utils import download_cover_image, IMAGE_URL
+from .utils import IMAGE_URL, download_cover_image
 
 logger = logging.getLogger("__name__")
 
 
 @dataclass
 class Album:
+    """Class to represent an album in the TIDAL API.
+
+    It just needs the album's ID and a Boolean as arguments to the
+    constructor; the Boolean specifies whether to write all JSON
+    responses from the TIDAL API to disk, for transparency's sake.
+
+    Methods, e.g. `set_tracks()`, are germane to retrieving data from the
+    TIDAL API.
+    """
+
     album_id: int
     transparent: bool = False
 
-    def __post_init__(self):
-        self.album_dir: Optional[Path] = None
+    def __post_init__(self) -> None:
+        """After dataclass's __init__() runs, this method sets two attributes.
+
+        The attributes will be updated during further method calls.
+        """
+        self.album_dir: Path | None = None
         self.album_cover_saved: bool = False
 
-    def set_tracks(self, session: Session):
-        """This method populates self.tracks by requesting from
-        TIDAL albums/items endpoint."""
-        album_items: Optional[AlbumsItemsResponseJSON] = request_albums_items(
-            session=session, album_id=self.album_id, transparent=self.transparent
+    def set_tracks(self, session: Session) -> None:
+        """Populate the `tracks` attribute of `self`.
+
+        The attribute is populated by requesting from TIDAL API's
+        albums/items endpoint and transforming the response JSON.
+        """
+        album_items: AlbumsItemsResponseJSON | None = request_albums_items(
+            session=session,
+            album_id=self.album_id,
+            transparent=self.transparent,
         )
         _items = album_items.items if album_items is not None else []
         if self.metadata.number_of_tracks > len(_items):
             items_to_retrieve: int = self.metadata.number_of_tracks - len(_items)
             offset: int = 100
             while items_to_retrieve > 0:
-                airj: Optional[AlbumsItemsResponseJSON] = request_albums_items(
+                airj: AlbumsItemsResponseJSON | None = request_albums_items(
                     session=session,
                     album_id=self.album_id,
                     transparent=self.transparent,
@@ -58,62 +83,83 @@ class Album:
                     offset += 100
                     items_to_retrieve -= 100
                 else:
-                    logger.warning(
+                    msg: str = (
                         f"Could not retrieve more than {len(_items)} "
                         f"tracks of album '{self.album_id}'. Continuing "
                         "without the remaining "
                         f"{self.metadata.number_of_tracks - len(_items)}"
                     )
+                    logger.warning(msg)
 
-        self.tracks: Tuple[TracksEndpointResponseJSON] = tuple(
+        self.tracks: tuple[TracksEndpointResponseJSON] = tuple(
             _item.item for _item in _items
         )
 
-    def set_metadata(self, session: Session):
-        """This method sets self.metadata by requesting from
-        TIDAL /albums endpoint"""
+    def set_metadata(self, session: Session) -> None:
+        """Set the attribute `metadata` of `self.
+
+        The attribute is populated by requesting from TIDAL API /albums
+        endpoint and converting the response JSON.
+        """
         self.metadata: AlbumsEndpointResponseJSON = request_albums(
-            session=session, album_id=self.album_id, transparent=self.transparent
+            session=session,
+            album_id=self.album_id,
+            transparent=self.transparent,
         )
 
-    def set_album_review(self, session: Session):
-        """This method requests the review corresponding to self.album_id
-        in TIDAL. If it exists, it is written to disk as AlbumReview.json
-        in self.album_dir"""
-        self.album_review: Optional[AlbumsReviewResponseJSON] = request_album_review(
-            session=session, album_id=self.album_id, transparent=self.transparent
+    def set_album_review(self, session: Session) -> None:
+        """Request the review text corresponding to self.album_id.
+
+        If an album review exists, it is written to disk as AlbumReview.json
+        in self.album_dir.
+        """
+        self.album_review: AlbumsReviewResponseJSON | None = request_album_review(
+            session=session,
+            album_id=self.album_id,
+            transparent=self.transparent,
         )
         if self.album_review is not None:
             (self.album_dir / "AlbumReview.json").write_text(
-                self.album_review.to_json()
+                self.album_review.to_json(),
             )
 
-    def set_album_credits(self, session: Session):
-        """This method requests the album's top-level credits (separate from
-        each track's credits) and writes them to AlbumCredits.json in
-        self.album_dir"""
-        self.album_credits: Optional[AlbumsCreditsResponseJSON] = (
-            request_albums_credits(
-                session=session, album_id=self.album_id, transparent=self.transparent
-            )
+    def set_album_credits(self, session: Session) -> None:
+        """Request the album's top-level credits from TIDAL API.
+
+        An album's credits are distinct from each track's credits. The JSON
+        data returned from the TIDAL API is converted and stored as
+        self.album_credits. If the JSON data returned is not empty,
+        then it is written to the file AlbumCredits.json in self.album_dir.
+        """
+        self.album_credits: AlbumsCreditsResponseJSON | None = request_albums_credits(
+            session=session,
+            album_id=self.album_id,
+            transparent=self.transparent,
         )
         if self.album_credits is not None:
             num_credit: int = len(self.album_credits.credit)
             if num_credit == 0:
-                logger.warning(
-                    f"No album credits returned from TIDAL API for album {self.album_id}"
+                _msg: str = (
+                    "No album credits returned from TIDAL API "
+                    f"for album {self.album_id}"
                 )
+                logger.warning(_msg)
             else:
-                ac_file: str = str((self.album_dir / "AlbumCredits.json").absolute())
-                with open(ac_file, "w") as fp:
+                ac_file: Path = (self.album_dir / "AlbumCredits.json").absolute()
+                with ac_file.open("w") as fp:
                     json.dump(obj=self.album_credits.credit, fp=fp)
 
-    def set_album_dir(self, out_dir: Path):
-        """This method populates self.album_dir as a sub-subdirectory of
-        out_dir: its parent directory is the name of the (main) artist of
-        the album"""
+    def set_album_dir(self, out_dir: Path) -> None:
+        """Populate the attribute `album_dir` of `self`.
+
+        Self.album_dir is a sub-subdirectory of out_dir; i.e.
+        out_dir/
+            <name of the main artist of the album>/
+                album_dir/
+        """
         artist_substring: str = self.metadata.artist.name.replace("..", "").replace(
-            "/", "and"
+            "/",
+            "and",
         )
         album_substring: str = (
             f"{self.metadata.name.replace('..', '')} "
@@ -129,13 +175,16 @@ class Album:
             for v in range(1, self.metadata.number_of_volumes + 1):
                 volume_substring: str = f"Volume {v}"
                 (out_dir / artist_substring / album_substring / volume_substring).mkdir(
-                    parents=True, exist_ok=True
+                    parents=True,
+                    exist_ok=True,
                 )
 
-    def save_cover_image(self, session: Session, out_dir: Path):
-        """This method writes cover.jpg in self.album_dir via the
-        utils.download_cover_image() function. If successful,
-        then self.album_cover_saved takes the value True"""
+    def save_cover_image(self, session: Session, out_dir: Path) -> None:
+        """Write a file named cover.jpg in self.album_dir.
+
+        This is achieved via the utils.download_cover_image() function.
+        If successful, then self.album_cover_saved is set to True.
+        """
         if self.album_dir is None:
             self.set_album_dir(out_dir=out_dir)
         if not self.cover_path.exists():
@@ -147,14 +196,20 @@ class Album:
         else:
             self.album_cover_saved = True
 
-    def original_album_cover(self, session: Session):
-        """For most albums, TIDAL features the "original" album cover, in the highest
-        resolution possible. This JPEG can be too large to be embedded into FLAC tracks,
-        however it is ideal to have for music archiving etc. purposes. This method requests
-        the original cover and overwrites the smaller, 1280x1280 image used to embed into the
-        track file. The filename on the API side is origin.jpg. It is *probably* okay to
-        get this URL as a track.Track method, as HTTP requests are cached, so e.g. executing
-        this method for each track in an album won't result in many redundant GET requests
+    def original_album_cover(self, session: Session) -> None:
+        """Write to disk the "original" album cover of a TIDAL album.
+
+        For most albums, TIDAL features the "original", or highest-resolution
+        possible image file. This JPEG can be too large to be embedded into FLAC tracks:
+        however, it is ideal to have for music archiving purposes.
+
+        This method requests the original cover and overwrites the smaller, 1280x1280
+        image that is embedded into each track file. The filename returned by the TIDAL
+        API is consistently origin.jpg.
+
+        It is *probably* okay to get this URL in a track.Track method, as HTTP requests
+        are cached, so e.g. executing this method for each track in an album won't
+        result in many redundant GET requests.
         """
         origin_jpg_url: str = (
             IMAGE_URL % f"{self.metadata.cover.replace('-', '/')}/origin"
@@ -163,10 +218,11 @@ class Album:
             try:
                 resp.raise_for_status()
             except RequestException as re:
-                logger.warning(
+                _msg: str = (
                     "Could not retrieve origin.jpg from TIDAL "
                     f"due to error '{re.args[0]}'"
                 )
+                logger.warning(_msg)
             else:
                 (self.album_dir / "cover.jpg").write_bytes(resp.content)
 
@@ -175,16 +231,18 @@ class Album:
         session: Session,
         audio_format: AudioFormat,
         out_dir: Path,
+        *,
         no_extra_files: bool,
-    ) -> List[Optional[str]]:
-        """This method uses self.tracks to call track.Track.get() for each
-        element in self.tracks. It uses the result of each of these calls to
-        populate self.track_files"""
-        track_files: List[str] = [None] * self.metadata.number_of_tracks
+    ) -> list[str | None]:
+        """Call track.Track.get() for each track object in self.tracks.
+
+        The result of each of these calls populates self.track_files.
+        """
+        track_files: list[str | None] = [None] * self.metadata.number_of_tracks
         for i, t in enumerate(self.tracks):  # type(t) is TracksEndpointResponseJSON
             track: Track = Track(track_id=t.id, transparent=self.transparent)
 
-            track_files_value: Optional[str] = track.get(
+            track_files_value: str | None = track.get(
                 session=session,
                 audio_format=audio_format,
                 out_dir=out_dir,
@@ -194,16 +252,15 @@ class Album:
                 origin_jpg=False,
             )
             track_files[i] = {track.metadata.track_number: track_files_value}
-        else:
-            self.track_files = track_files
 
-    def dumps(self):
-        """This method returns a JSON-like string of self.track_files"""
+        self.track_files = track_files
+
+    def dumps(self) -> str:
+        """Return a JSON-like string representation of self.track_files."""
         return json.dumps(self.track_files)
 
-    def dump(self, fp=sys.stdout):
-        """This method writes to (by default) STDOUT a
-        JSON-like string of self.track_files"""
+    def dump(self, fp: TextIOWrapper = sys.stdout) -> None:
+        """Write to `fp` (by default, STDOUT) a JSON-like string of self.track_files."""
         json.dump(self.track_files, fp)
 
     def get(
@@ -211,11 +268,13 @@ class Album:
         session: Session,
         audio_format: AudioFormat,
         out_dir: Path,
-        metadata: Optional[AlbumsEndpointResponseJSON] = None,
+        metadata: AlbumsEndpointResponseJSON | None = None,
+        *,
         no_extra_files: bool = False,
-    ):
-        """This method is the driver method of the class. It calls the
-        other methods in order:
+    ) -> None:
+        """Execute other methods of self in sequence.
+
+        That is:
             1. set_metadata()
             2. set_tracks()
             3. save_cover_image()
@@ -238,9 +297,11 @@ class Album:
         if self.metadata.cover != "":  # None was sent from the API
             self.save_cover_image(session, out_dir)
         else:
-            logger.warning(
-                f"No cover image was returned from TIDAL API for album {self.album_id}"
+            _msg: str = (
+                "No cover image was returned from TIDAL API "
+                f"for album {self.album_id}"
             )
+            logger.warning(_msg)
 
         self.get_tracks(session, audio_format, out_dir, no_extra_files)
 
@@ -249,7 +310,5 @@ class Album:
             self.set_album_credits(session)
             self.original_album_cover(session)
         else:
-            try:
+            with contextlib.suppress(FileNotFoundError):
                 self.cover_path.unlink()
-            except FileNotFoundError:
-                pass
