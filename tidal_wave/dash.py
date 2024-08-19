@@ -1,4 +1,5 @@
 """Audio data from TIDAL API is specified via DASH manifests; conceptualize this."""
+
 from __future__ import annotations
 
 import json
@@ -20,8 +21,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger("__name__")
 
 
-class TidalManifestException(Exception):
-    pass
+class TidalManifestError(Exception):
+    """Exception class to alert issue with parsing of DASH manifest."""
 
 
 @dataclass
@@ -149,7 +150,7 @@ Manifest = JSONDASHManifest | XMLDASHManifest
 def manifester(tesrj: TracksEndpointStreamResponseJSON) -> Manifest:
     """Attempt to return a Manifest-type object based on the attributes of `tesrj`.
 
-    Will raise TidalManifestException upon error.
+    Will raise TidalManifestError upon error.
     """
     if tesrj.manifest_mime_type == "application/vnd.tidal.bts":
         if tesrj.audio_mode not in {"DOLBY_ATMOS", "SONY_360RA", "STEREO"}:
@@ -157,7 +158,7 @@ def manifester(tesrj: TracksEndpointStreamResponseJSON) -> Manifest:
                 "Expected a manifest of Dolby Atmos, MQA, Sony 360 Reality Audio, "
                 f"or encrypted-for-Windows-client audio for track {tesrj.track_id}"
             )
-            raise TidalManifestException(_msg)
+            raise TidalManifestError(_msg)
 
         try:
             manifest: Manifest = dataclass_wizard.fromdict(
@@ -168,9 +169,9 @@ def manifester(tesrj: TracksEndpointStreamResponseJSON) -> Manifest:
                 "Cannot parse manifest with type "
                 f"'{tesrj.manifest_mime_type}' as JSON"
             )
-            raise TidalManifestException(_msg) from jde
+            raise TidalManifestError(_msg) from jde
         except dataclass_wizard.errors.ParseError as pe:
-            raise TidalManifestException from pe
+            raise TidalManifestError from pe
 
         if manifest.encryption_type == "NONE":
             return manifest
@@ -188,15 +189,13 @@ def manifester(tesrj: TracksEndpointStreamResponseJSON) -> Manifest:
                 f"{tesrj.audio_mode} is incorrigibly encrypted with "
                 f"encryption type '{manifest.encryption_type}'"
             )
-        raise TidalManifestException(_msg)
+        raise TidalManifestError(_msg)
     elif tesrj.manifest_mime_type == "application/dash+xml":
         try:
             xml: ElementTree.Element = ElementTree.fromstring(tesrj.manifest_bytes)
         except ElementTree.ParseError as pe:
-            _msg: str = (
-                f"Expected an XML manifest for track {tesrj.track_id}"
-            )
-            raise TidalManifestException(_msg) from pe
+            _msg: str = f"Expected an XML manifest for track {tesrj.track_id}"
+            raise TidalManifestError(_msg) from pe
 
         ns: str = re.match(r"({.*})", xml.tag).groups()[0]
         st: SegmentTimeline = SegmentTimeline(
@@ -219,7 +218,5 @@ def manifester(tesrj: TracksEndpointStreamResponseJSON) -> Manifest:
             st,
         )
     else:
-        raise TidalManifestException(
-            "Manifest MIME type passed is not recognized."
-        )
+        raise TidalManifestError("Manifest MIME type passed is not recognized.")
         return None
