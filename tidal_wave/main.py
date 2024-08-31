@@ -39,7 +39,7 @@ __version__ = "2024.7.1"
 def version_callback(value: bool) -> None:  # noqa: FBT001
     """Pass this function to typer to specify eager option behavior."""
     if value:
-        print(f"tidal-wave {__version__}")
+        print(f"tidal-wave {__version__}")  # noqa: T201
         raise typer.Exit
 
 
@@ -66,15 +66,15 @@ def main(
         ),
     ] = _user_music_path,
     loglevel: Annotated[
-        LogLevel, typer.Option(case_sensitive=False)
+        LogLevel, typer.Option(case_sensitive=False),
     ] = LogLevel.info.value,
     include_eps_singles: Annotated[  # noqa: FBT002
         bool,
         typer.Option(
             "--include-eps-singles",
             help=(
-                "No-op unless passing TIDAL artist. Whether to include artist's EPs and "
-                "singles with albums"
+                "No-op unless passing TIDAL artist. Whether to include artist's EPs and"
+                " singles with albums"
             ),
         ),
     ] = False,
@@ -105,7 +105,7 @@ def main(
             help="Whether to dump JSON responses from TIDAL API; maximum verbosity",
         ),
     ] = False,
-    version: Annotated[
+    version: Annotated[  # noqa: ARG001
         bool | None,
         typer.Option("--version", callback=version_callback, is_eager=True),
     ] = None,
@@ -134,7 +134,7 @@ def main(
     if not is_tidal_api_reachable():
         user_wishes_to_continue: bool = typer.confirm(
             "\nEven though tidal-wave cannot seem to connect to the Internet, "
-            "would you like program execution to continue?"
+            "would you like program execution to continue?",
         )
         if not user_wishes_to_continue:
             raise typer.Exit(code=1)
@@ -187,7 +187,7 @@ def main(
             raise typer.Exit(code=0)
         if isinstance(tidal_resource, TidalPlaylist):
             playlist = Playlist(
-                playlist_id=tidal_resource.tidal_id, transparent=transparent
+                playlist_id=tidal_resource.tidal_id, transparent=transparent,
             )
             if no_flatten:
                 playlist.get_elements(
