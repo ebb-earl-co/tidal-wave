@@ -79,7 +79,9 @@ class Artist:
         converted and stored as self.albums.
         """
         self.albums: ArtistsAlbumsResponseJSON | None = request_artists_albums(
-            session=session, artist_id=self.artist_id, transparent=self.transparent,
+            session=session,
+            artist_id=self.artist_id,
+            transparent=self.transparent,
         )
 
     def set_audio_works(self, session: Session) -> None:
@@ -89,7 +91,9 @@ class Artist:
         convert the JSON data returned, and store the result as self.albums.
         """
         self.albums: ArtistsAlbumsResponseJSON | None = request_artists_audio_works(
-            session=session, artist_id=self.artist_id, transparent=self.transparent,
+            session=session,
+            artist_id=self.artist_id,
+            transparent=self.transparent,
         )
 
     def set_videos(self, session: Session) -> None:
@@ -99,7 +103,9 @@ class Artist:
         data returned, and store the results as self.videos.
         """
         self.videos: ArtistsVideosResponseJSON | None = request_artists_videos(
-            session=session, artist_id=self.artist_id, transparent=self.transparent,
+            session=session,
+            artist_id=self.artist_id,
+            transparent=self.transparent,
         )
 
     def set_artist_dir(self, out_dir: Path) -> None:

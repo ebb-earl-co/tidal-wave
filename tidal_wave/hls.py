@@ -38,7 +38,8 @@ class RequestsClient:
 
 
 def playlister(
-    session: Session, vesrj: VideosEndpointStreamResponseJSON | None,
+    session: Session,
+    vesrj: VideosEndpointStreamResponseJSON | None,
 ) -> m3u8.M3U8:
     """Attempt to parse a VideosEndpointStreamResponseJSON into an m3u8.M3U8.
 

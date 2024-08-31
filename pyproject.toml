@@ -1,7 +1,7 @@
 [build-system]
 requires = ["setuptools", "wheel"]
 [bdist_wheel]
-universal = 0 # Make the generated wheels have "py3" tag
+universal = 0  # Make the generated wheels have "py3" tag
 [project]
 name = "tidal-wave"
 version = "2024.7.1"
@@ -10,7 +10,7 @@ authors = [{ name = "colinho", email = "pypi@colin.technology" }]
 maintainers = [{ name = "colinho", email = "pypi@colin.technology" }]
 license = { file = "LICENSE" }
 readme = { file = "README.md", content-type = "text/markdown" }
-requires-python = ">3.7,<3.13"
+requires-python = ">=3.8,<3.13"
 classifiers = [
     "Intended Audience :: End Users/Desktop",
     "Programming Language :: Python :: 3",
@@ -42,3 +42,9 @@ Homepage = "https://github.com/ebb-earl-co/tidal-wave"
 
 [tool.ruff]
 target-version = "py38"
+
+[tool.uv]
+dev-dependencies = [
+    "pyinstaller==6.7.0",
+    "ruff"
+]

@@ -61,7 +61,7 @@ class JSONDASHManifest:
             logger.debug("Attempting to create decryption key from DASH manifest")
             try:
                 self.key, self.nonce = decrypt_manifest_key_id(self.key_id)
-            except Exception as e:
+            except Exception:
                 logger.exception(
                     "An error occurred in the process of decrypting DASH manifest!",
                 )
