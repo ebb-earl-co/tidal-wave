@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+from datetime import date, datetime
 import logging
 import re
 from dataclasses import dataclass, field
@@ -16,9 +17,7 @@ from typing_extensions import Annotated
 from .utils import replace_illegal_characters
 
 if TYPE_CHECKING:
-    from datetime import date, datetime
     from pathlib import Path
-
     from requests import Request, Session
 
 

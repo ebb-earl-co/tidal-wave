@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from contextlib import closing
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import typer
 from cachecontrol import CacheControl
@@ -28,9 +28,6 @@ from tidal_wave.playlist import Playlist
 from tidal_wave.track import Track
 from tidal_wave.utils import is_tidal_api_reachable
 from tidal_wave.video import Video
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 __version__ = "2024.7.1"
 

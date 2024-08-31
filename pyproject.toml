@@ -4,7 +4,7 @@ requires = ["setuptools", "wheel"]
 universal = 0  # Make the generated wheels have "py3" tag
 [project]
 name = "tidal-wave"
-version = "2024.7.1"
+dynamic = ["version"]
 description = "A tool to wave at the TIDAL music service."
 authors = [{ name = "colinho", email = "pypi@colin.technology" }]
 maintainers = [{ name = "colinho", email = "pypi@colin.technology" }]
@@ -42,6 +42,9 @@ Homepage = "https://github.com/ebb-earl-co/tidal-wave"
 
 [tool.ruff]
 target-version = "py38"
+
+[tool.setuptools.dynamic]
+version = {attr = "tidal_wave.main.__version__"}
 
 [tool.uv]
 dev-dependencies = [
