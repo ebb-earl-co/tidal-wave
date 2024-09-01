@@ -1,12 +1,14 @@
-from dataclasses import dataclass
 import json
 import logging
-from pathlib import Path
 import shutil
 import sys
+from dataclasses import dataclass
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Dict, List, Optional, Set, Tuple, Union
 from uuid import uuid4
+
+from requests import HTTPError, Session
 
 from .media import AudioFormat
 from .models import (
@@ -14,10 +16,8 @@ from .models import (
     VideosEndpointResponseJSON,
 )
 from .track import Track
-from .utils import replace_illegal_characters, TIDAL_API_URL
+from .utils import TIDAL_API_URL, replace_illegal_characters
 from .video import Video
-
-from requests import HTTPError, Session
 
 logger = logging.getLogger("__name__")
 
@@ -52,7 +52,7 @@ class Mix:
             mix_items: Optional[MixesItemsResponseJSON] = retrieve_mix_items(
                 session=session, mix_id=self.mix_id, transparent=self.transparent
             )
-        except TidalMixException as tme:
+        except TidalMixError as tme:
             logger.exception(tme.args[0])
             self.items = tuple()
         else:
@@ -326,7 +326,7 @@ class Mix:
             self.files: List[Optional[str]] = files
 
 
-class TidalMixException(Exception):
+class TidalMixError(Exception):
     pass
 
 
@@ -463,10 +463,11 @@ def mix_items_response_json_maker(
             try:
                 mix_item = TracksEndpointResponseJSON.from_dict(namespace.item)
             except Exception as e:
-                logger.warning(
-                    f"TidalPlaylistException: unable to parse playlist item [i] "
+                _msg: str = (
+                    f"TidalMixError: unable to parse playlist item [i] "
                     f"with type '{namespace.type}'"
                 )
+                logger.warning(_msg)
                 logger.debug(e)
                 # value stays None
             else:
@@ -475,18 +476,18 @@ def mix_items_response_json_maker(
             try:
                 mix_item = VideosEndpointResponseJSON.from_dict(namespace.item)
             except Exception as e:
-                logger.warning(
-                    f"TidalMixException: unable to parse mix item [i] "
+                _msg: str = (
+                    f"TidalMixError: unable to parse mix item [i] "
                     f"with type '{namespace.type}'"
                 )
+                logger.warning(_msg)
                 logger.debug(e)
                 # value stays None
             else:
                 mixes_items[i] = mix_item
         else:
             continue  # value stays None
-    else:
-        init_args["items"] = tuple(mixes_items)
+    init_args["items"] = tuple(mixes_items)
 
     return MixesItemsResponseJSON(**init_args)
 
@@ -505,11 +506,11 @@ def retrieve_mix_items(
         session=session, mix_id=mix_id, transparent=transparent
     )
     if mixes_response is None:
-        raise TidalMixException(f"Could not retrieve the items in mix '{mix_id}'")
+        raise TidalMixError(f"Could not retrieve the items in mix '{mix_id}'")
 
     total_number_of_items: Optional[int] = mixes_response.get("totalNumberOfItems")
     if total_number_of_items is None:
-        raise TidalMixException(
+        raise TidalMixError(
             f"TIDAL API did not respond with number of items in mix '{mix_id}'"
         )
     else:
@@ -517,7 +518,7 @@ def retrieve_mix_items(
 
     num_items: int = len(mixes_response.get("items", []))
     if num_items == 0:
-        raise TidalMixException(
+        raise TidalMixError(
             f"TIDAL API did not return any mix items for mix '{mix_id}'"
         )
 
@@ -537,7 +538,7 @@ def retrieve_mix_items(
                     items_to_retrieve -= 100
                 else:
                     logger.exception(
-                        TidalMixException(
+                        TidalMixError(
                             f"Could not retrieve more than {len(items_list)} "
                             f"elements of mix '{mix_id}'. Continuing "
                             "without the remaining "
@@ -554,6 +555,6 @@ def retrieve_mix_items(
             mix_items_response_json_maker(mixes_response=all_items_mixes_response)
         )
     except Exception as e:
-        logger.exception(TidalMixException(e.args[0]))
+        logger.exception(TidalMixError(e.args[0]))
     finally:
         return mixes_items_response_json

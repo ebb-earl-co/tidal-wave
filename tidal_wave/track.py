@@ -1,22 +1,29 @@
-from dataclasses import dataclass
 import json
 import logging
-from pathlib import Path
 import re
 import shlex
 import shutil
 import subprocess
 import sys
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Union
 
+import ffmpeg
+import mutagen
+from Crypto.Cipher import AES
+from Crypto.Util import Counter
+from mutagen.mp4 import MP4Cover
+from requests import RequestException, Session
+
 from .dash import (
-    manifester,
     JSONDASHManifest,
     Manifest,
     TidalManifestError,
     XMLDASHManifest,
+    manifester,
 )
-from .media import AudioFormat, TAG_MAPPING
+from .media import TAG_MAPPING, AudioFormat
 from .models import (
     AlbumsEndpointResponseJSON,
     ArtistsBioResponseJSON,
@@ -36,14 +43,7 @@ from .requesting import (
     request_stream,
     request_tracks,
 )
-from .utils import download_cover_image, temporary_file, IMAGE_URL
-
-import ffmpeg
-import mutagen
-from mutagen.mp4 import MP4Cover
-from requests import RequestException, Session
-from Crypto.Cipher import AES
-from Crypto.Util import Counter
+from .utils import IMAGE_URL, download_cover_image, temporary_file
 
 logger = logging.getLogger("__name__")
 
@@ -153,10 +153,12 @@ class Track:
         out_dir. In particular, self.album_dir is a subdirectory of out_dir
         based on the name of the album's artist"""
         artist_substring: str = self.album.artist.name.replace("..", "").replace(
-            "/", "and"
+            "/",
+            "and",
         )
         album_substring: str = (
-            f"{self.album.name} " f"[{self.album.id}] [{self.album.release_date.year}]"
+            f"{self.album.name} "
+            f"[{self.album.id}] [{self.album.release_date.year}]"
         )
         self.album_dir: Path = out_dir / artist_substring / album_substring
         self.album_dir.mkdir(parents=True, exist_ok=True)
