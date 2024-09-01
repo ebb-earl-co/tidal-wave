@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
+
 from uuid import uuid4
 
 import ffmpeg
