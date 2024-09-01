@@ -1,8 +1,13 @@
+"""Represent various media metadata and formats."""
+
+from __future__ import annotations
+
 from enum import Enum
-from typing import Dict
 
 
 class AudioFormat(str, Enum):
+    """Simple representation of TIDAL's music data quality levels."""
+
     sony_360_reality_audio = "360"
     dolby_atmos = "Atmos"
     hi_res = "HiRes"
@@ -12,7 +17,7 @@ class AudioFormat(str, Enum):
     low = "Low"
 
 
-TAG_MAPPING: Dict[str, Dict[str, str]] = {
+TAG_MAPPING: dict[str, dict[str, str]] = {
     "album": {"flac": "ALBUM", "m4a": "\xa9alb"},
     "album_artist": {"flac": "ALBUMARTIST", "m4a": "aART"},
     "artist": {"flac": "ARTIST", "m4a": "\xa9ART"},

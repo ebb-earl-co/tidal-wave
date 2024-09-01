@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass
 import json
 import logging
@@ -6,7 +7,6 @@ from pathlib import Path
 import shutil
 import sys
 from types import SimpleNamespace
-from typing import Dict, List, Optional, Set, Tuple, Union
 from uuid import uuid4
 
 from .media import AudioFormat
@@ -38,12 +38,12 @@ class Playlist:
     transparent: bool = False
 
     def __post_init__(self):
-        self.playlist_dir: Optional[Path] = None
+        self.playlist_dir: Path | None = None
         self.playlist_cover_saved: bool = False
 
     def set_metadata(self, session: Session):
         """Request from TIDAL API /playlists endpoint"""
-        self.metadata: Optional[PlaylistsEndpointResponseJSON] = request_playlists(
+        self.metadata: PlaylistsEndpointResponseJSON | None = request_playlists(
             session=session, playlist_id=self.playlist_id, transparent=self.transparent
         )
 
@@ -57,13 +57,13 @@ class Playlist:
         populate self.items.  If 'totalNumberOfItems' field returned
         has value greater than 100, multiple requests of size <= 100 will be
         sent to the endpoint until all items for the playlist are retrieved."""
-        playlist_items: Optional[PlaylistsItemsResponseJSON] = retrieve_playlist_items(
+        playlist_items: PlaylistsItemsResponseJSON | None = retrieve_playlist_items(
             session=session, playlist_id=self.playlist_id
         )
         if playlist_items is None:
             self.items = tuple()
         else:
-            self.items: Tuple[Optional[PlaylistItem]] = tuple(
+            self.items: tuple[PlaylistItem | None] = tuple(
                 filter(None, playlist_items.items)
             )
 
@@ -132,7 +132,7 @@ class Playlist:
                 tracks_videos[i] = None
                 continue
         else:
-            self.tracks_videos: Tuple[Optional[Union[Track, Video]]] = tuple(
+            self.tracks_videos: tuple[Track | Video | None] = tuple(
                 tracks_videos
             )
         return tracks_videos
@@ -144,10 +144,10 @@ class Playlist:
         "flattens" self.playlist_dir, meaning that it moves all downloaded
         audio and video files to self.playlist_dir, and removes the various
         subdirectories created"""
-        files: List[Dict[int, Optional[str]]] = [None] * len(self.tracks_videos)
+        files: list[dict[int, str | None]] = [None] * len(self.tracks_videos)
         if len(self.tracks_videos) == 0:
             return
-        subdirs: Set[Path] = set()
+        subdirs: set[Path] = set()
 
         for i, tv in enumerate(self.tracks_videos, 1):
             if getattr(tv, "outfile") is None:
@@ -161,7 +161,7 @@ class Playlist:
                 files[i - 1] = {i: None}
                 continue
 
-            _path: Optional[Path] = Path(tv.outfile) if tv is not None else None
+            _path: Path | None = Path(tv.outfile) if tv is not None else None
             # if the item never got turned into a track or video
             if _path is None:
                 files[i - 1] = {i: None}
@@ -188,7 +188,7 @@ class Playlist:
                 _path.unlink()
                 files[i - 1] = {i: str(new_path.absolute())}
         else:
-            self.files: List[Dict[int, Optional[str]]] = files
+            self.files: list[dict[int, str | None]] = files
 
         # Find all subdirectories written to
         for tv in self.tracks_videos:
@@ -205,7 +205,7 @@ class Playlist:
 
         # Copy all artist images, artist bio JSON files out
         # of subdirs
-        artist_images: Set[Path] = set()
+        artist_images: set[Path] = set()
         for subdir in subdirs:
             for p in subdir.glob("*.jpg"):
                 if p.name == "cover.jpg":
@@ -219,7 +219,7 @@ class Playlist:
                         self.playlist_dir / artist_image_path.name,
                     )
 
-        artist_bios: Set[Path] = set()
+        artist_bios: set[Path] = set()
         for subdir in subdirs:
             for p in subdir.glob("*bio.json"):
                 artist_bios.add(p)
@@ -406,7 +406,7 @@ class Playlist:
             self.files = {}
             return
         else:
-            files: List[Dict[int, Optional[str]]] = [None] * len(self.items)
+            files: list[dict[int, str | None]] = [None] * len(self.items)
 
         for i, item in enumerate(self.items):
             if item is None:
@@ -414,7 +414,7 @@ class Playlist:
                 continue
             elif isinstance(item, TracksEndpointResponseJSON):
                 track: Track = Track(track_id=item.id, transparent=self.transparent)
-                track_file: Optional[str] = track.get(
+                track_file: str | None = track.get(
                     session=session,
                     audio_format=audio_format,
                     out_dir=out_dir,
@@ -425,7 +425,7 @@ class Playlist:
                 files[i] = {i: track_file}
             elif isinstance(item, VideosEndpointResponseJSON):
                 video: Video = Video(video_id=item.id, transparent=self.transparent)
-                video_file: Optional[str] = video.get(
+                video_file: str | None = video.get(
                     session=session,
                     out_dir=out_dir,
                     metadata=item,
@@ -435,7 +435,7 @@ class Playlist:
                 files[i] = {i: None}
                 continue
         else:
-            self.files: List[Dict[int, Optional[str]]] = files
+            self.files: list[dict[int, str | None]] = files
 
 
 class TidalPlaylistException(Exception):
@@ -445,9 +445,9 @@ class TidalPlaylistException(Exception):
 def request_playlists_items(
     session: Session,
     playlist_id: str,
-    offset: Optional[int] = None,
+    offset: int | None = None,
     transparent: bool = False,
-) -> Optional[dict]:
+) -> dict | None:
     """Request from TIDAL API /playlists/items endpoint. If requests.HTTPError
     arises, warning is logged; upon this or any other exception, None is returned.
     If no exception arises from 'session'.get(), the requests.Response.json()
@@ -461,7 +461,7 @@ def request_playlists_items(
     kwargs["headers"] = {"Accept": "application/json"}
     json_name: str = f"playlists-{playlist_id}-items_{uuid4().hex}.json"
 
-    data: Optional[dict] = None
+    data: dict | None = None
     logger.info(f"Requesting from TIDAL API: playlists/{playlist_id}/items")
     with session.get(**kwargs) as resp:
         try:
@@ -499,31 +499,31 @@ class PlaylistsItemsResponseJSON:
     limit: int
     offset: int
     total_number_of_items: int
-    items: Tuple[
-        Optional[Union["TracksEndpointResponseJSON", "VideosEndpointResponseJSON"]]
+    items: tuple[
+        TracksEndpointResponseJSON | VideosEndpointResponseJSON | None
     ]
 
 
 def playlists_items_response_json_maker(
-    playlists_response: Dict[str, Union[int, List[dict]]],
+    playlists_response: dict[str, int | list[dict]],
 ) -> "PlaylistsItemsResponseJSON":
     """This function massages the response from the TIDAL API endpoint
     /playlists/items into a format that PlaylistsItemsResponseJSON.__init__()
     can ingest, and then returns a PlaylistsItemsResponseJSON instance"""
-    init_args: Dict[str, Optional[int]] = {
+    init_args: dict[str, int | None] = {
         "limit": playlists_response.get("limit"),
         "offset": playlists_response.get("offset"),
         "total_number_of_items": playlists_response.get("totalNumberOfItems"),
     }
 
-    items: Tuple[SimpleNamespace] = tuple(
+    items: tuple[SimpleNamespace] = tuple(
         SimpleNamespace(**d) for d in playlists_response["items"]
     )
     if len(items) == 0:
         return
 
-    playlist_items: List[
-        Optional[Union["TracksEndpointResponseJSON", "VideosEndpointResponseJSON"]]
+    playlist_items: list[
+        TracksEndpointResponseJSON | VideosEndpointResponseJSON | None
     ] = [None] * init_args["total_number_of_items"]
 
     for i, namespace in enumerate(items):
@@ -563,14 +563,14 @@ def retrieve_playlist_items(
     session: Session,
     playlist_id: str,
     transparent: bool = False,
-) -> Optional["PlaylistsItemsResponseJSON"]:
+) -> PlaylistsItemsResponseJSON | None:
     """The pattern for playlist items retrieval does not follow the
     requesting.request_* functions, hence its implementation here. N.b.
     if the first response from /playlists/items endpoint indicates that
     the playlist contains more than 100 items, multiple requests will be
     sent until all N > 100 items are retrieved."""
-    playlists_items_response_json: Optional["PlaylistsItemsResponseJSON"] = None
-    playlists_response: Optional[dict] = request_playlists_items(
+    playlists_items_response_json: PlaylistsItemsResponseJSON | None = None
+    playlists_response: dict | None = request_playlists_items(
         session=session, playlist_id=playlist_id, transparent=transparent
     )
     if playlists_response is None:
@@ -578,7 +578,7 @@ def retrieve_playlist_items(
             f"Could not retrieve the items in playlist '{playlist_id}'"
         )
 
-    total_number_of_items: Optional[int] = playlists_response.get("totalNumberOfItems")
+    total_number_of_items: int | None = playlists_response.get("totalNumberOfItems")
     logger.info(
         f"Playlist '{playlist_id}' is comprised of {total_number_of_items} items"
     )
@@ -592,10 +592,10 @@ def retrieve_playlist_items(
     all_items_playlist_response: dict = playlists_response
 
     if total_number_of_items > 100:
-        items_list: List[dict] = playlists_response.pop("items")
+        items_list: list[dict] = playlists_response.pop("items")
         offset: int = 100
         while items_to_retrieve > 0:
-            pr: Optional[dict] = request_playlists_items(
+            pr: dict | None = request_playlists_items(
                 session=session, playlist_id=playlist_id, offset=offset
             )
 
@@ -616,7 +616,7 @@ def retrieve_playlist_items(
             all_items_playlist_response["items"] = items_list
 
     try:
-        playlists_items_response_json: Optional["PlaylistsItemsResponseJSON"] = (
+        playlists_items_response_json: PlaylistsItemsResponseJSON | None = (
             playlists_items_response_json_maker(
                 playlists_response=all_items_playlist_response
             )
@@ -628,6 +628,4 @@ def retrieve_playlist_items(
 
 
 # union type for type hinting
-PlaylistItem = Optional[
-    Union["TracksEndpointResponseJSON", "VideosEndpointResponseJSON"]
-]
+PlaylistItem = TracksEndpointResponseJSON | VideosEndpointResponseJSON | None

@@ -7,7 +7,7 @@ import sys
 from typing import Dict, List, Optional
 import urllib
 
-from .hls import playlister, variant_streams, TidalM3U8Exception
+from .hls import playlister, variant_streams, TidalM3U8Error
 from .media import TAG_MAPPING
 from .models import (
     VideosContributorsResponseJSON,
@@ -85,7 +85,7 @@ class Video:
         m3u8_files: List[str] = variant_streams(self.m3u8, session, return_urls=True)
         m3u8_parse_results = (urllib.parse.urlparse(url=f) for f in m3u8_files)
         if not all(u.netloc == "vmz-ad-cf.video.tidal.com" for u in m3u8_parse_results):
-            raise TidalM3U8Exception(
+            raise TidalM3U8Error(
                 f"HLS media segments are not available for video {self.video_id}"
             )
         self.urls: List[str] = m3u8_files

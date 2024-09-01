@@ -13,7 +13,7 @@ from .dash import (
     manifester,
     JSONDASHManifest,
     Manifest,
-    TidalManifestException,
+    TidalManifestError,
     XMLDASHManifest,
 )
 from .media import AudioFormat, TAG_MAPPING
@@ -124,7 +124,7 @@ class Track:
         """This method sets self.manifest and self.codec"""
         try:
             self.manifest: Manifest = manifester(self.stream)
-        except TidalManifestException as tme:
+        except TidalManifestError as tme:
             logger.critical(tme.args[0])
             self.manifest = None
             self.codec = None

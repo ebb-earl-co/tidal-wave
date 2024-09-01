@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-
+"""Provide a shim to pyproject.toml-based building of this package."""
 import setuptools
 
 if __name__ == "__main__":
