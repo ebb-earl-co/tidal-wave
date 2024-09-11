@@ -29,7 +29,7 @@ from .track import Track
 from .utils import is_tidal_api_reachable
 from .video import Video
 
-__version__ = "2024.8.1"
+__version__ = "2024.9.2"
 
 
 # https://typer.tiangolo.com/tutorial/options/version/#fix-with-is_eager
