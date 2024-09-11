@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import base64
-from datetime import date, datetime
 import logging
 import re
 from dataclasses import dataclass, field
+from datetime import date, datetime
 from io import BytesIO
 from typing import TYPE_CHECKING, Literal
 
@@ -18,6 +18,7 @@ from .utils import replace_illegal_characters
 
 if TYPE_CHECKING:
     from pathlib import Path
+
     from requests import Request, Session
 
 

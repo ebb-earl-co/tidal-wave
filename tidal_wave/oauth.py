@@ -1,23 +1,25 @@
+from __future__ import annotations
+
 import base64
+import json
+import logging
+import sys
+import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-import json
-import logging
 from pathlib import Path
-import sys
-import time
 from typing import Dict, Optional, Tuple, Union
 
 import dataclass_wizard
-from platformdirs import user_config_path
 import requests
+from platformdirs import user_config_path
 
 PROJECT_NAME: str = "tidal-wave"
 TOKEN_DIR_PATH: Path = user_config_path() / PROJECT_NAME
 TOKEN_DIR_PATH.mkdir(exist_ok=True, parents=True)
 OAUTH2_URL: str = "https://auth.tidal.com/v1/oauth2"
-OAUTH2_HEADERS: Dict[str, str] = {
+OAUTH2_HEADERS: dict[str, str] = {
     "User-Agent": "TIDAL_ANDROID/2.38.0",
     "Accept": "application/json",
 }
@@ -48,27 +50,27 @@ class DeviceAuthorizationEndpointResponseJSON(dataclass_wizard.JSONSerializable)
 @dataclass
 class User:
     user_id: int
-    email: Optional[str]
+    email: str | None
     country_code: str
-    full_name: Optional[str]
-    first_name: Optional[str]
-    last_name: Optional[str]
-    nickname: Optional[str]
+    full_name: str | None
+    first_name: str | None
+    last_name: str | None
+    nickname: str | None
     username: str
-    address: Optional[str]
-    city: Optional[str]
-    postalcode: Optional[str]
-    us_state: Optional[str]
-    phone_number: Optional[str]
-    birthday: Optional[str]
+    address: str | None
+    city: str | None
+    postalcode: str | None
+    us_state: str | None
+    phone_number: str | None
+    birthday: str | None
     channel_id: int
     parent_id: int
     accepted_eula: bool
     created: int
     updated: int
     facebook_uid: int
-    apple_uid: Optional[str]
-    google_uid: Optional[str]
+    apple_uid: str | None
+    google_uid: str | None
     account_link_created: bool
     email_verified: bool
     new_user: bool
@@ -240,7 +242,7 @@ class TidalOauth:
         self._client_id: str = "7m7Ap0JC9j1cOM3n"
         self._client_secret: str = "vRAdA108tlvkJpTsGZS8rGZ7xTlbJ0qaZ2K9saEzsgY="
         self.token: Optional[BearerToken] = None
-        self.verification_url: Optional[str] = None
+        self.verification_url: str | None = None
 
     @property
     def client_id(self) -> str:
