@@ -147,12 +147,12 @@ Similarly, by default, all media retrieved is placed in subdirectories of the us
 
 ### Which Audio Formats Are Available to Which Clients
 Source: [TIDAL](https://tidal.com/supported-devices)
-|                | Low                  | High               | Lossless            | HiRes FLAC         | Dolby Atmos          |  Video (H.264 + AAC) |
-| :---           | :---:                | :---:              |   :---:             |   :---:            |    :---:             |      :---:           |
-| Android        | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:  | :heavy_check_mark: |     :x:              |  :heavy_check_mark:  |
-| Fire TV        | :large_blue_diamond: | :heavy_check_mark: | :heavy_check_mark:  | :x:                |  :heavy_check_mark:  |  :heavy_check_mark:  |
-| macOS          | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:  | :heavy_check_mark: |     :x:              |  :heavy_check_mark:  |
-| Windows        | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:  | :heavy_check_mark: |     :x:              |  :heavy_check_mark:  |
+|                                  | Low                  | High               | Lossless            | HiRes FLAC         | Dolby Atmos          |  Video (H.264 + AAC) |
+| :---                             | :---:                | :---:              |   :---:             |   :---:            |    :---:             |      :---:           |
+| Android                          | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:  | :heavy_check_mark: |     :x:              |  :heavy_check_mark:  |
+| Fire TV  :large_blue_diamond:    | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:  | :x:                |  :heavy_check_mark:  |  :heavy_check_mark:  |
+| macOS                            | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:  | :heavy_check_mark: |     :x:              |  :heavy_check_mark:  |
+| Windows                          | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:  | :heavy_check_mark: |     :x:              |  :heavy_check_mark:  |
 
 :large_blue_diamond: This is the default client for `tidal-wave`, a spoofed Amazon Fire TV. It is the one invoked in all situations unless `--audio-format hires` is passed as a command line flag:
 ```bash
