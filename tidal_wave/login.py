@@ -1,4 +1,5 @@
 """Interact with the TIDAL API in order to authenticate tidal-wave as a client."""
+
 from __future__ import annotations
 
 import base64
@@ -33,10 +34,8 @@ logger = logging.getLogger(__name__)
 class AudioFormat(str, Enum):
     """A simple representation of TIDAL's music quality levels."""
 
-    sony_360_reality_audio = "360"
     dolby_atmos = "Atmos"
     hi_res = "HiRes"
-    mqa = "MQA"
     lossless = "Lossless"
     high = "High"
     low = "Low"
@@ -76,7 +75,8 @@ def load_token_from_disk(
 
 
 def validate_token_for_session(
-    token: str, headers: dict[str, str] = COMMON_HEADERS,
+    token: str,
+    headers: dict[str, str] = COMMON_HEADERS,
 ) -> requests.Session | None:
     """Send a GET request to the /sessions endpoint of TIDAL's API.
 
@@ -88,7 +88,9 @@ def validate_token_for_session(
     sess: requests.Session | None = None
 
     with requests.get(
-        url=f"{TIDAL_API_URL}/sessions", headers=auth_headers, timeout=10,
+        url=f"{TIDAL_API_URL}/sessions",
+        headers=auth_headers,
+        timeout=10,
     ) as r:
         try:
             r.raise_for_status()
@@ -305,13 +307,9 @@ def login(
     Return a tuple of a requests.Session object, if no error, and the
     AudioFormat instance passed in; or (None, "") in the event of error.
     """
-    high_quality_formats: set[AudioFormat] = {
-        AudioFormat.sony_360_reality_audio,
-        AudioFormat.hi_res,
-    }
+    high_quality_formats: set[AudioFormat] = {AudioFormat.hi_res}
     fire_tv_formats: set[AudioFormat] = {
         AudioFormat.dolby_atmos,
-        AudioFormat.mqa,
         AudioFormat.lossless,
         AudioFormat.high,
         AudioFormat.low,
