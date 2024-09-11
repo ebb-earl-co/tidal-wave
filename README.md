@@ -191,12 +191,12 @@ tidal-wave 2024.7.1
 
  - To (attempt to) get a playlist, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when retrieving videos.
  ```powershell
- PS > C:\Users\User > & tidal-wave_py311_pyapp.exe https://tidal.com/browse/playlist/...
+ PS > C:\Users\User > & tidal-wave_windows.exe https://tidal.com/browse/playlist/...
  ```
 
  - To (attempt to) get a mix, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when retrieving videos.
  ```bash
- $ ./tidal-wave_py311.pyapp https://tidal.com/browse/mix/...
+ $ ./tidal-wave_ubuntu_24.04_amd64 https://tidal.com/browse/mix/...
  ```
 
  - To (attempt to) get all of an artist's works (albums and videos, **excluding EPs and singles**) in AAC High format and verbose logging, the following will do that:
@@ -287,7 +287,6 @@ The easiest way to start working on development is to fork this project on GitHu
   4. Activate the virtual environment and install the required packages (requirements.txt): `(some-virtual-env) $ python3 -m pip install -r requirements.txt`
 
     * optional packages to follow the coding style and build process; `pyinstaller`, `black`: `(some-virtual-env) $ python3 -m pip install black pyinstaller`
-    * optionally, Rust and cargo in order to build the `pyapp` artifacts
     * optionally, Docker to build the OCI container artifacts
   5. From a Python REPL (or, my preferred method, an iPython session), import all the relevant modules, or the targeted ones for development:
   ```python
