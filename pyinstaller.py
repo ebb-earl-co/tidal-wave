@@ -1,4 +1,4 @@
-"""A version of main.py with current Python syntax just for use with pyinstaller."""
+"""A version of main.py with current Python syntax just for use with Pyinstaller."""
 
 from __future__ import annotations
 
@@ -144,7 +144,10 @@ def main(
     with closing(CacheControl(s)) as session:
         match tidal_resource:
             case TidalTrack():
-                track = Track(track_id=tidal_resource.tidal_id, transparent=transparent)
+                track: Track = Track(
+                    track_id=tidal_resource.tidal_id,
+                    transparent=transparent,
+                )
                 track.get(
                     session=session,
                     audio_format=audio_format,
@@ -156,7 +159,10 @@ def main(
                     track.dump()
                 raise typer.Exit(code=0)
             case TidalAlbum():
-                album = Album(album_id=tidal_resource.tidal_id, transparent=transparent)
+                album: Album = Album(
+                    album_id=tidal_resource.tidal_id,
+                    transparent=transparent,
+                )
                 album.get(
                     session=session,
                     audio_format=audio_format,
@@ -168,7 +174,7 @@ def main(
                     album.dump()
                 raise typer.Exit(code=0)
             case TidalArtist():
-                artist = Artist(
+                artist: Artist = Artist(
                     artist_id=tidal_resource.tidal_id,
                     transparent=transparent,
                 )
@@ -181,14 +187,16 @@ def main(
                 )
                 raise typer.Exit(code=0)
             case TidalVideo():
-                video = Video(video_id=tidal_resource.tidal_id, transparent=transparent)
+                video: Video = Video(
+                    video_id=tidal_resource.tidal_id, transparent=transparent
+                )
                 video.get(session=session, out_dir=output_directory)
 
                 if loglevel == LogLevel.debug:
                     video.dump()
                 raise typer.Exit(code=0)
             case TidalPlaylist():
-                playlist = Playlist(
+                playlist: Playlist = Playlist(
                     playlist_id=tidal_resource.tidal_id,
                     transparent=transparent,
                 )
@@ -211,7 +219,7 @@ def main(
                     playlist.dump()
                 raise typer.Exit(code=0)
             case TidalMix():
-                mix = Mix(mix_id=tidal_resource.tidal_id, transparent=transparent)
+                mix: Mix = Mix(mix_id=tidal_resource.tidal_id, transparent=transparent)
                 if no_flatten:
                     mix.get_elements(
                         session=session,
