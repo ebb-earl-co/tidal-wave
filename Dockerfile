@@ -37,7 +37,7 @@ RUN ./configure \
       --enable-small \
       && make -j$(nproc) && make install && hash -r
 
-FROM docker.io/library/python:3.12-slim
+FROM docker.io/library/python:3.12.6-slim
 LABEL org.opencontainers.image.authors="colinho <github@colin.technology>"
 LABEL org.opencontainers.image.description="Waving at the TIDAL music service with Python"
 LABEL org.opencontainers.image.documentation="https://github.com/ebb-earl-co/tidal-wave/blob/trunk/README.md"
