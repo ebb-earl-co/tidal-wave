@@ -18,7 +18,8 @@ This project is inspired by [`qobuz-dl`](https://github.com/vitiko98/qobuz-dl), 
 This software uses libraries from the [FFmpeg](http://ffmpeg.org) project under the [LGPLv2.1](http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html). FFmpeg is a trademark of [Fabrice Bellard](http://www.bellard.org/), originator of the FFmpeg project. 
 
 ## Features
-* Retrieve [FLAC](https://xiph.org/flac/), [Dolby Atmos](https://www.dolby.com/technologies/dolby-atmos/), [Sony 360 Reality Audio](https://electronics.sony.com/360-reality-audio), or [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) tracks; [AVC/H.264](https://en.wikipedia.org/wiki/Advanced_Video_Coding) (up to 1920x1080) + [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) videos
+* Retrieve [FLAC](https://xiph.org/flac/), [Dolby Atmos](https://www.dolby.com/technologies/dolby-atmos/), or [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) tracks; [AVC/H.264](https://en.wikipedia.org/wiki/Advanced_Video_Coding) (up to 1920x1080) + [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) videos
+  - **Note**: [as of 24 July 2024](https://web.archive.org/web/20240714095203/https://support.tidal.com/hc/en-us/articles/25876825185425-Upcoming-Changes-to-Audio-Formats), TIDAL's catalog no longer includes tracks in MQA or [Sony 360 Reality Audio](https://electronics.sony.com/360-reality-audio) format.
 * Either a single track or an entire album can be retrieved
 * Album covers are retrieved by default, and embedded into all tracks
   - Highest-resolution, "original" album covers, which can be up to 6000x6000 pixels resolution, are retrieved if available
@@ -126,7 +127,7 @@ Usage: python -m tidal_wave [OPTIONS] TIDAL_URL [OUTPUT_DIRECTORY]
 │      output_directory      [OUTPUT_DIRECTORY]  The parent directory under which directory(ies) of files will be written [default: ~/Music]                                                                                        │
 ╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --audio-format               [360|Atmos|HiRes|MQA|Lossless|High|Low]  [default: Lossless]                                                                                                                                         │
+│ --audio-format               [Atmos|HiRes|Lossless|High|Low]  [default: Lossless]                                                                                                                                                 │
 │ --loglevel                   [DEBUG|INFO|WARNING|ERROR|CRITICAL]      [default: INFO]                                                                                                                                             │
 │ --include-eps-singles                                                 No-op unless passing TIDAL artist. Whether to include artist's EPs and singles with albums                                                                  │
 │ --no-extra-files                                                      Whether to not even attempt to retrieve artist bio, artist image, album credits, album review, or playlist m3u8                                             │
@@ -146,14 +147,14 @@ Similarly, by default, all media retrieved is placed in subdirectories of the us
 
 ### Which Audio Formats Are Available to Which Clients
 Source: [TIDAL](https://tidal.com/supported-devices)
-|                | Low                | High               | Lossless           |      MQA           | HiRes FLAC         | Dolby Atmos        | Sony 360 Reality Audio | Video (H.264 + AAC) |
-| :---           | :---:              | :---:              |   :---:            |     :---:          |   :---:            |    :---:           |        :---:           |     :---:           |
-| Android        | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |     :x:            |   :heavy_check_mark:   | :heavy_check_mark: |
-| Fire TV :large_blue_diamond: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:        |         :x:        | :heavy_check_mark:     | :x: | :heavy_check_mark: |
-| macOS          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |         :x:        |       :x:              | :heavy_check_mark: |
-| Windows        | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |         :x:        |            :x:         | :heavy_check_mark: |
+|                                  | Low                  | High               | Lossless            | HiRes FLAC         | Dolby Atmos          |  Video (H.264 + AAC) |
+| :---                             | :---:                | :---:              |   :---:             |   :---:            |    :---:             |      :---:           |
+| Android                          | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:  | :heavy_check_mark: |     :x:              |  :heavy_check_mark:  |
+| Fire TV  :large_blue_diamond:    | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:  | :x:                |  :heavy_check_mark:  |  :heavy_check_mark:  |
+| macOS                            | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:  | :heavy_check_mark: |     :x:              |  :heavy_check_mark:  |
+| Windows                          | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:  | :heavy_check_mark: |     :x:              |  :heavy_check_mark:  |
 
-:large_blue_diamond: This is the default client for `tidal-wave`, a spoofed Amazon Fire TV. It is the one invoked in all situations unless `--audio-format hires` or `--audio-format 360` is passed as a command line flag:
+:large_blue_diamond: This is the default client for `tidal-wave`, a spoofed Amazon Fire TV. It is the one invoked in all situations unless `--audio-format hires` is passed as a command line flag:
 ```bash
 $ tidal-wave https://listen.tidal.com/album/000000
 $ # no --audio-format flag passed will instruct tidal-wave to use the Fire TV client, as it implies --audio-format lossless
@@ -162,7 +163,6 @@ $ # specifying low, high, lossless, or atmos will instruct tidal-wave to use the
 $ tidal-wave https://listen.tidal.com/album/000000 --audio-format hires
 $ # the above forces tidal-wave to ask for an access token gleaned from an Android, macOS, or Windows device, as laid out in the above table
 ```
-Otherwise, in order to retrieve the desired audio format for a given track, it is **necessary** to have the access token from a compatible device; e.g. an Android device in order to retrieve Sony 360 Reality Audio tracks
 
 ### Version
 It is certainly useful for debugging, and, perhaps, using multiple versions of a software, to know which binary/package invoked is which version. From version 2024.7.1 of `tidal-wave`, this is possible by adding the `--version` flag to any command. This is an _eager_ command, in `typer` parlance, meaning that **any** other flag or argument passed to `tidal-wave` will be ignored and the version will simply be returned. E.g.
@@ -183,7 +183,7 @@ tidal-wave 2024.7.1
  ```bash
  (.venv) $ tidal-wave https://tidal.com/browse/track/... --audio-format atmos --loglevel debug
  ```
- **Keep in mind that an access token from an Android (preferred), Windows, or macOS device will need to be extracted and passed to this tool in order to access HiRes FLAC or Sony 360 Reality Audio tracks**
+ **Keep in mind that an access token from an Android (preferred), Windows, or macOS device will need to be extracted and passed to this tool in order to access HiRes FLAC tracks**
  - To (attempt to) get a HiRes FLAC version of an album, and you desire to see only warnings and errors, the following will do that:
  ```bash
  $ tidal-wave https://tidal.com/browse/album/... --audio-format hires --loglevel warning
@@ -191,17 +191,17 @@ tidal-wave 2024.7.1
 
  - To (attempt to) get a playlist, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when retrieving videos.
  ```powershell
- PS > C:\Users\User > & tidal-wave_py311_pyapp.exe https://tidal.com/browse/playlist/...
+ PS > C:\Users\User > & tidal-wave_windows.exe https://tidal.com/browse/playlist/...
  ```
 
  - To (attempt to) get a mix, the following will do that. **N.b.** passing anything to `--audio-format` is a no-op when retrieving videos.
  ```bash
- $ ./tidal-wave_py311.pyapp https://tidal.com/browse/mix/...
+ $ ./tidal-wave_ubuntu_24.04_amd64 https://tidal.com/browse/mix/...
  ```
 
- - To (attempt to) get all of an artist's works (albums and videos, **excluding EPs and singles**) in Sony 360 Reality Audio format and verbose logging, the following will do that:
+ - To (attempt to) get all of an artist's works (albums and videos, **excluding EPs and singles**) in AAC High format and verbose logging, the following will do that:
  ```bash
- (.venv) $ python3 -m tidal_wave https://listen.tidal.com/artist/... --audio-format 360 --loglevel debug
+ (.venv) $ python3 -m tidal_wave https://listen.tidal.com/artist/... --audio-format high --loglevel debug
  ```
 
  - To (attempt to) get all of an artist's works (**including EPs and singles**), in HiRes format, the following will do that:
@@ -287,7 +287,6 @@ The easiest way to start working on development is to fork this project on GitHu
   4. Activate the virtual environment and install the required packages (requirements.txt): `(some-virtual-env) $ python3 -m pip install -r requirements.txt`
 
     * optional packages to follow the coding style and build process; `pyinstaller`, `black`: `(some-virtual-env) $ python3 -m pip install black pyinstaller`
-    * optionally, Rust and cargo in order to build the `pyapp` artifacts
     * optionally, Docker to build the OCI container artifacts
   5. From a Python REPL (or, my preferred method, an iPython session), import all the relevant modules, or the targeted ones for development:
   ```python

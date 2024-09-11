@@ -1,26 +1,26 @@
-from dataclasses import dataclass
-from enum import Enum
 import json
 import logging
-from pathlib import Path
 import sys
-from typing import Dict, List, Optional
 import urllib
+from dataclasses import dataclass
+from enum import Enum
+from pathlib import Path
+from typing import Dict, List, Optional
 
-from .hls import playlister, variant_streams, TidalM3U8Error
+import ffmpeg
+import m3u8
+import mutagen
+from requests import Session
+
+from .hls import TidalM3U8Error, playlister, variant_streams
 from .media import TAG_MAPPING
 from .models import (
     VideosContributorsResponseJSON,
     VideosEndpointResponseJSON,
     VideosEndpointStreamResponseJSON,
 )
-from .requesting import request_videos, request_video_contributors, request_video_stream
+from .requesting import request_video_contributors, request_video_stream, request_videos
 from .utils import temporary_file
-
-import ffmpeg
-import mutagen
-import m3u8
-from requests import Session
 
 logger = logging.getLogger("__name__")
 
@@ -129,7 +129,7 @@ class Video:
         request_headers: Dict[str, str] = (
             {"sessionId": session.session_id}
             if session.session_id is not None
-            else dict()
+            else {}
         )
         logger.info(
             f"Writing video {self.video_id} to '{str(self.outfile.absolute())}'"
@@ -145,11 +145,9 @@ class Video:
                 ) as download_response:
                     if not download_response.ok:
                         logger.warning(f"Could not download {self}")
-                        return
-                    else:
-                        tf.write(download_response.content)
-            else:
-                tf.seek(0)
+                        return None
+                    tf.write(download_response.content)
+            tf.seek(0)
             self.outfile.write_bytes(Path(tf.name).read_bytes())
 
             if self.outfile.exists() and self.outfile.stat().st_size > 0:
@@ -223,7 +221,7 @@ class Video:
         logger.debug("Adding tag for video engineer, if the contributor(s) exist(s)")
         for tag in {"engineer", "mastering_engineer", "vocal_engineer"}:
             try:
-                # self.contributors.mastering_engineer is Tuple[str]
+                # self.contributors.mastering_engineer is of type Tuple[str]
                 _credits_tag: str = ";".join(getattr(self.contributors, tag))
             except (TypeError, AttributeError):  # NoneType problems
                 pass
@@ -242,7 +240,7 @@ class Video:
         # Lyricist
         logger.debug("Adding tag for video lyricist, if the contributor(s) exist(s)")
         try:
-            # self.contributors.lyricist is Optional[Tuple[str]]
+            # self.contributors.lyricist is of type Optional[Tuple[str]]
             _credits_tag: str = ";".join(self.contributors.lyricist)
         except (TypeError, AttributeError):  # NoneType problems
             pass
@@ -251,7 +249,7 @@ class Video:
 
         # Mixing
         logger.debug("Adding tag for video mixer, if the contributor(s) exist(s)")
-        for tag in {"assistant_mixer", "mixer", "mixing_engineer"}:
+        for tag in ("assistant_mixer", "mixer", "mixing_engineer"):
             try:
                 _credits_tag: str = ";".join(getattr(self.contributors, tag))
             except (TypeError, AttributeError):  # NoneType problems

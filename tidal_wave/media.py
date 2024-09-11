@@ -8,10 +8,8 @@ from enum import Enum
 class AudioFormat(str, Enum):
     """Simple representation of TIDAL's music data quality levels."""
 
-    sony_360_reality_audio = "360"
     dolby_atmos = "Atmos"
     hi_res = "HiRes"
-    mqa = "MQA"
     lossless = "Lossless"
     high = "High"
     low = "Low"

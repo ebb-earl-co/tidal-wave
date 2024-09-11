@@ -1,9 +1,12 @@
-from functools import partial
 import json
 import logging
+from functools import partial
 from pathlib import Path
 from typing import Callable, Iterable, Iterator, Optional, Tuple, Union
 from uuid import uuid4
+
+import backoff
+from requests import HTTPError, Response, Session
 
 from .models import (
     AlbumsCreditsResponseJSON,
@@ -26,9 +29,6 @@ from .models import (
     VideosEndpointStreamResponseJSON,
 )
 from .utils import TIDAL_API_URL
-
-import backoff
-from requests import HTTPError, Response, Session
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -76,9 +76,8 @@ def requester_maker(
         kwargs: dict = {"url": url}
         if p is not None:
             kwargs["params"] = p if offset is None else p | {"offset": offset}
-        else:
-            if offset is not None:
-                kwargs["params"] = {"offset": offset}
+        elif offset is not None:
+            kwargs["params"] = {"offset": offset}
 
         if h is not None:
             kwargs["headers"] = h
@@ -107,15 +106,14 @@ def requester_maker(
                 logger.warning(
                     f"404 Client Error: not found for TIDAL API endpoint {e}/{i}{u}"
                 )
-                return
-            elif resp.status_code == 401:
+                return None
+            if resp.status_code == 401:
                 logger.warning(
                     f"401 Client Error: Unauthorized for TIDAL API endpoint {e}/{i}{u}"
                 )
-                return
-            else:
-                logger.exception(he)
-                return
+                return None
+            logger.exception(he)
+            return None
 
         if t:
             json_name: str = (

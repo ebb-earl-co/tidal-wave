@@ -1,4 +1,4 @@
-"""Retrieve playlist data from the TIDAL API."""
+"""Represent a playlist in the reckoning of the TIDAL API."""
 
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
-
 from uuid import uuid4
 
 import ffmpeg
