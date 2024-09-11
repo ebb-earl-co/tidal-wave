@@ -1,4 +1,4 @@
-"""Represent various TIDAL API responses by JSONWizard subclasses."""
+"""Represent JSON responses from TIDAL API as JSONWizard subclasses."""
 
 from __future__ import annotations
 
@@ -121,7 +121,7 @@ class MediaMetadata:
     and, perhaps, the device's network connectivity conditions.
     """
 
-    tags: list[str]
+    tags: list[str]  # LOSSLESS, HIRES_LOSSLESS
 
 
 @dataclass(frozen=True)

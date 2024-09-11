@@ -35,7 +35,7 @@ jobs:
       # https://trac.ffmpeg.org/wiki/CompilationGuide/macOS#InstallingdependencieswithHomebrew
       - name: Get FFmpeg dependencies from Homebrew
         id: brew-install-ffmpeg-deps
-        run: brew install automake libtool nasm shtool xvid
+        run: brew install automake nasm shtool xvid
       - name: Clone FFmpeg, n7.0 tag
         id: clone-ffmpeg-from-github
         uses: actions/checkout@v4

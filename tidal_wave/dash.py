@@ -1,4 +1,4 @@
-"""Audio data from TIDAL API is specified via DASH manifests; conceptualize this."""
+"""Represent the DASH manifests retrieved from TIDAL API."""
 
 from __future__ import annotations
 

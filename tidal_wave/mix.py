@@ -1,3 +1,5 @@
+"""Represent a mix of tracks and/or videos in the reckoning of TIDAL API."""
+
 import json
 import logging
 import shutil
