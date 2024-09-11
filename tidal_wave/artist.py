@@ -1,4 +1,4 @@
-"""The module tidal_wave.artist conceptually encapsulates a TIDAL artist."""
+"""Represent an artist in the reckoning of TIDAL API."""
 
 from __future__ import annotations
 

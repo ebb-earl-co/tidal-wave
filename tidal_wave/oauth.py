@@ -1,3 +1,5 @@
+"""Interact with TIDAL API in order to register tidal-wave as an OAUTH2 client."""
+
 from __future__ import annotations
 
 import base64

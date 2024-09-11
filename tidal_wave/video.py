@@ -1,3 +1,5 @@
+"""Represent a video in the reckoning of TIDAL API."""
+
 import json
 import logging
 import sys

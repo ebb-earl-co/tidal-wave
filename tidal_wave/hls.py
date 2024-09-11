@@ -1,4 +1,4 @@
-"""Videos are transported from TIDAL via HLS. Conceptualize this process."""
+"""Represent the HLS manifests retrieved from TIDAL API."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Retrieve data from the TIDAL API."""
+"""Retrieve data from TIDAL API and save it locally."""
 
 from __future__ import annotations
 

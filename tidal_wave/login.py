@@ -1,4 +1,4 @@
-"""Interact with the TIDAL API in order to authenticate tidal-wave as a client."""
+"""Interact with TIDAL API in order to authenticate tidal-wave as a client."""
 
 from __future__ import annotations
 

@@ -1,3 +1,5 @@
+"""Create helper functions to request data from various TIDAL API endpoints."""
+
 import json
 import logging
 from functools import partial

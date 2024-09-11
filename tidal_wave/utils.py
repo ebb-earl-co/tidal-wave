@@ -1,3 +1,5 @@
+"""Create utility functions for interacting with data returned from TIDAL API."""
+
 import base64
 import logging
 import os

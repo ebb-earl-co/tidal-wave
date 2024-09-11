@@ -1,4 +1,4 @@
-"""The module tidal_wave.album conceptually encapsulates a TIDAL album."""
+"""Represent an album in the reckoning of TIDAL API."""
 
 from __future__ import annotations
 
