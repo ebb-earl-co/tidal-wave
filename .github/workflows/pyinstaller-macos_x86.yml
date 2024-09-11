@@ -87,7 +87,7 @@ jobs:
           architecture: "x64"
           cache: "pip"
           check-latest: false
-          python-version: "3.12.3"
+          python-version: "3.12.6"
       - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip pyinstaller setuptools wheel
