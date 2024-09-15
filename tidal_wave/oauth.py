@@ -1,4 +1,4 @@
-"""Interact with TIDAL API in order to register tidal-wave as an OAUTH2 client."""
+"""Interact with TIDAL API using OAuth 2.0 to register tidal-wave as a client."""
 
 from __future__ import annotations
 
@@ -10,12 +10,15 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from pathlib import Path
-from typing import Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING
 
 import dataclass_wizard
 import requests
 from platformdirs import user_config_path
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
 
 PROJECT_NAME: str = "tidal-wave"
 TOKEN_DIR_PATH: Path = user_config_path() / PROJECT_NAME
@@ -29,18 +32,17 @@ OAUTH2_HEADERS: dict[str, str] = {
 logger = logging.getLogger(__name__)
 
 
-class AuthorizationException(Exception):
-    pass
+class AuthorizationError(Exception):
+    """Exception that is raised upon unsuccessful interaction with TIDAL API."""
 
 
-class TokenException(Exception):
-    pass
+class TokenError(Exception):
+    """Exception that is raised upon unsuccessful interaction with TIDAL API."""
 
 
 @dataclass
 class DeviceAuthorizationEndpointResponseJSON(dataclass_wizard.JSONSerializable):
-    """This class models Tidal OAuth 2.0 API
-    /device_authorization endpoint JSON response."""
+    """Model the JSON response from TIDAL API /device_authorization endpoint."""
 
     device_code: str
     user_code: str
@@ -51,6 +53,8 @@ class DeviceAuthorizationEndpointResponseJSON(dataclass_wizard.JSONSerializable)
 
 @dataclass
 class User:
+    """Model the User object of JSON response from /device_authorization endpoint."""
+
     user_id: int
     email: str | None
     country_code: str
@@ -80,11 +84,10 @@ class User:
 
 @dataclass
 class TokenEndpointResponseJSON(dataclass_wizard.JSONSerializable):
-    """This class models the JSON response from the Tidal API
-    authorization /token endpoint."""
+    """Model the JSON response from TIDAL API /token endpoint."""
 
     scope: str
-    user: "User"
+    user: User
     client_name: str
     token_type: str
     access_token: str
@@ -92,7 +95,8 @@ class TokenEndpointResponseJSON(dataclass_wizard.JSONSerializable):
     expires_in: int
     user_id: int
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        """Set self.expiration attribute based on self.expires_in."""
         # Shave off 5 minutes from the expiration time. The API usually
         # gives 1-week expiration timeline, but depending on network latency
         # etc., want to refresh early.
@@ -102,18 +106,20 @@ class TokenEndpointResponseJSON(dataclass_wizard.JSONSerializable):
 
 @dataclass
 class BearerToken:
-    """This class represents a token used in bearer authentication
-    (https://swagger.io/docs/specification/authentication/bearer-authentication/)
-    with the Tidal API."""
+    """Model a JWT access token of type Bearer.
+
+    See more at (https://swagger.io/docs/specification/authentication/bearer-authentication/).
+    """
 
     access_token: str = field(repr=False)
     client_name: str  # "TIDAL_Android_2.38.0_Fire_TV_Atmos"
-    expiration: Union[str, datetime] = field(repr=False)
+    expiration: str | datetime = field(repr=False)
     refresh_token: str = field(repr=False)
     user_id: int
     user_name: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        """Set attributes self.client_id, self.client_secret."""
         self.client_id, self.client_secret = (
             TidalOauth().client_id,
             TidalOauth().client_secret,
@@ -121,20 +127,22 @@ class BearerToken:
         if isinstance(self.expiration, str):
             try:
                 self.expiration = datetime.fromisoformat(self.expiration)
-            except ValueError:
-                raise TokenException(
-                    "Expiration must be a datetime or datetime-like str"
-                )
+            except ValueError as ve:
+                _msg: str = "Expiration must be a datetime or datetime-like str"
+                raise TokenError(_msg) from ve
 
     @property
     def is_expired(self) -> bool:
-        """Returns whether self.expiration is in the past, by comparing with
-        datetime.datetime.now(tz=datetime.timezone.utc)."""
-        return False if datetime.now(tz=timezone.utc) < self.expiration else True
+        """Return whether self.expiration is in the past.
 
-    def save(self, p: Path = TOKEN_DIR_PATH / "fire_tv-tidal.token"):
-        """Write some attributes as base64-encoded JSON to path on disk, p"""
-        d: Dict[str, str] = {
+        This is done by comparing self.expiration with
+        datetime.datetime.now(tz=datetime.timezone.utc).
+        """
+        return not (datetime.now(tz=timezone.utc) < self.expiration)
+
+    def save(self, p: Path = TOKEN_DIR_PATH / "fire_tv-tidal.token") -> None:
+        """Write some attributes as base64-encoded JSON to path on disk, p."""
+        d: dict[str, str] = {
             "access_token": self.access_token,
             "client_name": self.client_name,
             "expiration": self.expiration.isoformat(),
@@ -147,35 +155,37 @@ class BearerToken:
 
     @classmethod
     def load(
-        cls, p: Path = TOKEN_DIR_PATH / "fire_tv-tidal.token"
-    ) -> Optional["BearerToken"]:
-        """Read base64-encoded JSON object from disk. If no error arises,
-        return a BearerToken instance; else, return None"""
+        cls,
+        p: Path = TOKEN_DIR_PATH / "fire_tv-tidal.token",
+    ) -> BearerToken | None:
+        """Read base64-encoded JSON object from disk.
 
+        If no error arises, return a BearerToken instance; else, return None.
+        """
         try:
             token_path_bytes = p.read_bytes()
         except FileNotFoundError:
             logger.exception(
-                TokenException(f"File '{str(p.absolute())}' does not exist")
+                TokenError(f"File '{p.absolute()}' does not exist"),
             )
-            return
+            return None
 
         try:
             data = json.loads(base64.b64decode(token_path_bytes))
         except json.JSONDecodeError:
             logger.exception(
-                TokenException(f"Could not parse JSON data from '{str(p.absolute())}'")
+                TokenError(f"Could not parse JSON data from '{p.absolute()}'"),
             )
-            return
+            return None
         except UnicodeDecodeError:
             logger.exception(
-                TokenException(
-                    f"File '{str(p.absolute())}' does not appear to be base64-encoded"
-                )
+                TokenError(
+                    f"File '{p.absolute()}' does not appear to be base64-encoded",
+                ),
             )
-            return
+            return None
 
-        data_args: Tuple[str, str, datetime, str, int, str] = (
+        data_args: tuple[str, str, datetime, str, int, str] = (
             data.get(a)
             for a in (
                 "access_token",
@@ -190,9 +200,10 @@ class BearerToken:
         _token: BearerToken = cls(*data_args)
         return _token
 
-    def refresh(self):
-        """If self.access_token is expired, go through the token refresh process:
-        https://oauth.net/2/refresh-tokens/. If successful, various attributes of
+    def refresh(self) -> None:
+        """If self.access_token is expired, go through the token refresh process.
+
+        I.e., https://oauth.net/2/refresh-tokens/. If successful, various attributes of
         self are overwritten: most importantly, self.expiration & self.access_token
         """
         _data = {
@@ -203,21 +214,26 @@ class BearerToken:
         }
         _auth = (self.client_id, self.client_secret)
         with requests.post(
-            url=f"{OAUTH2_URL}/token", data=_data, auth=_auth, headers=OAUTH2_HEADERS
+            url=f"{OAUTH2_URL}/token",
+            data=_data,
+            auth=_auth,
+            headers=OAUTH2_HEADERS,
+            timeout=5,
         ) as resp:
             try:
                 resp.raise_for_status()
-            except requests.HTTPError:
-                raise TokenException(
-                    f"Could not refresh bearer token: HTTP error code {resp.status_code}"
+            except requests.HTTPError as he:
+                _msg: str = (
+                    f"Could not refresh bearer token: HTTP error {resp.status_code}"
                 )
+                raise TokenError(_msg) from he
             else:
                 token_json = resp.json()
 
             self.access_token = token_json.get("access_token")
             if token_json.get("clientName", token_json.get("client_name")) is not None:
                 self.client_name = token_json.get(
-                    "clientName", token_json.get("client_name")
+                    "clientName", token_json.get("client_name"),
                 )
             if token_json.get("userId", token_json.get("user_id")) is not None:
                 self.user_id = token_json.get("userId", token_json.get("user_id"))
@@ -240,37 +256,40 @@ class TidalOauth:
     https://github.com/Dniel97/RedSea/blob/4ba02b88cee33aeb735725cb854be6c66ff372d4/config/settings.example.py#L68
     """
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        """Set static attributes on self."""
         self._client_id: str = "7m7Ap0JC9j1cOM3n"
         self._client_secret: str = "vRAdA108tlvkJpTsGZS8rGZ7xTlbJ0qaZ2K9saEzsgY="
-        self.token: Optional[BearerToken] = None
+        self.token: BearerToken | None = None
         self.verification_url: str | None = None
 
     @property
     def client_id(self) -> str:
+        """Return the instance's client ID."""
         return self._client_id
 
     @property
     def client_secret(self) -> str:
+        """Return the instance's client secret."""
         return self._client_secret
 
-    def post_device_authorization(self, headers: Dict[str, str] = OAUTH2_HEADERS):
+    def post_device_authorization(self, headers: dict[str, str] = OAUTH2_HEADERS):
         """Send a POST request to the /device_authorization endpoint of Tidal's
-        authentication API. If error, raises AuthorizationException. Else,
+        authentication API. If error, raises AuthorizationError. Else,
         return an DeviceAuthorizationEndpointResponseJSON instance with five
         attributes:
         device_code, user_code, verification_uri_complete, expires_in, interval
         """
         _url: str = f"{OAUTH2_URL}/device_authorization"
-        _data: Dict[str, str] = {
+        _data: dict[str, str] = {
             "client_id": self.client_id,
             "scope": "r_usr+w_usr+w_sub",
         }
-        with requests.post(url=_url, data=_data, headers=headers) as resp:
+        with requests.post(url=_url, data=_data, headers=headers, timeout=5) as resp:
             try:
                 resp.raise_for_status()
             except requests.HTTPError as he:
-                raise AuthorizationException(he.args[0])
+                raise AuthorizationError from he
 
             daerj = DeviceAuthorizationEndpointResponseJSON.from_dict(resp.json())
 
@@ -279,17 +298,20 @@ class TidalOauth:
         # "Date" header is in the "%a, %d %b %Y %H:%M:%S %Z" format:
         # e.g. "Wed, 06 Dec 2023 05:11:11 GMT".
         # So, parsedate_to_datetime converts the above into
-        # datetime.datetime(2023, 12, 6, 5, 11, 11, tzinfo=datetime.timezone.utc)
+        # datetime.datetime(2023, 12, 6, 5, 11, 11, tzinfo=datetime.timezone.utc)  # noqa:ERA001
         self.verification_expiration: datetime = parsedate_to_datetime(
-            resp.headers.get("Date")
+            resp.headers.get("Date"),
         ) + timedelta(seconds=daerj.expires_in)
 
     def authorization_code_flow(
-        self, headers: Dict[str, str] = OAUTH2_HEADERS
+        self,
+        headers: dict[str, str] = OAUTH2_HEADERS,
     ) -> BearerToken:
-        """Returns an instance of BearerToken by authenticating
-        with the Tidal OAuth 2.0 API /token endpoint. Upon error,
-        raises AuthorizationException"""
+        """Return an instance of BearerToken or raise exception.
+
+        Authenticate with the Tidal OAuth 2.0 API /token endpoint.
+        Upon error, raise AuthorizationError.
+        """
         _data = {
             "client_id": self.client_id,
             "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
@@ -301,7 +323,7 @@ class TidalOauth:
         _data["device_code"] = self.device_authorization.device_code
         _auth = (self.client_id, self.client_secret)
 
-        print(
+        print(  # noqa:T201
             "\nCopy this URL, then navigate to it in a browser: "
             f"{self.verification_url}\n",
             file=sys.stderr,
@@ -309,17 +331,19 @@ class TidalOauth:
 
         while datetime.now(tz=timezone.utc) < self.verification_expiration:
             with requests.post(
-                url=f"{OAUTH2_URL}/token", headers=headers, data=_data, auth=_auth
+                url=f"{OAUTH2_URL}/token",
+                headers=headers,
+                data=_data,
+                auth=_auth,
+                timeout=5,
             ) as resp:
                 if not resp.ok:
                     time.sleep(self.device_authorization.interval * 2)
                     continue
-                else:
-                    break
+                break
         else:
-            raise AuthorizationException(
-                "OAuth login process has timed out. Please try again."
-            )
+            _msg: str = "OAuth login process has timed out. Please try again."
+            raise AuthorizationError(_msg)
 
         logger.info("Successfully authenticated with Tidal API.")
 
@@ -333,7 +357,5 @@ class TidalOauth:
                 user_id=_token.user_id,
                 user_name=_token.user.username,
             )
-        else:
-            raise TokenException(
-                f"Expected a bearer token, but received token type: {_token.token_type}"
-            )
+        _msg: str = f"Expected a bearer token, but received type: {_token.token_type}"
+        raise TokenError(_msg)
