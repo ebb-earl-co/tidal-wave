@@ -16,27 +16,10 @@ from pydantic import (
     field_validator,
 )
 
-
-class Artist(BaseModel, frozen=True):
-    """Parse the JSON response from the TIDAL API, /albums endpoint.
-
-    This class is a sub-object of the JSON response, representing the album's
-    artist(s).
-    """
-
-    id: int
-    name: str
-    artist_type: Literal["MAIN", "FEATURED"] = Field(alias="type")
-    picture: UUID4 = Field(repr=False)
-
-    @computed_field(repr=False)
-    def picture_url(self) -> HttpUrl:
-        """Set as property the URL to self's highest-quality JPEG file."""
-        _path: str = self.picture.replace("-", "/")
-        return f"https://resources.tidal.com/images/{_path}/1080x720.jpg"
+from .artists import Artist
 
 
-class AlbumsResponse(BaseModel, frozen=True):
+class AlbumsResponse(BaseModel):
     """Parse the JSON response from the TIDAL API, /albums endpoint."""
 
     id: int = Field(frozen=True, ge=10, le=999_999_999)  # 2- to 9-digit number
@@ -54,21 +37,25 @@ class AlbumsResponse(BaseModel, frozen=True):
     )
     number_of_tracks: PositiveInt = Field(
         alias="numberOfTracks",
+        frozen=True,
         repr=False,
         strict=True,
     )
     number_of_videos: NonNegativeInt = Field(
         alias="numberOfVideos",
+        frozen=True,
         repr=False,
         strict=True,
     )
     number_of_volumes: PositiveInt = Field(
         alias="numberOfVolumes",
+        frozen=True,
         repr=False,
         strict=True,
     )
     release_date: date = Field(
         alias="releaseDate",
+        frozen=True,
         repr=False,
         strict=False,  # so that pydantic parses str to date
     )
@@ -87,7 +74,7 @@ class AlbumsResponse(BaseModel, frozen=True):
         "HIGH",
         "LOW",
     ] = Field(alias="audioQuality", repr=False)
-    audio_modes: frozenset[Literal["DOLBY_ATMOS", "SONY_360RA", "STEREO"]] = Field(
+    audio_modes: frozenset[Literal["DOLBY_ATMOS", "STEREO"]] = Field(
         alias="audioModes",
         strict=False,  # to cast from list
         repr=False,
