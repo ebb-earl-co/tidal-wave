@@ -7,6 +7,7 @@ from typing import Literal
 
 from pydantic import (
     UUID4,
+    AwareDatetime,
     BaseModel,
     Field,
     HttpUrl,
@@ -16,13 +17,13 @@ from pydantic import (
     field_validator,
 )
 
-from .artists import Artist
+from . import Artist
 
 
 class AlbumsResponse(BaseModel):
     """Parse the JSON response from the TIDAL API, /albums endpoint."""
 
-    id: int = Field(frozen=True, ge=10, le=999_999_999)  # 2- to 9-digit number
+    id: PositiveInt = Field(frozen=True, ge=10, le=999_999_999)  # 2- to 9-digit number
     title: str = Field(
         frozen=True,
         description=(
@@ -30,7 +31,7 @@ class AlbumsResponse(BaseModel):
             "that is not denoted here."
         ),
     )
-    duration: int = Field(
+    duration: PositiveInt = Field(
         frozen=True,
         description="Total runtime, in seconds, of album's tracks and/or videos.",
         repr=False,
@@ -166,3 +167,17 @@ class AlbumsResponse(BaseModel):
         """Set as property the URL to self's highest-quality JPEG file."""
         _original_cover_path: str = self.cover.replace("-", "/")
         return f"https://resources.tidal.com/images/{_original_cover_path}/origin.jpg"
+
+
+class AlbumsReviewResponseJSON(BaseModel):
+    """Represent the response from the TIDAL API endpoint /albums/<ID>/review."""
+
+    source: str = Field(frozen=True, examples=["TiVo"])
+    last_updated: AwareDatetime = Field(
+        alias="lastUpdated",
+        examples=["2024-08-15T05:39:47.865+0000"],
+        frozen=True,
+        strict=False,  # so that pydantic parses str to datetime
+    )
+    text: str = Field(frozen=True, repr=None)
+    summary: str = Field(frozen=True, repr=None)

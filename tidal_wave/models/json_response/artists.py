@@ -13,34 +13,43 @@ from pydantic import (
     NonNegativeInt,
     PositiveInt,
     computed_field,
-    field_validator,
 )
 
-from .albums import AlbumsEndpointResponseJSON
+from .albums import AlbumsResponse
+from .videos import VideosEndpointResponseJSON
 
-class Artist(BaseModel):
-    """Parse the JSON response from the TIDAL API, /artists endpoint.
 
-    This class is a sub-object of the JSON response, representing the album's
-    artist(s).
-    """
+class ArtistsEndpointResponseJSON(BaseModel):
+    """Represent the response from the TIDAL API endpoint /artists."""
 
+    # artist_types: Literal["ARTIST", "CONTRIBUTOR"]
     id: PositiveInt = Field(frozen=True)
     name: str = Field(frozen=True)
-    artist_type: Literal["MAIN", "FEATURED"] = Field(alias="type", frozen=True)
-    picture: UUID4 = Field(repr=False, frozen=True)
+    picture: UUID4 | None = Field(
+        default=None,
+        frozen=True,
+        repr=False,
+    )
+    url: HttpUrl = Field(
+        examples=["http://www.tidal.com/artist/4950177"], frozen=True, repr=False
+    )
 
     @computed_field(repr=False)
     def picture_url(self) -> HttpUrl:
-        """Set as property the URL to self's highest-quality JPEG file."""
-        _path: str = self.picture.replace("-", "/")
-        return f"https://resources.tidal.com/images/{_path}/750x750.jpg"
+        """Set as property the URL to self's JPEG file."""
+        url_path: str = str(self.picture).replace("-", "/")
+        # TODO: figure out which dimension is ideal here. Is non-square a no-go?
+        # is 750x750 (the largest square dimensions) embeddable into fLaC, m4a?
+        return f"https://resources.tidal.com/images/{url_path}/750x750.jpg"
 
 
 class ArtistsBioResponseJSON(BaseModel):
     """Represent the response from the TIDAL API endpoint /artists/<ID>/bio."""
 
-    source: str = Field(frozen=True)
+    source: str = Field(
+        examples=["TiVo"],
+        frozen=True,
+    )
     last_updated: AwareDatetime = Field(
         alias="lastUpdated",
         frozen=True,
@@ -57,4 +66,13 @@ class ArtistsAlbumsResponseJSON(BaseModel):
     limit: NonNegativeInt = Field(frozen=True)
     offset: NonNegativeInt = Field(frozen=True)
     total_number_of_items: NonNegativeInt = Field(frozen=True)
-    items: list[AlbumsEndpointResponseJSON] = Field(frozen=True)
+    items: list[AlbumsResponse] = Field(frozen=True, repr=False)
+
+
+class ArtistsVideosResponseJSON(BaseModel):
+    """Represent the response from the TIDAL API endpoint /artists/<ID>/videos."""
+
+    limit: NonNegativeInt = Field(frozen=True)
+    offset: NonNegativeInt = Field(frozen=True)
+    total_number_of_items: PositiveInt = Field(frozen=True)
+    items: list[VideosEndpointResponseJSON] = Field(frozen=True, repr=False)
