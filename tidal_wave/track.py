@@ -591,7 +591,7 @@ class Track:
             else None
         )
         tags[tag_map["album_replay_gain"]] = (
-            f"{self.stream.album_replay_gain}"
+            f"{self.stream.album_replay_gain} dB"
             if self.stream.album_replay_gain is not None
             else None
         )
@@ -608,7 +608,7 @@ class Track:
             f"{self.metadata.peak}" if self.metadata.peak is not None else None
         )
         tags[tag_map["track_replay_gain"]] = (
-            f"{self.metadata.replay_gain}"
+            f"{self.metadata.replay_gain} dB"
             if self.metadata.replay_gain is not None
             else None
         )
