@@ -17,7 +17,7 @@ from .oauth import (
     TOKEN_DIR_PATH,
     BearerToken,
     TidalOauth,
-    TokenException,
+    TokenError,
 )
 from .utils import TIDAL_API_URL
 
@@ -145,7 +145,7 @@ def login_fire_tv(
         logger.warning("TIDAL access token needs refreshing: Attempting now.")
         try:
             bearer_token.refresh()
-        except TokenException as te:
+        except TokenError as te:
             sys.exit(te.args[0])
         else:
             logger.info("Successfully refreshed TIDAL access token")

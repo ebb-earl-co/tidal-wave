@@ -1,12 +1,7 @@
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Code style: Ruff](https://img.shields.io/badge/code%20style-Ruff-000000.svg)](https://docs.astral.sh/ruff/)
 [![PyPI - Version](https://img.shields.io/pypi/v/tidal-wave)](https://pypi.org/project/tidal-wave/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/tidal-wave)](https://pypi.org/project/tidal-wave/)
-[![Build Python package](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/python-build.yml/badge.svg?branch=trunk&event=release)](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/python-build.yml)
 [![Docker Image CI](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/docker-image.yml/badge.svg?branch=trunk)](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/docker-image.yml)
-[![GNU/Linux amd64 Executable](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/pyinstaller-linux.yml/badge.svg?branch=trunk)](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/pyinstaller-linux.yml)
-[![macOS amd64 Executable](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/pyinstaller-macos_x86.yml/badge.svg?branch=trunk)](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/pyinstaller-macos_x86.yml)
-[![macOS aarch64 (Apple Silicon) Executable](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/pyinstaller-macos_arm64.yml/badge.svg?branch=trunk)](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/pyinstaller-macos_arm64.yml)
-[![Windows amd64 Executable](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/pyinstaller-windows.yml/badge.svg?branch=trunk)](https://github.com/ebb-earl-co/tidal-wave/actions/workflows/pyinstaller-windows.yml)
 
 # tidal-wave &#x1F3B6; &#x1F30A;
 Waving at the [TIDAL](https://tidal.com) music service with [Python](https://www.python.org/). Runs on (at least) Windows, macOS, and GNU/Linux.
