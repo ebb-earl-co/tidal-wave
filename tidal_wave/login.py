@@ -17,7 +17,7 @@ from .oauth import (
     TOKEN_DIR_PATH,
     BearerToken,
     TidalOauth,
-    TokenException,
+    TokenError,
 )
 from .utils import TIDAL_API_URL
 
