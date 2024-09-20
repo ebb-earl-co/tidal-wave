@@ -12,21 +12,14 @@ import sys
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, TYPE_CHECKING
 
 import ffmpeg
 import mutagen
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
 from mutagen.mp4 import MP4Cover
-from requests import RequestException, Session
-
-import ffmpeg
-import mutagen
-from Crypto.Cipher import AES
-from Crypto.Util import Counter
-from mutagen.mp4 import MP4Cover
-from requests import RequestException, Session
+from requests import RequestException
 
 from .dash import (
     JSONDASHManifest,
@@ -56,6 +49,9 @@ from .requesting import (
     request_tracks,
 )
 from .utils import IMAGE_URL, download_cover_image, temporary_file
+
+if TYPE_CHECKING:
+    from requests import Session
 
 logger = logging.getLogger("__name__")
 
