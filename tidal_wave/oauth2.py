@@ -309,7 +309,9 @@ class TidalDevice(BaseModel):
         except ValidationError as ve:
             if device_access_token_request_response is None:
                 logger.critical("TIDAL API did not respond with an access token.")
-                raise AccessTokenError from ve
+                # raise AccessTokenError from ve
+                # Don't need the above traceback
+                raise AccessTokenError
 
             logger.critical(
                 "Unable to complete Authorization Grant Flow with TIDAL API.",
