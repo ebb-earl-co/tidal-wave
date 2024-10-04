@@ -715,16 +715,7 @@ class Track:
 
         if self.metadata is None:
             self.outfile = None
-            return
-
-        if "DOLBY_ATMOS" in self.metadata.media_metadata.tags:
-            if audio_format != AudioFormat.dolby_atmos:
-                logger.warning(
-                    f"Track {self.track_id} is only available in Dolby Atmos "
-                    "format. Downloading of track will not continue."
-                )
-                self.outfile = None
-                return
+            return None
 
         if audio_format == AudioFormat.dolby_atmos:
             if "DOLBY_ATMOS" not in self.metadata.media_metadata.tags:
