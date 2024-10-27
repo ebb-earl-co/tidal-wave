@@ -12,6 +12,7 @@ from platformdirs import user_config_path
 from pydantic import (
     UUID4,
     BaseModel,
+    ConfigDict,
     Field,
     PositiveInt,
     ValidationError,
@@ -48,15 +49,16 @@ class LoginError(Exception):
 class SessionClient(BaseModel):
     """Sub-object in TIDAL API response from /sessions endpoint."""
 
+    model_config = ConfigDict(strict=True)
     id: PositiveInt = Field(frozen=True)
     name: str = Field(frozen=True)
-    authorized_for_offline: bool = Field(alias="authorizedForOffline", frozen=True)
 
 
-class SessionsEndpointResponseJSON(BaseModel):
+class SessionsResponse(BaseModel):
     """Represent the response from the TIDAL API endpoint /sessions."""
 
-    session_id: UUID4 = Field(alias="sessionId", frozen=True)
+    model_config = ConfigDict(strict=True)
+    session_id: UUID4 = Field(alias="sessionId", frozen=True, strict=False)
     user_id: PositiveInt = Field(alias="userId", frozen=True)
     country_code: str = Field(alias="countryCode", frozen=True, pattern=r"[A-Z]{2}")
     session_client: SessionClient = Field(alias="client", frozen=True)
@@ -66,7 +68,7 @@ def request_tidal_session(
     client: httpx.Client,
     device: Literal[AmazonFireTVDevice, AndroidAutoDevice],
 ) -> httpx.Client:
-    """Initiate a TIDAL API 'session' by sending requests with 'client'.
+    """Initiate a TIDAL API "session" by sending requests with 'client'.
 
     This is so that parameters expected by all subsequent TIDAL API
     queries are expected: notably, the countryCode. Thus, this function
@@ -93,8 +95,8 @@ def request_tidal_session(
         raise LoginError from e
 
     try:
-        sessions_response_json: SessionsEndpointResponseJSON = (
-            SessionsEndpointResponseJSON.validate(sessions_response.json())
+        sessions_response_json: SessionsResponse = SessionsResponse.validate(
+            sessions_response.json()
         )
     except ValidationError:
         logger.critical("Unable to parse response from TIDAL API, /sessions endpoint.")
@@ -135,7 +137,7 @@ def prepare_client_for_audio_format(
 
     try:
         device_json: str | None = json.load(path_to_device_file.open("rb"))
-    except json.JSONDecodeError as jde:
+    except json.JSONDecodeError:
         raise LoginError from None
     except FileNotFoundError:
         log_msg: str = (
