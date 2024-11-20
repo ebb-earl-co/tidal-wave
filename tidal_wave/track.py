@@ -786,20 +786,6 @@ class Track:
             self.outfile = None
             return None
 
-        # TODO: the following logic is flawed, as tracks can be
-        # available in Dolby Atmos format as well as HI_RES, e.g.
-        if (
-            "DOLBY_ATMOS" in self.metadata.media_metadata.tags
-            and audio_format != AudioFormat.dolby_atmos
-        ):
-            _msg: str = (
-                f"Track {self.track_id} is only available in Dolby Atmos "
-                "format. Downloading of track will not continue."
-            )
-            logger.warning(_msg)
-            self.outfile = None
-            return None
-
         if (audio_format == AudioFormat.dolby_atmos) and (
             "DOLBY_ATMOS" not in self.metadata.media_metadata.tags
         ):
