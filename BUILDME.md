@@ -21,8 +21,8 @@ However, PyInstaller wants to package up a single Python script into an easily-d
   ./venv/bin/pyinstaller \
     --name tidal-wave_linux \
     --paths tidal_wave \
-    --exclude-modules pyinstaller \
-    --exclude-modules ruff \
+    --exclude-module pyinstaller \
+    --exclude-module ruff \
     --clean \
     --noupx \
     --onefile \
@@ -37,8 +37,8 @@ However, PyInstaller wants to package up a single Python script into an easily-d
   ./venv/bin/pyinstaller \
     --name tidal-wave_linux \
     --paths tidal_wave \
-    --exclude-modules pyinstaller \
-    --exclude-modules ruff \
+    --exclude-module pyinstaller \
+    --exclude-module ruff \
     --add-binary "ffmpeg-n7.0/ffmpeg:." \
     --clean \
     --noupx \
