@@ -33,7 +33,7 @@ dependencies = [
     "platformdirs==4.3.6",
     "pycryptodome==3.21.0",
     "requests[socks]==2.32.3",
-    "typer==0.14.0",
+    "typer==0.15.0",
 ]
 [project.scripts]
 tidal-wave = "tidal_wave.main:app"
