@@ -7,11 +7,11 @@ import json
 import logging
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from io import TextIOWrapper
-    from pathlib import Path
 
     from .media import AudioFormat
     from .models import (

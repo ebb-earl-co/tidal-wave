@@ -10,15 +10,11 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import dataclass_wizard
 import requests
 from platformdirs import user_config_path
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
 
 PROJECT_NAME: str = "tidal-wave"
 TOKEN_DIR_PATH: Path = user_config_path() / PROJECT_NAME

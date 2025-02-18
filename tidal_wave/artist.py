@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .album import Album
@@ -17,8 +18,6 @@ from .utils import download_cover_image
 from .video import Video
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from requests import Session
 
     from .media import AudioFormat
