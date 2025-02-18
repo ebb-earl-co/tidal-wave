@@ -92,7 +92,7 @@ jobs:
         run: |
           python3 -m pip install uv
           python3 -m uv pip install pyinstaller==6.12.0
-          python3 -m uv sync --active
+          python3 -m uv pip install .
       - name: Create Executable with Pyinstaller
         run: |
           pyinstaller \

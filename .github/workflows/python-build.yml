@@ -27,11 +27,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install --upgrade pip setuptools wheel
-          python3 -m pip install build
+          python3 -m pip install uv
 
       - name: Build package
-        run: python3 -m build
+        run: python3 -m uv build
 
       - name: Publish package
         uses: pypa/gh-action-pypi-publish@release/v1
