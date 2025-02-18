@@ -92,9 +92,9 @@ jobs:
           python-version: "3.12.9"
       - name: Install dependencies
         run: |
-          python3 -m pip install --upgrade pip setuptools wheel
-          python3 -m pip install pyinstaller==6.7.0
-          python3 -m pip install -r requirements.txt
+          python3 -m pip install uv
+          python3 -m uv pip install pyinstaller==6.12.0
+          python3 -m uv sync --active
       - name: Create Executable with Pyinstaller
         run: |
           pyinstaller \

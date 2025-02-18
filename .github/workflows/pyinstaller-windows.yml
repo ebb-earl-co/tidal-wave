@@ -51,9 +51,9 @@ jobs:
         run: |
           python.exe -m venv .\venv
           & .\venv\Scripts\activate
-          pip install --upgrade pip setuptools wheel
-          pip install pyinstaller==6.7.0 pypiwin32==223
-          pip install -r requirements.txt
+          python.exe -m pip install uv
+          python.exe -m uv pip install pyinstaller==6.12.0 pypiwin32==223
+          python.exe -m uv sync --active
       - name: Create Executable with Pyinstaller
         run: |
           & .\venv\Scripts\activate
