@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from contextlib import closing
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import typer
 from cachecontrol import CacheControl
@@ -29,7 +29,10 @@ from .track import Track
 from .utils import is_tidal_api_reachable
 from .video import Video
 
-__version__ = "2024.11.1"
+if TYPE_CHECKING:
+    from pathlib import Path
+
+__version__ = "2025.2.1"
 
 
 # https://typer.tiangolo.com/tutorial/options/version/#fix-with-is_eager
@@ -63,7 +66,8 @@ def main(
         ),
     ] = _user_music_path,
     loglevel: Annotated[
-        LogLevel, typer.Option(case_sensitive=False),
+        LogLevel,
+        typer.Option(case_sensitive=False),
     ] = LogLevel.info.value,
     include_eps_singles: Annotated[  # noqa: FBT002
         bool,
@@ -184,7 +188,8 @@ def main(
             raise typer.Exit(code=0)
         if isinstance(tidal_resource, TidalPlaylist):
             playlist = Playlist(
-                playlist_id=tidal_resource.tidal_id, transparent=transparent,
+                playlist_id=tidal_resource.tidal_id,
+                transparent=transparent,
             )
             if no_flatten:
                 playlist.get_elements(

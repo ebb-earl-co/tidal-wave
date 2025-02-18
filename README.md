@@ -45,7 +45,7 @@ More information on sound quality at [TIDAL's site here](https://tidal.com/sound
    - For macOS, the [FFmpeg download page](http://ffmpeg.org/download.html#build-mac) links to [this download source](https://evermeet.cx/ffmpeg/); or there is always [Homebrew](https://formulae.brew.sh/formula/ffmpeg)
    - For Windows, the [FFmpeg download page](http://ffmpeg.org/download.html#build-windows) lists 2 resources; or [`chocolatey`](https://community.chocolatey.org/packages/ffmpeg) is an option
    - If a minimal FFmpeg, compiled from source, is desired, take a look at this project's [BUILDME.md](https://github.com/ebb-earl-co/tidal-wave/blob/trunk/BUILDME.md) file for decent instructions
- - This is a Python package, so **to use it in the default manner** you will need [Python 3](https://www.python.org/downloads/), version 3.8 or newer, on your system.
+ - This is a Python package, so **to use it in the default manner** you will need [Python 3](https://www.python.org/downloads/), version 3.10 or newer, on your system.
    - *However*, as of December 2023, an [OCI container image](https://github.com/ebb-earl-co/tidal-wave/pkgs/container/tidal-wave); and [PyInstaller](https://pyinstaller.org/en/stable/)-created binaries for x86\_64 GNU/Linux, Apple Silicon macOS, x86\_64 macOS, and x86\_64 Windows are provided for download and use that *do not require Python to be installed*
  - Only a handful of Python libraries are dependencies:
    - [`backoff`](https://pypi.org/project/backoff/)
@@ -99,7 +99,7 @@ PS > Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
 PS > Invoke-WebRequest "https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_windows.exe" -OutFile "tidal-wave_windows.exe"
 PS > Invoke-WebRequest "https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_windows.exe.sha256" -OutFile "tidal-wave_windows.exe.sha256"
 # Get the checksum value from the tidal-wave_windows.exe.sha256 file and compare it to the just-downloaded EXE
-# (Get-FileHash .\tidal-wave_windows.exe -Algorithm SHA256).Hash -eq (Get-Content .\tidal-wave_windows.exe.sha256)
+# (Get-FileHash .\tidal-wave_windows.exe -Algorithm SHA256).Hash -eq (Get-Content .\tidal-wave_windows.exe.sha256).split("`t")[0]
 PS > (Get-FileHash .\tidal-wave_windows.exe -Algorithm SHA256).Hash -eq "e02f69eb850a98e6e1df2bc033fd12566cf27305421a36ec5372fd432ccc8e70"  # This checksum is from version 2024.4.3
 # ONLY CONTINUE IF THE OUTPUT OF THE PREVIOUS COMMAND IS 'True'
 PS > & .\tidal-wave_windows.exe --help
@@ -274,7 +274,7 @@ $ docker exec -it tidal-wave tidal-wave https://tidal.com/browse/track/...
 Note: the first `tidal-wave` is whatever `--name` you give the container, so that can be whatever your heart desires, but the second `tidal-wave` is invoking the Python program *inside* the container and needs to exactly `tidal-wave`.
 ## Development
 The easiest way to start working on development is to fork this project on GitHub, or clone the repository to your local machine and do the pull requesting on GitHub later. In any case, there will need to be some getting from GitHub first, so, roughly, the process is:
-  1. Get Python 3.8+ on your system
+  1. Get Python 3.10+ on your system
   2. Use a virtualenv or some other Python environment system (poetry, pipenv, etc.)
   3. Clone the repository: `$ git clone --depth=1 https://github.com/ebb-earl-co/tidal-wave/git`
 

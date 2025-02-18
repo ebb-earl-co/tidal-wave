@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from contextlib import closing
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import typer
 from cachecontrol import CacheControl
@@ -29,7 +29,10 @@ from tidal_wave.track import Track
 from tidal_wave.utils import is_tidal_api_reachable
 from tidal_wave.video import Video
 
-__version__ = "2024.11.1"
+if TYPE_CHECKING:
+    from pathlib import Path
+
+__version__ = "2025.2.1"
 
 
 # https://typer.tiangolo.com/tutorial/options/version/#fix-with-is_eager

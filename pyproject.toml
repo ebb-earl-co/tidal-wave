@@ -1,7 +1,7 @@
 [build-system]
-requires = ["setuptools", "wheel"]
-[bdist_wheel]
-universal = 0  # Make the generated wheels have "py3" tag
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "tidal-wave"
 dynamic = ["version"]
@@ -10,15 +10,14 @@ authors = [{ name = "colinho", email = "pypi@colin.technology" }]
 maintainers = [{ name = "colinho", email = "pypi@colin.technology" }]
 license = { file = "LICENSE" }
 readme = { file = "README.md", content-type = "text/markdown" }
-requires-python = ">=3.8"
+requires-python = ">3.9"
 classifiers = [
     "Intended Audience :: End Users/Desktop",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
     "Topic :: Multimedia :: Sound/Audio",
     "Topic :: Multimedia :: Video",
@@ -35,19 +34,44 @@ dependencies = [
     "requests[socks]==2.32.3",
     "typer==0.15.1",
 ]
+
 [project.scripts]
 tidal-wave = "tidal_wave.main:app"
+
 [project.urls]
 Homepage = "https://github.com/ebb-earl-co/tidal-wave"
 
-[tool.ruff]
+[dependency-groups] # https://docs.astral.sh/uv/reference/settings/#dev-dependencies
+dev = [
+    "pyinstaller==6.12.0",
+    "ruff",
+    "uv>=0.6.0"
+]
+
+[tool.hatch.build]
+reproducible = true
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "tidal_wave/",
+]
+exclude = [
+  "pyinstaller.py"
+]
+
+[tool.hatch.version]
+path = "tidal_wave/main.py"
+
+[tool.ruff]  # https://docs.astral.sh/ruff/configuration/
+indent-width = 4
+line-length = 88
 target-version = "py38"
 
-[tool.setuptools.dynamic]
-version = {attr = "tidal_wave.main.__version__"}
+[tool.ruff.format]
+indent-style = "space"
+quote-style = "double"
 
 [tool.uv]
-dev-dependencies = [
-    "pyinstaller==6.7.0",
-    "ruff"
-]
+compile-bytecode = true  # https://docs.astral.sh/uv/reference/settings/#compile-bytecode
+package = true  # https://docs.astral.sh/uv/reference/settings/#package
+required-version = ">=0.6.0"  # https://docs.astral.sh/uv/reference/settings/#required-version
