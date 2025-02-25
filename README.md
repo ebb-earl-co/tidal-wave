@@ -99,7 +99,7 @@ PS > Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
 PS > Invoke-WebRequest "https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_windows.exe" -OutFile "tidal-wave_windows.exe"
 PS > Invoke-WebRequest "https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_windows.exe.sha256" -OutFile "tidal-wave_windows.exe.sha256"
 # Get the checksum value from the tidal-wave_windows.exe.sha256 file and compare it to the just-downloaded EXE
-# (Get-FileHash .\tidal-wave_windows.exe -Algorithm SHA256).Hash -eq (Get-Content .\tidal-wave_windows.exe.sha256)
+# (Get-FileHash .\tidal-wave_windows.exe -Algorithm SHA256).Hash -eq (Get-Content .\tidal-wave_windows.exe.sha256).split("`t")[0]
 PS > (Get-FileHash .\tidal-wave_windows.exe -Algorithm SHA256).Hash -eq "e02f69eb850a98e6e1df2bc033fd12566cf27305421a36ec5372fd432ccc8e70"  # This checksum is from version 2024.4.3
 # ONLY CONTINUE IF THE OUTPUT OF THE PREVIOUS COMMAND IS 'True'
 PS > & .\tidal-wave_windows.exe --help

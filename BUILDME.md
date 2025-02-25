@@ -39,7 +39,7 @@ However, PyInstaller wants to package up a single Python script into an easily-d
     --paths tidal_wave \
     --exclude-module pyinstaller \
     --exclude-module ruff \
-    --add-binary "ffmpeg-n7.0/ffmpeg:." \
+    --add-binary "ffmpeg-n7.0/ffmpeg:ffmpeg" \
     --clean \
     --noupx \
     --onefile \

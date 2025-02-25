@@ -60,7 +60,7 @@ jobs:
           pyinstaller `
             --name tidal-wave_windows.exe `
             --paths tidal_wave `
-            --add-binary "ffmpeg.exe:." `
+            --add-binary "ffmpeg.exe:ffmpeg.exe" `
             --exclude-module pyinstaller `
             --exclude-module ruff `
             --clean `
