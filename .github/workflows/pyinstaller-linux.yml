@@ -83,7 +83,7 @@ jobs:
             --paths tidal_wave \
             --exclude-module pyinstaller \
             --exclude-module ruff \
-            --add-binary "ffmpeg-n7.0/ffmpeg:." \
+            --add-binary "ffmpeg-n7.0/ffmpeg:ffmpeg" \
             --clean \
             --noupx \
             --onefile \
