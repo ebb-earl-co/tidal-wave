@@ -1,8 +1,9 @@
 # https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
-FROM docker.io/library/debian:bookworm-slim as build_image
+FROM docker.io/library/debian:bookworm-slim AS build_image
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update -qq && \
-    apt-get -y install --no-install-recommends ca-certificates g++ gcc git make pkg-config yasm && \
+    apt-get install -qy -o APT::Install-Recommends=false -o APT::Install-Suggests=false \
+    ca-certificates g++ gcc git make pkg-config yasm && \
     git clone --single-branch --branch n7.0 --depth=1 https://github.com/FFmpeg/FFmpeg.git /opt/ffmpeg-n7.0
 
 WORKDIR /opt/ffmpeg-n7.0
@@ -37,7 +38,7 @@ RUN ./configure \
       --enable-small \
       && make -j$(nproc) && make install && hash -r
 
-FROM docker.io/library/python:3.12.6-slim
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 LABEL org.opencontainers.image.authors="colinho <github@colin.technology>"
 LABEL org.opencontainers.image.description="Waving at the TIDAL music service with Python"
 LABEL org.opencontainers.image.documentation="https://github.com/ebb-earl-co/tidal-wave/blob/trunk/README.md"
@@ -50,18 +51,31 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
     # disable a pip version check to reduce run-time & log-spam
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     # cache is useless in docker image, so disable to reduce image size
-    PIP_NO_CACHE_DIR=1
-RUN useradd --create-home --shell /bin/bash debian && mkdir -p /home/debian/.local/bin/ && chown -R debian:debian /home/debian/
+    PIP_NO_CACHE_DIR=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=never
+
+RUN useradd --create-home --shell /bin/bash debian \
+    && mkdir -p /home/debian/.local/bin/ /home/debian/.config/tidal-wave/ /home/debian/Music/ \
+    && chown -R debian:debian /home/debian/
 COPY --from=build_image --chown=debian:debian /usr/local/bin/ffmpeg /home/debian/.local/bin/ffmpeg
+
 USER debian
 WORKDIR /home/debian
-COPY --chown=debian:debian pyproject.toml .
+# Install the project's dependencies
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project --no-dev --no-group=docker
+
+# Then, add the rest of the project source code and install it
+# Installing separately from its dependencies allows optimal layer caching
+COPY --chown=debian:debian pyproject.toml LICENSE README.md uv.lock .
 COPY --chown=debian:debian tidal_wave/ ./tidal_wave/
-RUN pip install --user --upgrade pip setuptools wheel dumb-init && \
-    pip install --user . && \
-    mkdir -p /home/debian/.config/tidal-wave/ /home/debian/Music/ && \
-    chown -R debian:debian /home/debian/.config/tidal-wave/ /home/debian/Music/
-ENV PATH="/home/debian/.local/bin:$PATH"
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --group=docker --no-group=dev
+
+ENV PATH="/home/debian/.local/bin:/home/debian/.venv/bin:$PATH"
 VOLUME /home/debian/.config/tidal-wave /home/debian/Music
 ENTRYPOINT ["dumb-init", "--", "tidal-wave"]
 CMD ["--help"]
