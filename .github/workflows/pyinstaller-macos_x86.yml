@@ -31,7 +31,7 @@ jobs:
       - name: Update Homebrew
         id: update-homebrew
         run: |
-          brew update --preinstall
+          brew update
       # https://trac.ffmpeg.org/wiki/CompilationGuide/macOS#InstallingdependencieswithHomebrew
       - name: Get FFmpeg dependencies from Homebrew
         id: brew-install-ffmpeg-deps
