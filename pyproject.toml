@@ -43,7 +43,7 @@ Homepage = "https://github.com/ebb-earl-co/tidal-wave"
 [dependency-groups]
 dev = [
     "pyinstaller==6.7.0",
-    "ruff"
+    "ruff",
     "uv>=0.6.0"
 ]
 
