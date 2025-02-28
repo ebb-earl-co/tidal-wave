@@ -16,7 +16,6 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-13, macos-latest]
     runs-on: ${{ matrix.os }}
     # Python 3.8 and 3.9 are not available on macOS aarch64 any more
-    # Python 3.13.0-alpha.6 does not work on Windows
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
