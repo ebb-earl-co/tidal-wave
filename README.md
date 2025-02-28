@@ -109,7 +109,7 @@ There is a wonderful command-line tool called [`aria2`](https://aria2.github.io/
 ##### On Unix-Like
 ```bash
 # The checksum of version 2024.11.1 tidal-wave_ubuntu_24.04_amd64 is 341d9c464dfd9a3c08880e0c39d1aad0159eb84f0da3fef8fc47ed756c6fe78b
-$ aria2c --checksum=sha-26=341d9c464dfd9a3c08880e0c39d1aad0159eb84f0da3fef8fc47ed756c6fe78b https://github.com/ebb-earl-co/tidal-wave/releases/download/2024.11.1/tidal-wave_ubuntu_24.04_amd64
+$ aria2c --checksum=sha-256=341d9c464dfd9a3c08880e0c39d1aad0159eb84f0da3fef8fc47ed756c6fe78b https://github.com/ebb-earl-co/tidal-wave/releases/download/2024.11.1/tidal-wave_ubuntu_24.04_amd64
 $ chmod +x ./tidal-wave_ubuntu_24.04_amd64
 $ ./tidal-wave_ubuntu_24.04_amd64 --help
 ```
