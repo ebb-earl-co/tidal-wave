@@ -81,7 +81,7 @@ $ source .venv/bin/activate
 $ (.venv) pip install .
 ```
 ### PyInstaller executable
-The release artifacts for this project are created with [PyInstaller](https://pyinstaller.org). It bundles Python 3.12.7, FFmpeg 7.0, and the `tidal-wave` program into one binary, licensed under the terms of FFmpeg: with the [GNU Lesser General Public License (LGPL) version 2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html). Installation is as simple as downloading the correct binary for your platform giving it execute permissions, and running it. **Please make sure that the SHA256 checksum of the file that you have downloaded matches the corresponding `.sha256` file on the releases page!**
+The release artifacts for this project are created with [PyInstaller](https://pyinstaller.org). It bundles Python 3.12.9, FFmpeg 7.0, and the `tidal-wave` program into one binary, licensed under the terms of FFmpeg: with the [GNU Lesser General Public License (LGPL) version 2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html). Installation is as simple as downloading the correct binary for your platform giving it execute permissions, and running it. **Please make sure that the SHA256 checksum of the file that you have downloaded matches the corresponding `.sha256` file on the releases page!**
 #### On Unix-Like
 ```bash
 $ wget https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_ubuntu_24.04_amd64
@@ -104,6 +104,24 @@ PS > (Get-FileHash .\tidal-wave_windows.exe -Algorithm SHA256).Hash -eq "e02f69e
 # ONLY CONTINUE IF THE OUTPUT OF THE PREVIOUS COMMAND IS 'True'
 PS > & .\tidal-wave_windows.exe --help
 ```
+#### Using a One-Command Tool for Downloading and Checksum Verification
+There is a wonderful command-line tool called [`aria2`](https://aria2.github.io/) that will retrieve a URL _and_ verify a checksum of said URL contents **in one fell swoop**. [A Windows release and an Android + ARM64 release is available on their GitHub page](https://github.com/aria2/aria2/releases), but the package is available in plenty of Linux distros or Chocolatey/Winget (on Windows) or Brew (on MacOS) as well.
+##### On Unix-Like
+```bash
+# The checksum of version 2024.11.1 tidal-wave_ubuntu_24.04_amd64 is 341d9c464dfd9a3c08880e0c39d1aad0159eb84f0da3fef8fc47ed756c6fe78b
+$ aria2c --checksum=sha-26=341d9c464dfd9a3c08880e0c39d1aad0159eb84f0da3fef8fc47ed756c6fe78b https://github.com/ebb-earl-co/tidal-wave/releases/download/2024.11.1/tidal-wave_ubuntu_24.04_amd64
+$ chmod +x ./tidal-wave_ubuntu_24.04_amd64
+$ ./tidal-wave_ubuntu_24.04_amd64 --help
+```
+##### On Windows
+```powershell
+# For just the lifetime of this PowerShell process, don't block the download from GitHub
+PS > Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
+# The checksum of version 2024.11.1 tidal-wave_windows.exe is 2742ea0ceeaac3c943f01fa70a208810c359b1f070e1599db8955ef5f732672e
+PS > aria2c.exe --checksum=sha-256=2742ea0ceeaac3c943f01fa70a208810c359b1f070e1599db8955ef5f732672e https://github.com/ebb-earl-co/tidal-wave/releases/download/2024.11.1/tidal-wave_windows.exe
+PS > & .\tidal-wave_windows.exe --help
+```
+
 
 ### Docker
 Pull the image from GitHub container repo:
