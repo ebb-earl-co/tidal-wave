@@ -45,15 +45,15 @@ jobs:
         with:
           architecture: "x64"
           cache: "pip"
-          python-version: "3.12.7"
+          python-version: "3.12.9"
       - name: Install Python dependencies
         shell: pwsh
         run: |
           python.exe -m venv .\venv
           & .\venv\Scripts\activate
-          pip install --upgrade pip setuptools wheel
-          pip install pyinstaller==6.7.0 pypiwin32==223
-          pip install -r requirements.txt
+          python.exe -m pip install uv
+          python.exe -m uv pip install pyinstaller==6.12.0 pypiwin32==223
+          python.exe -m uv pip install .
       - name: Create Executable with Pyinstaller
         run: |
           & .\venv\Scripts\activate

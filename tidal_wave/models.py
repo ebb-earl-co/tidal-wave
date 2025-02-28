@@ -8,6 +8,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from io import BytesIO
+from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 import dataclass_wizard
@@ -17,8 +18,6 @@ from typing_extensions import Annotated
 from .utils import replace_illegal_characters
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from requests import Request, Session
 
 

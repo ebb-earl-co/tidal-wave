@@ -7,7 +7,7 @@ import json
 import logging
 import sys
 from enum import Enum
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import requests
 import typer
@@ -20,10 +20,6 @@ from .oauth import (
     TokenError,
 )
 from .utils import TIDAL_API_URL
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
 
 COMMON_HEADERS: dict[str, str] = {"Accept-Encoding": "gzip, deflate, br"}
 COUNTRY_CODE_PROPER_LENGTH: int = 2

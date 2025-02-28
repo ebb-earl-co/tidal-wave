@@ -69,12 +69,12 @@ jobs:
           architecture: "x64"
           cache: "pip"
           check-latest: false
-          python-version: "3.12.7"
+          python-version: "3.12.9"
       - name: Install dependencies
         run: |
-          python3 -m pip install --upgrade pip setuptools wheel
-          python3 -m pip install pyinstaller==6.7.0
-          python3 -m pip install -r requirements.txt
+          python3 -m pip install uv
+          python3 -m uv pip install pyinstaller==6.12.0
+          python3 -m uv pip install .
       - name: Create Executable with PyInstaller
         run: |
           pyinstaller \

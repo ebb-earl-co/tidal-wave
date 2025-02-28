@@ -22,16 +22,15 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12.7"
+          python-version: "3.12.9"
           cache: "pip"
 
       - name: Install dependencies
         run: |
-          python3 -m pip install --upgrade pip setuptools wheel
-          python3 -m pip install build
+          python3 -m pip install uv
 
       - name: Build package
-        run: python3 -m build
+        run: python3 -m uv build
 
       - name: Publish package
         uses: pypa/gh-action-pypi-publish@release/v1
