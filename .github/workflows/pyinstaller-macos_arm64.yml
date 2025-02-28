@@ -31,7 +31,7 @@ jobs:
         id: update-homebrew
         continue-on-error: true
         run: |
-          brew update --preinstall
+          brew update
       # https://trac.ffmpeg.org/wiki/CompilationGuide/macOS#InstallingdependencieswithHomebrew
       - name: Get FFmpeg dependencies from Homebrew
         id: brew-install-ffmpeg-deps
@@ -89,7 +89,7 @@ jobs:
         with:
           cache: "pip"
           check-latest: false
-          python-version: "3.12.7"
+          python-version: "3.12.9"
       - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip setuptools wheel
