@@ -242,35 +242,44 @@ def request_artists(
 
 
 def request_artists_albums(
-    session: Session, artist_id: int, transparent: bool = False
+    session: Session,
+    artist_id: int,
+    transparent: bool = False,
+    offset: Optional[int] = None,
 ) -> Optional[ArtistsAlbumsResponseJSON]:
     """Send a GET request to the /artists/<artist ID>/albums
     endpoint of the TIDAL API. If an Exception occurs, return None.
     Else, return an instance of ArtistsAlbumsResponseJSON"""
     return requester_maker(
         session=session,
+        headers={"Accept": "application/json"},
         endpoint="artists",
         identifier=artist_id,
-        headers={"Accept": "application/json"},
         url_end="/albums",
+        parameters={"limit": 100},
+        offset=offset,
         subclass=ArtistsAlbumsResponseJSON,
         transparent=transparent,
     )
 
 
 def request_artists_audio_works(
-    session: Session, artist_id: int, transparent: bool = False
+    session: Session,
+    artist_id: int,
+    transparent: bool = False,
+    offset: Optional[int] = None,
 ) -> Optional[ArtistsAlbumsResponseJSON]:
     """Send a GET request to the /artists/<artist ID>/albums
     endpoint of the TIDAL API. If an Exception occurs, return None.
     Else, return an instance of ArtistsAlbumsResponseJSON"""
     return requester_maker(
         session=session,
+        headers={"Accept": "application/json"},
         endpoint="artists",
         identifier=artist_id,
-        headers={"Accept": "application/json"},
-        parameters={"filter": "EPSANDSINGLES"},
         url_end="/albums",
+        parameters={"filter": "EPSANDSINGLES", "limit": 100},
+        offset=offset,
         subclass=ArtistsAlbumsResponseJSON,
         transparent=transparent,
     )
