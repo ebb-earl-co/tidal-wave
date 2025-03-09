@@ -82,7 +82,7 @@ class Artist:
             session=session,
             artist_id=self.artist_id,
             transparent=self.transparent,
-            offset=0
+            offset=0,
         )
 
         _items: list[ArtistsAlbumsResponseJSON] = (
@@ -111,14 +111,14 @@ class Artist:
                     )
                     logger.warning(msg)
                     break
-        
+
         # The ArtistsAlbumsResponseJSON instances are frozen, so construct a new one
         # with the extended 'items' attribute and assign to self.album the new instance
         self.albums = ArtistsAlbumsResponseJSON(
             limit=aarj.limit if aarj is not None else artist_albums.limit,
             offset=aarj.offset if aarj is not None else artist_albums.offset,
             total_number_of_items=artist_albums.total_number_of_items,
-            items=_items
+            items=_items,
         )
 
     def set_audio_works(self, session: Session) -> None:
@@ -165,7 +165,7 @@ class Artist:
             limit=aarj.limit if aarj is not None else singles_eps.limit,
             offset=aarj.offset if aarj is not None else singles_eps.offset,
             total_number_of_items=singles_eps.total_number_of_items,
-            items=_items
+            items=_items,
         )
 
     def set_videos(self, session: Session) -> None:

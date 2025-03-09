@@ -80,6 +80,20 @@ $ python3 -m venv .venv
 $ source .venv/bin/activate
 $ (.venv) pip install .
 ```
+
+### Using the New Tool `uv`
+The [`uv`](https://docs.astral.sh/uv/) project from [Astral](https://astral.sh/) (creators of [Ruff](https://docs.astral.sh/ruff/)) will be the future of project development for `tidal-wave`. It is fast, well-documented, simple, and available as a binary or as a Python package! You don't even _necessarily_ need Python installed before using `tidal-wave`! The following is how to: install Python; resolve `tidal-wave`'s dependencies; and run `tidal-wave` in one fell swoop:
+```bash
+# assuming that the `uv` binary is already available on one's system
+$ uvx tidal-wave --help
+```
+
+```powershell
+# assuming that `uv.exe` binary is already available on one's system
+PS> uvx.exe tidal-wave --help
+```
+It _really_ is that simple and straightforward! Repeated uses of `tidal-wave` via this declaration will be much faster, as the project and its dependencies will have been stored in `uv`'s cache.
+
 ### PyInstaller executable
 The release artifacts for this project are created with [PyInstaller](https://pyinstaller.org). It bundles Python 3.12.9, FFmpeg 7.0, and the `tidal-wave` program into one binary, licensed under the terms of FFmpeg: with the [GNU Lesser General Public License (LGPL) version 2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html). Installation is as simple as downloading the correct binary for your platform giving it execute permissions, and running it. **Please make sure that the SHA256 checksum of the file that you have downloaded matches the corresponding `.sha256` file on the releases page!**
 #### On Unix-Like

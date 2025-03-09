@@ -43,7 +43,8 @@ __version__ = "2025.2.1"
 # been once the execution of the PyInstaller binary created from
 # this file is complete.
 OLD_PATH: str = os.environ["PATH"]
-os.environ["PATH"] += os.pathsep + sys._MEIPASS
+os.environ["PATH"] += os.pathsep + sys._MEIPASS  # noqa: SLF001
+
 
 # https://typer.tiangolo.com/tutorial/options/version/#fix-with-is_eager
 def version_callback(value: bool) -> None:  # noqa: FBT001
@@ -120,7 +121,7 @@ def main(
         bool | None,
         typer.Option("--version", callback=version_callback, is_eager=True),
     ] = None,
-):
+) -> None:
     """Parse command line arguments and retrieve data from TIDAL."""
     logging.basicConfig(
         format="%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s",
@@ -201,7 +202,7 @@ def main(
                 raise typer.Exit(code=0)
             case TidalVideo():
                 video: Video = Video(
-                    video_id=tidal_resource.tidal_id, transparent=transparent
+                    video_id=tidal_resource.tidal_id, transparent=transparent,
                 )
                 video.get(session=session, out_dir=output_directory)
 
@@ -254,7 +255,7 @@ def main(
             case _:
                 raise NotImplementedError
 
-# https://docs.python.org/3/tutorial/errors.html#defining-clean-up-actions
+
 try:
     app()
 finally:
