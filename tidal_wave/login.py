@@ -278,7 +278,7 @@ def login_macos(
             token_path.unlink()
     else:
         _msg: str = f"Writing this access token to '{token_path.absolute()}'"
-        logger.debug()
+        logger.debug(_msg)
         s.headers["User-Agent"] = (
             "TIDALPlayer/3.1.4.209 CFNetwork/1494.0.7 Darwin/23.4.0"
         )
@@ -348,5 +348,5 @@ def login(
         "Please provide one of the following: "
         f"{', '.join(e.value for e in AudioFormat)}"
     )
-    logger.critical()
+    logger.critical(_msg)
     return _to_return
