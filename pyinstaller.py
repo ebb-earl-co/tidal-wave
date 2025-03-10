@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import os
+import sys
 from contextlib import closing
 from pathlib import Path
 
@@ -30,6 +32,18 @@ from tidal_wave.utils import is_tidal_api_reachable
 from tidal_wave.video import Video
 
 __version__ = "2025.2.1"
+
+# PyInstaller --one-file option creates a temporary folder in the
+# appropriate temp-folder location for the executing OS. The folder
+# is named _MEIxxxxxx, where xxxxxx is a random
+# number. This is stored in the Python process as sys._MEIPASS. So,
+# the OS's PATH variable needs to be able to find the FFmpeg
+# executable that has been unbundled into the path sys._MEIPASS.
+# To be polite, the PATH variable will be re-set to whatever it had
+# been once the execution of the PyInstaller binary created from
+# this file is complete.
+OLD_PATH: str = os.environ["PATH"]
+os.environ["PATH"] += os.pathsep + sys._MEIPASS  # noqa: SLF001
 
 
 # https://typer.tiangolo.com/tutorial/options/version/#fix-with-is_eager
@@ -107,7 +121,7 @@ def main(
         bool | None,
         typer.Option("--version", callback=version_callback, is_eager=True),
     ] = None,
-):
+) -> None:
     """Parse command line arguments and retrieve data from TIDAL."""
     logging.basicConfig(
         format="%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s",
@@ -135,7 +149,7 @@ def main(
             "would you like program execution to continue?",
         )
         if not user_wishes_to_continue:
-            raise typer.Exit(code=1)
+            raise typer.Exit(code=0)
 
     s, audio_format = login(audio_format=audio_format)
     if s is None:
@@ -188,7 +202,7 @@ def main(
                 raise typer.Exit(code=0)
             case TidalVideo():
                 video: Video = Video(
-                    video_id=tidal_resource.tidal_id, transparent=transparent
+                    video_id=tidal_resource.tidal_id, transparent=transparent,
                 )
                 video.get(session=session, out_dir=output_directory)
 
@@ -242,4 +256,7 @@ def main(
                 raise NotImplementedError
 
 
-app()
+try:
+    app()
+finally:
+    os.environ["PATH"] = OLD_PATH

@@ -60,9 +60,10 @@ jobs:
           pyinstaller `
             --name tidal-wave_windows.exe `
             --paths tidal_wave `
-            --add-binary "ffmpeg.exe:ffmpeg.exe" `
+            --add-binary "ffmpeg.exe;." `
             --exclude-module pyinstaller `
             --exclude-module ruff `
+            --exclude-module uv `
             --clean `
             --upx-dir "~\AppData\Local\upx-4.2.3-win64" `
             --onefile `

@@ -47,7 +47,9 @@ However, PyInstaller wants to package up a single Python script into an easily-d
     ./pyinstaller.py
   ```
   The resulting `tidal-wave_linux` artifact is a single-click executable with everything that `tidal-wave` needs to execute! The GitHub Actions automations that execute this process are:
-  - `.github/workflows/pyinstaller-linux.yml`
+  - `.github/workflows/pyinstaller-ubuntu_20_04.yml`
+  - `.github/workflows/pyinstaller-ubuntu_22_04.yml`
+  - `.github/workflows/pyinstaller-ubuntu_24_04.yml`
   - `.github/workflows/pyinstaller-macos_arm64.yml`
   - `.github/workflows/pyinstaller-macos_x86.yml`
   - `.github/workflows/pyinstaller-windows.yml`

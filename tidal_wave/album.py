@@ -92,6 +92,7 @@ class Album:
                         f"{self.metadata.number_of_tracks - len(_items)}"
                     )
                     logger.warning(msg)
+                    break
 
         self.tracks: tuple[TracksEndpointResponseJSON] = tuple(
             _item.item for _item in _items
@@ -300,8 +301,7 @@ class Album:
             self.save_cover_image(session, out_dir)
         else:
             _msg: str = (
-                "No cover image was returned from TIDAL API "
-                f"for album {self.album_id}"
+                f"No cover image was returned from TIDAL API for album {self.album_id}"
             )
             logger.warning(_msg)
 

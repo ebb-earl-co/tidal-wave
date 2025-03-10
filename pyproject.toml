@@ -1,7 +1,5 @@
 [build-system]
 requires = ["setuptools", "wheel"]
-[bdist_wheel]
-universal = 0  # Make the generated wheels have "py3" tag
 [project]
 name = "tidal-wave"
 dynamic = ["version"]
@@ -43,9 +41,12 @@ Homepage = "https://github.com/ebb-earl-co/tidal-wave"
 
 [dependency-groups]
 dev = [
-    "pyinstaller==6.7.0",
     "ruff",
     "uv>=0.6.0"
+]
+build = [
+    "pyinstaller>=6.0.0",
+    "pypiwin32==223 ; platform_system == 'Windows'",
 ]
 
 [tool.ruff]
