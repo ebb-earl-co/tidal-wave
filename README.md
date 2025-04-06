@@ -13,11 +13,17 @@ This project is inspired by [`qobuz-dl`](https://github.com/vitiko98/qobuz-dl), 
 This software uses libraries from the [FFmpeg](http://ffmpeg.org) project under the [LGPLv2.1](http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html). FFmpeg is a trademark of [Fabrice Bellard](http://www.bellard.org/), originator of the FFmpeg project. 
 
 ## Features
-* Retrieve [FLAC](https://xiph.org/flac/), [Dolby Atmos](https://www.dolby.com/technologies/dolby-atmos/), or [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) tracks; [AVC/H.264](https://en.wikipedia.org/wiki/Advanced_Video_Coding) (up to 1920x1080) + [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) videos
-  - **Note**: [as of 24 July 2024](https://web.archive.org/web/20240714095203/https://support.tidal.com/hc/en-us/articles/25876825185425-Upcoming-Changes-to-Audio-Formats), TIDAL's catalog no longer includes tracks in MQA or [Sony 360 Reality Audio](https://electronics.sony.com/360-reality-audio) format.
+* Retrieve ready-to-play audio with copious metadata embedded in the following formats:
+  - [FLAC](https://xiph.org/flac/) (up to 24-bit, 192 kHz)
+  - [Dolby Atmos](https://www.dolby.com/technologies/dolby-atmos/) (5.1 channel)
+  - [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) (up to 320 kbps)
+  - **Note**: [as of 24 July 2024](https://web.archive.org/web/20240714095203/https://support.tidal.com/hc/en-us/articles/25876825185425-Upcoming-Changes-to-Audio-Formats),
+  TIDAL's catalog no longer includes tracks in [MQA](https://www.whathifi.com/advice/mqa-audio-what-it-how-can-you-get-it) or [Sony 360 Reality Audio](https://electronics.sony.com/360-reality-audio) format.
+* Retrieve ready-to-play video with copious metadata embedded in the [AVC/H.264](https://en.wikipedia.org/wiki/Advanced_Video_Coding) (up to 1920x1080) format with [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) audio
+  
 * Either a single track or an entire album can be retrieved
 * Album covers are retrieved by default, and embedded into all tracks
-  - Highest-resolution, "original" album covers, which can be up to 6000x6000 pixels resolution, are retrieved if available
+  - Highest-resolution, "original" album covers, which can be up to 6,000x6,000 pixels resolution, are retrieved if available
 * Support for albums with multiple discs
 * If available, lyrics are added as metadata to tracks
 * If available, album reviews are retrieved as JSON
@@ -27,7 +33,10 @@ This software uses libraries from the [FFmpeg](http://ffmpeg.org) project under 
 * Playlist retrieval support (video or audio or both)
 * Playlist .m3u8 file automatically created
 * Mix retrieval support (video or audio)
-* Artist's entire works retrieval support (video and audio; albums or albums and EPs and singles)
+* Artist's entire works retrieval support
+  - All videos
+  - All albums OR;
+  - All albums and EPs and singles
 * Because of the use of the `requests` package, system proxies are respected (HTTP, HTTPs, Socks); or can be specified by typical environment variable
 * Also because of the use of `requests`, very simple [`Cache-Control`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control) request caching occurs via `CacheControl`
 * If desired, all JSON responses from the TIDAL API can be saved for inspection or posterity or debugging
