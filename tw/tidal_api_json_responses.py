@@ -6,7 +6,7 @@ import json
 import string
 import sys
 from base64 import b64decode
-from datetime import date, datetime  # noqa:TCH003
+from datetime import date, datetime  # noqa:TC003
 from pathlib import Path
 from typing import Literal
 
