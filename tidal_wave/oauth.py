@@ -102,7 +102,7 @@ class TokenEndpointResponseJSON(dataclass_wizard.JSONSerializable):
 
 @dataclass
 class BearerToken:
-    """Model a JWT access token of type Bearer.
+    """Model a bearer token of type JWT.
 
     See more at (https://swagger.io/docs/specification/authentication/bearer-authentication/).
     """
@@ -229,7 +229,8 @@ class BearerToken:
             self.access_token = token_json.get("access_token")
             if token_json.get("clientName", token_json.get("client_name")) is not None:
                 self.client_name = token_json.get(
-                    "clientName", token_json.get("client_name"),
+                    "clientName",
+                    token_json.get("client_name"),
                 )
             if token_json.get("userId", token_json.get("user_id")) is not None:
                 self.user_id = token_json.get("userId", token_json.get("user_id"))
@@ -242,20 +243,20 @@ class BearerToken:
 
 @dataclass
 class TidalOauth:
-    """This class encapsulates attributes and methods to do with authenticating
-    with the Tidal OAuth API. In particular, the authorization_code_flow()
-    method implements the authorization code flow part of the OAuth 2.0
-    specification:
+    """Encapsulate attributes and methods to do with authenticating with the Tidal OAuth API.
+
+    In particular, the authorization_code_flow() method implements the authorization code
+    flow part of the OAuth 2.0 specification:
     https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow
-    The client_id and client_secret attributes are gleaned from other projects'
-    work, especially
+    The client_id and client_secret attributes are gleaned from other projects' work,
+    especially
     https://github.com/Dniel97/RedSea/blob/4ba02b88cee33aeb735725cb854be6c66ff372d4/config/settings.example.py#L68
     """
 
     def __post_init__(self) -> None:
         """Set static attributes on self."""
         self._client_id: str = "7m7Ap0JC9j1cOM3n"
-        self._client_secret: str = "vRAdA108tlvkJpTsGZS8rGZ7xTlbJ0qaZ2K9saEzsgY="
+        self._client_secret: str = "vRAdA108tlvkJpTsGZS8rGZ7xTlbJ0qaZ2K9saEzsgY="  # noqa: S105
         self.token: BearerToken | None = None
         self.verification_url: str | None = None
 
