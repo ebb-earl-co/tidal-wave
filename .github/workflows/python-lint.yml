@@ -26,7 +26,7 @@ jobs:
           version: ">=0.7.8"
       - name: Lint with Ruff
         if: ${{ matrix.version != '3.9' && matrix.os == 'macos-latest'}}
-        run: uv run --no-project --with ruff ruff check --diff --statistics --exclude pyinstaller.py ./tidal_wave/
+        run: uv run --no-project --with ruff ruff check --statistics --exclude pyinstaller.py ./tidal_wave/
       - name: Format with Ruff
         if: ${{ matrix.version != '3.9' && matrix.os == 'macos-latest'}}
         run: uv run --no-project --with ruff ruff format --diff tidal_wave
