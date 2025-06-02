@@ -50,7 +50,7 @@ def version_callback(value: bool) -> None:  # noqa: FBT001
     """Pass this function to typer to specify eager option behavior."""
     if value:
         print(f"tidal-wave {__version__}")  # noqa: T201
-        raise typer.Exit
+        raise typer.Exit(code=0)
 
 
 app = typer.Typer()
@@ -104,8 +104,8 @@ def main(
         typer.Option(
             "--no-flatten",
             help=(
-                "Whether to treat playlists or mixes as a list of tracks/videos and, as"
-                " such, retrieve them independently"
+                "Whether to treat playlists or mixes as a list of tracks/videos and, "
+                "as such, retrieve them independently"
             ),
         ),
     ] = False,
@@ -244,7 +244,4 @@ def main(
 
 
 if __name__ == "__main__":
-    try:
-        app()
-    finally:
-        os.environ["PATH"] = OLD_PATH
+    app()

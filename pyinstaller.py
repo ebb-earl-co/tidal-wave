@@ -202,7 +202,8 @@ def main(
                 raise typer.Exit(code=0)
             case TidalVideo():
                 video: Video = Video(
-                    video_id=tidal_resource.tidal_id, transparent=transparent,
+                    video_id=tidal_resource.tidal_id,
+                    transparent=transparent,
                 )
                 video.get(session=session, out_dir=output_directory)
 
