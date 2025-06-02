@@ -857,8 +857,7 @@ def download_artist_image(
         output_file.write_bytes(bytes_to_write.read())
         bytes_to_write.close()
         _msg: str = (
-            f"Wrote artist image JPEG for {artist} to "
-            f"'{output_file.absolute()}'"
+            f"Wrote artist image JPEG for {artist} to '{output_file.absolute()}'"
         )
         logger.info(_msg)
     return output_file

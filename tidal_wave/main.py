@@ -45,6 +45,7 @@ __version__ = "2025.6.1"
 OLD_PATH: str = os.environ["PATH"]
 os.environ["PATH"] += os.pathsep + sys._MEIPASS  # noqa: SLF001
 
+
 # https://typer.tiangolo.com/tutorial/options/version/#fix-with-is_eager
 def version_callback(value: bool) -> None:  # noqa: FBT001
     """Pass this function to typer to specify eager option behavior."""

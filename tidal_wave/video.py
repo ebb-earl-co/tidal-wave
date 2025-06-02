@@ -129,9 +129,7 @@ class Video:
         download_params: Dict[str, None] = {k: None for k in session.params}
         # self.outfile should already have been set by self.set_outfile()
         request_headers: Dict[str, str] = (
-            {"sessionId": session.session_id}
-            if session.session_id is not None
-            else {}
+            {"sessionId": session.session_id} if session.session_id is not None else {}
         )
         logger.info(
             f"Writing video {self.video_id} to '{str(self.outfile.absolute())}'"
