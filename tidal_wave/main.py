@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import os
+import sys
 from contextlib import closing
 from pathlib import Path
 
@@ -29,7 +31,19 @@ from .track import Track
 from .utils import is_tidal_api_reachable
 from .video import Video
 
-__version__ = "2025.3.1"
+__version__ = "2025.6.1"
+
+# PyInstaller --one-file option creates a temporary folder in the
+# appropriate temp-folder location for the executing OS. The folder
+# is named _MEIxxxxxx, where xxxxxx is a random
+# number. This is stored in the Python process as sys._MEIPASS. So,
+# the OS's PATH variable needs to be able to find the FFmpeg
+# executable that has been unbundled into the path sys._MEIPASS.
+# To be polite, the PATH variable will be re-set to whatever it had
+# been once the execution of the PyInstaller binary created from
+# this file is complete.
+OLD_PATH: str = os.environ["PATH"]
+os.environ["PATH"] += os.pathsep + sys._MEIPASS  # noqa: SLF001
 
 
 # https://typer.tiangolo.com/tutorial/options/version/#fix-with-is_eager
@@ -37,7 +51,7 @@ def version_callback(value: bool) -> None:  # noqa: FBT001
     """Pass this function to typer to specify eager option behavior."""
     if value:
         print(f"tidal-wave {__version__}")  # noqa: T201
-        raise typer.Exit
+        raise typer.Exit(code=0)
 
 
 app = typer.Typer()
@@ -91,8 +105,8 @@ def main(
         typer.Option(
             "--no-flatten",
             help=(
-                "Whether to treat playlists or mixes as a list of tracks/videos and, as"
-                " such, retrieve them independently"
+                "Whether to treat playlists or mixes as a list of tracks/videos and, "
+                "as such, retrieve them independently"
             ),
         ),
     ] = False,
@@ -135,7 +149,7 @@ def main(
             "would you like program execution to continue?",
         )
         if not user_wishes_to_continue:
-            raise typer.Exit(code=1)
+            raise typer.Exit(code=0)
 
     s, audio_format = login(audio_format=audio_format)
     if s is None:

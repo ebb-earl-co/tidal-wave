@@ -68,7 +68,8 @@ class Playlist:
         sent to the endpoint until all items for the playlist are retrieved.
         """
         playlist_items: PlaylistsItemsResponseJSON | None = retrieve_playlist_items(
-            session=session, playlist_id=self.playlist_id,
+            session=session,
+            playlist_id=self.playlist_id,
         )
         if playlist_items is None:
             self.items = ()
@@ -268,8 +269,7 @@ class Playlist:
                 artist: str = m.get("artist", [""])[0]
                 title: str = m.get("title", [""])[0]
                 extinf: str = (
-                    f"#EXTINF:{math.ceil(m.info.length)},"
-                    f"{artist} - {title}\n{file}\n"
+                    f"#EXTINF:{math.ceil(m.info.length)},{artist} - {title}\n{file}\n"
                 )
                 m3u_text += extinf
             elif file.endswith(".mka"):
@@ -277,8 +277,7 @@ class Playlist:
                 artist: str = m.get("ARTI", [""])[0]
                 title: str = m.get("TITL", [""])[0]
                 extinf: str = (
-                    f"#EXTINF:{math.ceil(m.info.length)},"
-                    f"{artist} - {title}\n{file}\n"
+                    f"#EXTINF:{math.ceil(m.info.length)},{artist} - {title}\n{file}\n"
                 )
                 m3u_text += extinf
             elif file.endswith(".m4a"):
@@ -305,8 +304,7 @@ class Playlist:
                 artist: str = m.get("\xa9ART", [""])[0]
                 title: str = m.get("\xa9nam", [""])[0]
                 extinf: str = (
-                    f"#EXTINF:{math.ceil(m.info.length)},"
-                    f"{artist} - {title}\n{file}\n"
+                    f"#EXTINF:{math.ceil(m.info.length)},{artist} - {title}\n{file}\n"
                 )
                 m3u_text += extinf
         return m3u_text

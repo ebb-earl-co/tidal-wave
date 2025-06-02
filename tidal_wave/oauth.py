@@ -233,7 +233,8 @@ class BearerToken:
             self.access_token = token_json.get("access_token")
             if token_json.get("clientName", token_json.get("client_name")) is not None:
                 self.client_name = token_json.get(
-                    "clientName", token_json.get("client_name"),
+                    "clientName",
+                    token_json.get("client_name"),
                 )
             if token_json.get("userId", token_json.get("user_id")) is not None:
                 self.user_id = token_json.get("userId", token_json.get("user_id"))
