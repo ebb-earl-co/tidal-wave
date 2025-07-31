@@ -43,7 +43,7 @@ Homepage = "https://github.com/ebb-earl-co/tidal-wave"
 
 [dependency-groups] # https://docs.astral.sh/uv/reference/settings/#dev-dependencies
 dev = [
-    "pyinstaller==6.12.0",
+    "pyinstaller==6.14.2",
     "ruff",
     "uv>=0.6.0"
 ]
