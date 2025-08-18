@@ -11,7 +11,7 @@ jobs:
   build:
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
       - name: Set up Homebrew
@@ -38,7 +38,7 @@ jobs:
         run: brew install automake nasm shtool xvid
       - name: Clone FFmpeg, n7.0 tag
         id: clone-ffmpeg-from-github
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: FFmpeg/FFmpeg
           path: ffmpeg-n7.0
