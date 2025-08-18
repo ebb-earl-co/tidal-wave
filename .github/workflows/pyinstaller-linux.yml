@@ -11,7 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
       - uses: awalsh128/cache-apt-pkgs-action@latest
@@ -27,7 +27,7 @@ jobs:
       - name: Clone FFmpeg, n7.0 tag
         if: ${{ steps.cache-ffmpeg.outputs.cache-hit != 'true' }}
         id: clone-ffmpeg-from-github
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: FFmpeg/FFmpeg
           path: ffmpeg-n7.0
