@@ -64,7 +64,7 @@ jobs:
             --enable-small
           make -j$(nproc)
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           architecture: "x64"
           cache: "pip"

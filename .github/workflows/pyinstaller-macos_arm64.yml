@@ -85,7 +85,7 @@ jobs:
             --enable-small
           make -j$(sysctl -n hw.logicalcpu)
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           cache: "pip"
           check-latest: false

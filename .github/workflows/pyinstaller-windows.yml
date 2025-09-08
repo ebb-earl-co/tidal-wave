@@ -41,7 +41,7 @@ jobs:
         run: |
           Expand-Archive "~\AppData\Local\upx-4.2.3-win64.zip" -DestinationPath "~\AppData\Local\upx-4.2.3-win64"
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           architecture: "x64"
           cache: "pip"
