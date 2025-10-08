@@ -24,14 +24,15 @@ classifiers = [
 dependencies = [
     "backoff==2.2.1",
     "cachecontrol==0.14.2",
-    "dataclass-wizard==0.35.0",
+    "dataclass-wizard==0.35.1",
     "ffmpeg-python==0.2.0",
     "mutagen==1.47.0",
     "m3u8==6.0.0",
     "platformdirs==4.3.8",
     "pycryptodome==3.23.0",
-    "requests[socks]==2.32.3",
-    "typer==0.16.0",
+    "requests[socks]==2.32.4",
+    "typer==0.19.2",
+    "tzdata==2025.2; system_platform == 'Windows'",
 ]
 [project.scripts]
 tidal-wave = "tidal_wave.main:app"
@@ -41,7 +42,7 @@ Homepage = "https://github.com/ebb-earl-co/tidal-wave"
 [dependency-groups]
 dev = [
     "ruff",
-    "uv>=0.7.8"
+    "uv",
 ]
 build = [
     "pyinstaller<6.11",  # 6.11.1 and 6.12.0 break with a 'circular dependencies' problem
@@ -51,7 +52,7 @@ build = [
 [tool.ruff]
 indent-width = 4
 line-length = 88
-target-version = "py38"
+target-version = "py39"
 
 [tool.ruff.format]
 indent-style = "space"
@@ -63,3 +64,4 @@ version = {attr = "tidal_wave.main.__version__"}
 [tool.uv]
 compile-bytecode = true  # https://docs.astral.sh/uv/reference/settings/#compile-bytecode
 package = true  # https://docs.astral.sh/uv/reference/settings/#package
+required-version = ">=0.8.15"  # https://docs.astral.sh/uv/reference/settings/#required-version
