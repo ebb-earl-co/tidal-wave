@@ -42,8 +42,9 @@ __version__ = "2025.6.1"
 # To be polite, the PATH variable will be re-set to whatever it had
 # been once the execution of the PyInstaller binary created from
 # this file is complete.
-OLD_PATH: str = os.environ["PATH"]
-os.environ["PATH"] += os.pathsep + sys._MEIPASS  # noqa: SLF001
+if getattr(sys, "_MEIPASS", None) is not None:
+    OLD_PATH: str = os.environ["PATH"]
+    os.environ["PATH"] += os.pathsep + sys._MEIPASS  # noqa: SLF001
 
 
 # https://typer.tiangolo.com/tutorial/options/version/#fix-with-is_eager

@@ -97,7 +97,7 @@ class Video:
         with name `self.metadata.artist.name`"""
         self.artist_dir: Path = out_dir / self.metadata.artist.name.replace(
             "..", ""
-        ).replace("/", "and")
+        ).replace("/", "and").replace('" ', " ").replace(' "', " ")
         self.artist_dir.mkdir(parents=True, exist_ok=True)
 
     def set_filename(self, out_dir: Path):

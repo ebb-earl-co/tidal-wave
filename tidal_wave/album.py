@@ -160,9 +160,14 @@ class Album:
             <name of the main artist of the album>/
                 album_dir/
         """
-        artist_substring: str = self.metadata.artist.name.replace("..", "").replace(
-            "/",
-            "and",
+        artist_substring: str = (
+            self.metadata.artist.name.replace("..", "")
+            .replace(
+                "/",
+                "and",
+            )
+            .replace(' "', " ")
+            .replace('" ', " ")
         )
         album_substring: str = (
             f"{self.metadata.name.replace('..', '')} "
