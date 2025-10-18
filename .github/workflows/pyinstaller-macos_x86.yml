@@ -12,9 +12,8 @@ jobs:
     # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0
-        with:
-          submodules: true
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0
       - name: Set up Homebrew
         id: set-up-homebrew
         uses: Homebrew/actions/setup-homebrew@master
@@ -45,7 +44,7 @@ jobs:
       - name: Clone FFmpeg, n7.0 tag
         if: ${{ steps.cache-ffmpeg.outputs.cache-hit != 'true' }}
         id: clone-ffmpeg-from-github
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0
         with:
           repository: FFmpeg/FFmpeg
           path: ffmpeg-n7.0
@@ -87,7 +86,7 @@ jobs:
           architecture: "x64"
           cache: "pip"
           check-latest: false
-          python-version: "3.12.12"
+          python-version: "3.12.10"
       - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip pyinstaller setuptools wheel
