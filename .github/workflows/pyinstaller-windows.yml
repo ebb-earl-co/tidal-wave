@@ -54,7 +54,7 @@ jobs:
           & .\venv\Scripts\activate
           pip install --upgrade pip setuptools wheel
           pip install .
-          pip install 'pypyiwin32==223' 'pyinstaller==6.7.0'
+          pip install 'pypiwin32==223' 'pyinstaller==6.7.0'
       - name: Create Executable with Pyinstaller
         run: |
           & .\venv\Scripts\activate
