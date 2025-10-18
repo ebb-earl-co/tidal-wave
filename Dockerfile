@@ -1,5 +1,5 @@
 # https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
-FROM docker.io/library/debian:bookworm-slim as build_image
+FROM docker.io/library/debian:bookworm-slim AS build_image
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update -qq && \
     apt-get -y install --no-install-recommends ca-certificates g++ gcc git make pkg-config yasm && \
@@ -37,7 +37,7 @@ RUN ./configure \
       --enable-small \
       && make -j$(nproc) && make install && hash -r
 
-FROM docker.io/library/python:3.12.6-slim
+FROM docker.io/library/python:3.13.9-slim
 LABEL org.opencontainers.image.authors="colinho <github@colin.technology>"
 LABEL org.opencontainers.image.description="Waving at the TIDAL music service with Python"
 LABEL org.opencontainers.image.documentation="https://github.com/ebb-earl-co/tidal-wave/blob/trunk/README.md"
@@ -56,6 +56,8 @@ COPY --from=build_image --chown=debian:debian /usr/local/bin/ffmpeg /home/debian
 USER debian
 WORKDIR /home/debian
 COPY --chown=debian:debian pyproject.toml .
+COPY --chown=debian:debian README.md .
+COPY --chown=debian:debian LICENSE .
 COPY --chown=debian:debian tidal_wave/ ./tidal_wave/
 RUN pip install --user --upgrade pip setuptools wheel dumb-init && \
     pip install --user . && \
