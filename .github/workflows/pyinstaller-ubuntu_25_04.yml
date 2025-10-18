@@ -1,5 +1,5 @@
 ---
-name: Pyinstaller Build on Ubuntu 20.04 for GNU/Linux x86_64
+name: Pyinstaller Build on Ubuntu 25.04 for GNU/Linux x86_64
 on:
   release:
     types: ["published"]
@@ -9,9 +9,9 @@ permissions:
   contents: write
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-25.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0
         with:
           submodules: true
       - uses: awalsh128/cache-apt-pkgs-action@latest
@@ -20,14 +20,14 @@ jobs:
           packages: g++ gcc git make pkg-config yasm
       - name: Cache FFmpeg n7.0
         id: cache-ffmpeg
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: ${{ github.workspace }}/ffmpeg-n7.0
           key: ffmpeg-${{ hashFiles('ffmpeg-n7.0') }}
       - name: Clone FFmpeg, n7.0 tag
         if: ${{ steps.cache-ffmpeg.outputs.cache-hit != 'true' }}
         id: clone-ffmpeg-from-github
-        uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0
         with:
           repository: FFmpeg/FFmpeg
           path: ffmpeg-n7.0
@@ -64,7 +64,7 @@ jobs:
             --enable-small
           make -j$(nproc)
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c  # v6.0
         with:
           architecture: "x64"
           cache: "pip"
@@ -78,7 +78,7 @@ jobs:
       - name: Create Executable with PyInstaller
         run: |
           pyinstaller \
-            --name tidal-wave_ubuntu_20.04_amd64 \
+            --name tidal-wave_ubuntu_25.04_amd64 \
             --target-arch=x86_64 \
             --paths tidal_wave \
             --exclude-module pyinstaller \
@@ -91,29 +91,29 @@ jobs:
             ./pyinstaller.py
       - name: Test just-compiled binary
         run: |
-          chmod +x ./dist/tidal-wave_ubuntu_20.04_amd64
-          ./dist/tidal-wave_ubuntu_20.04_amd64 --help
+          chmod +x ./dist/tidal-wave_ubuntu_25.04_amd64
+          ./dist/tidal-wave_ubuntu_25.04_amd64 --help
       - name: Create SHA256 checksum file of just-compiled binary
         run: |
-          python3 -c "from hashlib import sha256;from pathlib import Path;Path('tidal-wave_ubuntu_20.04_amd64.sha256').write_text(f'''{sha256(Path('./dist/tidal-wave_ubuntu_20.04_amd64').read_bytes()).hexdigest()}\ttidal-wave_ubuntu_20.04_amd64''')"
-          cat tidal-wave_ubuntu_20.04_amd64.sha256
+          python3 -c "from hashlib import sha256;from pathlib import Path;Path('tidal-wave_ubuntu_25.04_amd64.sha256').write_text(f'''{sha256(Path('./dist/tidal-wave_ubuntu_25.04_amd64').read_bytes()).hexdigest()}\ttidal-wave_ubuntu_25.04_amd64''')"
+          cat tidal-wave_ubuntu_25.04_amd64.sha256
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           compression-level: 9
           name: tidal-wave_ubuntu
           overwrite: true
           path: |
-            ./dist/tidal-wave_ubuntu_20.04_amd64
-            tidal-wave_ubuntu_20.04_amd64.sha256
+            ./dist/tidal-wave_ubuntu_25.04_amd64
+            tidal-wave_ubuntu_25.04_amd64.sha256
           retention-days: 7
       - name: Add artifact to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@6da8fa9354ddfdc4aeace5fc48d7f679b5214090  # v2.4.1
         if: startsWith(github.ref, 'refs/tags/')
         with:
           fail_on_unmatched_files: true
           files: |
-            ./dist/tidal-wave_ubuntu_20.04_amd64
-            tidal-wave_ubuntu_20.04_amd64.sha256
+            ./dist/tidal-wave_ubuntu_25.04_amd64
+            tidal-wave_ubuntu_25.04_amd64.sha256
           token: ${{ github.token }}
