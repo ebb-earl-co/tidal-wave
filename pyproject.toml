@@ -6,7 +6,7 @@ dynamic = ["version"]
 description = "A tool to wave at the TIDAL music service."
 authors = [{ name = "colinho", email = "pypi@colin.technology" }]
 maintainers = [{ name = "colinho", email = "pypi@colin.technology" }]
-license = { file = "LICENSE" }
+license-files = ["LICENSE"]
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.9, <3.14"
 classifiers = [
@@ -30,9 +30,9 @@ dependencies = [
     "m3u8==6.0.0",
     "platformdirs==4.3.8",
     "pycryptodome==3.23.0",
-    "requests[socks]==2.32.4",
+    "requests[socks]>=2.32.4",  # CVE-2024-47081
     "typer==0.19.2",
-    "tzdata==2025.2; system_platform == 'Windows'",
+    "tzdata==2025.2; platform_system == 'Windows'",
 ]
 [project.scripts]
 tidal-wave = "tidal_wave.main:app"
@@ -41,11 +41,12 @@ Homepage = "https://github.com/ebb-earl-co/tidal-wave"
 
 [dependency-groups]
 dev = [
-    "ruff",
-    "uv",
+    "ruff"
 ]
 build = [
-    "pyinstaller<6.11",  # 6.11.1 and 6.12.0 break with a 'circular dependencies' problem
+    # https://github.com/pyinstaller/pyinstaller?tab=readme-ov-file#requirements-and-tested-platforms
+    # Python 3.10 is inoperable with PyInstaller
+    "pyinstaller ; python_version != '3.10'",
     "pypiwin32==223 ; platform_system == 'Windows'",
 ]
 
@@ -64,4 +65,4 @@ version = {attr = "tidal_wave.main.__version__"}
 [tool.uv]
 compile-bytecode = true  # https://docs.astral.sh/uv/reference/settings/#compile-bytecode
 package = true  # https://docs.astral.sh/uv/reference/settings/#package
-required-version = ">=0.8.15"  # https://docs.astral.sh/uv/reference/settings/#required-version
+required-version = ">=0.9"  # https://docs.astral.sh/uv/reference/settings/#required-version
