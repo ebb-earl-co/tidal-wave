@@ -37,7 +37,6 @@ jobs:
         run: brew install automake nasm shtool xvid
       - name: Clone FFmpeg, n7.0 tag
         id: clone-ffmpeg-from-github
-      - name: Checkout FFmpeg mirror on GitHub
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0
         with:
           repository: FFmpeg/FFmpeg

@@ -53,7 +53,8 @@ jobs:
           python.exe -m venv .\venv
           & .\venv\Scripts\activate
           pip install --upgrade pip setuptools wheel
-          pip install --group build .
+          pip install .
+          pip install 'pypyiwin32==223' 'pyinstaller==6.7.0'
       - name: Create Executable with Pyinstaller
         run: |
           & .\venv\Scripts\activate
