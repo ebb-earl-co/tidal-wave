@@ -635,7 +635,7 @@ requires-dist = [
     { name = "mutagen", specifier = "==1.47.0" },
     { name = "platformdirs", specifier = "==4.3.8" },
     { name = "pycryptodome", specifier = "==3.23.0" },
-    { name = "requests", extras = ["socks"], specifier = "==2.32.4" },
+    { name = "requests", extras = ["socks"], specifier = ">=2.32.4" },
     { name = "typer", specifier = "==0.19.2" },
     { name = "tzdata", marker = "sys_platform == 'win32'", specifier = "==2025.2" },
 ]
