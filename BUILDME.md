@@ -14,7 +14,7 @@ Perhaps *the* tried and true method of packaging up a Python project into a sing
 However, PyInstaller wants to package up a single Python script into an easily-distributed format, yet `tidal-wave` is a Python *package*: the raison d'être of `pyinstaller.py` is to have a script to which PyInstaller can be pointed in order to create an executable out of the project. It mimics the instructions that Python's `build` uses to build a Python package, but it does so in a single .py file (*not* named setup.py) so that PyInstaller is satisfied. Additionally, PyInstaller would like a virtual environment with `tidal-wave`'s Python dependencies installed already, so the process starts with that:
   1. Create virtual environment in repository root: `$ "$(command -v python3)" -m venv ./venv` and install `tidal-wave`'s dependencies
    - `$ ./venv/bin/python3 -m pip install --upgrade pip setuptools wheel`
-   - `$ ./venv/bin/python3 -m pip install -r requirements.txt`
+   - `$ ./venv/bin/python3 -m pip install .`
    - `$ ./venv/bin/python3 -m pip install pyinstaller==6.7.0`
   2. Without compiling FFmpeg from source, the command is very simple:
   ```bash
@@ -47,7 +47,6 @@ However, PyInstaller wants to package up a single Python script into an easily-d
     ./pyinstaller.py
   ```
   The resulting `tidal-wave_linux` artifact is a single-click executable with everything that `tidal-wave` needs to execute! The GitHub Actions automations that execute this process are:
-  - `.github/workflows/pyinstaller-ubuntu_20_04.yml`
   - `.github/workflows/pyinstaller-ubuntu_22_04.yml`
   - `.github/workflows/pyinstaller-ubuntu_24_04.yml`
   - `.github/workflows/pyinstaller-macos_arm64.yml`
