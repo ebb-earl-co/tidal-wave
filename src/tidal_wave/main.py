@@ -31,7 +31,7 @@ from .track import Track
 from .utils import is_tidal_api_reachable
 from .video import Video
 
-__version__ = "2025.10.1"
+__version__ = "2025.10.2"
 
 # PyInstaller --one-file option creates a temporary folder in the
 # appropriate temp-folder location for the executing OS. The folder
