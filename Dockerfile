@@ -51,7 +51,9 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     # cache is useless in docker image, so disable to reduce image size
     PIP_NO_CACHE_DIR=1
-RUN useradd --create-home --shell /bin/bash debian && mkdir -p /home/debian/.local/bin/ && chown -R debian:debian /home/debian/
+RUN useradd --create-home --shell /bin/bash debian && \
+    mkdir -p /home/debian/.local/bin/ /home/debian/.config/tidal-wave/ /home/debian/Music/ && \
+    chown -R debian:debian /home/debian/
 COPY --from=build_image --chown=debian:debian /usr/local/bin/ffmpeg /home/debian/.local/bin/ffmpeg
 USER debian
 WORKDIR /home/debian
@@ -60,9 +62,7 @@ COPY --chown=debian:debian README.md .
 COPY --chown=debian:debian LICENSE .
 COPY --chown=debian:debian src/ ./src/
 RUN pip install --no-warn-script-location --user --upgrade pip setuptools wheel dumb-init && \
-    pip install --no-warn-script-location --user . && \
-    mkdir -p /home/debian/.config/tidal-wave/ /home/debian/Music/ && \
-    chown -R debian:debian /home/debian/.config/tidal-wave/ /home/debian/Music/
+    pip install --no-warn-script-location --user . 
 ENV PATH="/home/debian/.local/bin:$PATH"
 VOLUME /home/debian/.config/tidal-wave /home/debian/Music
 ENTRYPOINT ["dumb-init", "--", "tidal-wave"]
