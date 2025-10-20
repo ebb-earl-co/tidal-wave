@@ -58,7 +58,7 @@ WORKDIR /home/debian
 COPY --chown=debian:debian pyproject.toml .
 COPY --chown=debian:debian README.md .
 COPY --chown=debian:debian LICENSE .
-COPY --chown=debian:debian tidal_wave/ ./tidal_wave/
+COPY --chown=debian:debian src/ ./src/
 RUN pip install --no-warn-script-location --user --upgrade pip setuptools wheel dumb-init && \
     pip install --no-warn-script-location --user . && \
     mkdir -p /home/debian/.config/tidal-wave/ /home/debian/Music/ && \
