@@ -483,14 +483,9 @@ def get_album_id(session: Session, track_id: int) -> Optional[int]:
     """Given the Tidal ID to a track, query the Tidal API in order to retrieve
     the Tidal ID of the album to which the track belongs"""
     terj: Optional[TracksEndpointResponseJSON] = request_tracks(session, track_id)
-    album_id: Optional[int] = None
 
-    try:
-        album_id = terj.id
-    except AttributeError:
-        pass
-    finally:
-        return album_id
+    album_id: Optional[int] = getattr(terj, "id", None)
+    return album_id
 
 
 def contiguous_ranges(value: int, range_size: int) -> Iterator[Tuple[int, int]]:

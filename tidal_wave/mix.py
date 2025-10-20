@@ -408,22 +408,20 @@ def request_mixes_items(
                 )
             else:
                 logger.exception(he)
+        if transparent:
+            Path(json_name).write_text(
+                json.dumps(resp.json(), ensure_ascii=True, indent=4, sort_keys=True)
+            )
+            data = resp.json()
+            logger.debug(
+                f"{resp.status_code} response from TIDAL API to request: mixes/{mix_id}/items"
+            )
         else:
-            if transparent:
-                Path(json_name).write_text(
-                    json.dumps(resp.json(), ensure_ascii=True, indent=4, sort_keys=True)
-                )
-                data = resp.json()
-                logger.debug(
-                    f"{resp.status_code} response from TIDAL API to request: mixes/{mix_id}/items"
-                )
-            else:
-                data = resp.json()
-                logger.debug(
-                    f"{resp.status_code} response from TIDAL API to request: mixes/{mix_id}/items"
-                )
-        finally:
-            return data
+            data = resp.json()
+            logger.debug(
+                f"{resp.status_code} response from TIDAL API to request: mixes/{mix_id}/items"
+            )
+        return data
 
 
 @dataclass(frozen=True)
@@ -558,5 +556,4 @@ def retrieve_mix_items(
         )
     except Exception as e:
         logger.exception(TidalMixError(e.args[0]))
-    finally:
-        return mixes_items_response_json
+    return mixes_items_response_json
