@@ -15,7 +15,7 @@ class AudioFormat(str, Enum):
     low = "Low"
 
 
-TAG_MAPPING: dict[str, dict[str, str]] = {
+TAG_MAPPING: dict[str, dict[str, str | None]] = {
     "album": {"flac": "ALBUM", "m4a": "\xa9alb"},
     "album_artist": {"flac": "ALBUMARTIST", "m4a": "aART"},
     "artist": {"flac": "ARTIST", "m4a": "\xa9ART"},

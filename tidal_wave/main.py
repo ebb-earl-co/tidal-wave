@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import logging
-import os
-import sys
 from contextlib import closing
 from pathlib import Path
 
@@ -32,19 +30,6 @@ from .utils import is_tidal_api_reachable
 from .video import Video
 
 __version__ = "2025.10.1"
-
-# PyInstaller --one-file option creates a temporary folder in the
-# appropriate temp-folder location for the executing OS. The folder
-# is named _MEIxxxxxx, where xxxxxx is a random
-# number. This is stored in the Python process as sys._MEIPASS. So,
-# the OS's PATH variable needs to be able to find the FFmpeg
-# executable that has been unbundled into the path sys._MEIPASS.
-# To be polite, the PATH variable will be re-set to whatever it had
-# been once the execution of the PyInstaller binary created from
-# this file is complete.
-if getattr(sys, "_MEIPASS", None) is not None:
-    OLD_PATH: str = os.environ["PATH"]
-    os.environ["PATH"] += os.pathsep + sys._MEIPASS  # noqa: SLF001
 
 
 # https://typer.tiangolo.com/tutorial/options/version/#fix-with-is_eager
