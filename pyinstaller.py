@@ -31,19 +31,7 @@ from tidal_wave.track import Track
 from tidal_wave.utils import is_tidal_api_reachable
 from tidal_wave.video import Video
 
-__version__ = "2025.3.1"
-
-# PyInstaller --one-file option creates a temporary folder in the
-# appropriate temp-folder location for the executing OS. The folder
-# is named _MEIxxxxxx, where xxxxxx is a random
-# number. This is stored in the Python process as sys._MEIPASS. So,
-# the OS's PATH variable needs to be able to find the FFmpeg
-# executable that has been unbundled into the path sys._MEIPASS.
-# To be polite, the PATH variable will be re-set to whatever it had
-# been once the execution of the PyInstaller binary created from
-# this file is complete.
-OLD_PATH: str = os.environ["PATH"]
-os.environ["PATH"] += os.pathsep + sys._MEIPASS  # noqa: SLF001
+__version__ = "2025.10.1"
 
 
 # https://typer.tiangolo.com/tutorial/options/version/#fix-with-is_eager
@@ -257,7 +245,21 @@ def main(
                 raise NotImplementedError
 
 
-try:
+# PyInstaller --one-file option creates a temporary folder in the
+# appropriate temp-folder location for the executing OS. The folder
+# is named _MEIxxxxxx, where xxxxxx is a random
+# number. This is stored in the Python process as sys._MEIPASS. So,
+# the OS's PATH variable needs to be able to find the FFmpeg
+# executable that has been unbundled into the path sys._MEIPASS.
+# To be polite, the PATH variable will be re-set to whatever it had
+# been once the execution of the PyInstaller binary created from
+# this file is complete.
+if getattr(sys, "_MEIPASS", None) is None:
     app()
-finally:
-    os.environ["PATH"] = OLD_PATH
+else:
+    OLD_PATH: str = os.environ["PATH"]
+    os.environ["PATH"] += os.pathsep + sys._MEIPASS
+    try:
+        app()
+    finally:
+        os.environ["PATH"] = OLD_PATH
