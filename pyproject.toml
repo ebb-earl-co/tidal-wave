@@ -55,7 +55,7 @@ build = [
 [tool.ruff]
 indent-width = 4
 line-length = 88
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.format]
 indent-style = "space"

@@ -8,7 +8,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from io import BytesIO
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, Optional
 
 import dataclass_wizard
 from requests.auth import AuthBase
@@ -635,7 +635,9 @@ class TidalResource:
         self.url = url
 
     def match_url(self) -> int | str | None:
-        _match: re.Match = re.match(self.pattern, self.url, re.IGNORECASE)
+        _match: Optional[re.Match[str]] = re.match(
+            self.pattern, self.url, re.IGNORECASE
+        )
         try:
             _id: str = _match.groups()[0]
         except AttributeError:
@@ -796,12 +798,12 @@ def match_tidal_url(input_str: str) -> TidalResource | None:
     """
     resource_match: TidalResource | None = None
     tidal_resources: tuple[
-        TidalResource,
-        TidalResource,
-        TidalResource,
-        TidalResource,
-        TidalResource,
-        TidalResource,
+        type[TidalResource],
+        type[TidalResource],
+        type[TidalResource],
+        type[TidalResource],
+        type[TidalResource],
+        type[TidalResource],
     ] = (
         TidalTrack,
         TidalAlbum,
@@ -829,7 +831,7 @@ def download_artist_image(
     """Given a UUID that corresponds to a (JPEG) image on Tidal's servers,
     download the image file and write it as '{artist name}.jpeg'
     in the directory `output_dir`. Returns path to downloaded file"""
-    _url: str = artist.picture_url(dimension)
+    _url: Optional[str] = artist.picture_url(dimension)
     if _url is None:
         _msg: str = (
             f"Cannot download image for artist '{artist.name}', "
@@ -852,7 +854,7 @@ def download_artist_image(
     file_name: str = f"{artist.name.replace('..', '')}.jpg"
     output_file: Path | None = None
     if bytes_to_write is not None:
-        output_file: Path = output_dir / file_name
+        output_file = output_dir / file_name
         bytes_to_write.seek(0)
         output_file.write_bytes(bytes_to_write.read())
         bytes_to_write.close()

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.metadata
 import logging
 import os
 import sys
@@ -31,8 +32,6 @@ from .track import Track
 from .utils import is_tidal_api_reachable
 from .video import Video
 
-__version__ = "2025.10.2"
-
 # PyInstaller --one-file option creates a temporary folder in the
 # appropriate temp-folder location for the executing OS. The folder
 # is named _MEIxxxxxx, where xxxxxx is a random
@@ -51,7 +50,7 @@ if getattr(sys, "_MEIPASS", None) is not None:
 def version_callback(value: bool) -> None:  # noqa: FBT001
     """Pass this function to typer to specify eager option behavior."""
     if value:
-        print(f"tidal-wave {__version__}")  # noqa: T201
+        print(f"tidal-wave {importlib.metadata.version('tidal-wave')}")  # noqa: T201
         raise typer.Exit(code=0)
 
 

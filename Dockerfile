@@ -62,7 +62,7 @@ COPY --chown=debian:debian README.md .
 COPY --chown=debian:debian LICENSE .
 COPY --chown=debian:debian src/ ./src/
 RUN pip install --no-warn-script-location --user --upgrade pip setuptools wheel dumb-init && \
-    pip install --no-warn-script-location --user . 
+    pip install --no-warn-script-location --user .
 ENV PATH="/home/debian/.local/bin:$PATH"
 VOLUME /home/debian/.config/tidal-wave /home/debian/Music
 ENTRYPOINT ["dumb-init", "--", "tidal-wave"]
