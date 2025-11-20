@@ -10,7 +10,7 @@ Waving at the [TIDAL](https://tidal.com) music service with [Python](https://www
 
 This project is inspired by [`qobuz-dl`](https://github.com/vitiko98/qobuz-dl), and, particularly, is a continuation of [`Tidal-Media-Downloader`](https://github.com/yaronzz/Tidal-Media-Downloader). **This project is intended for private use only: it is not intended for distribution of copyrighted content**.
 
-This software uses libraries from the [FFmpeg](http://ffmpeg.org) project under the [LGPLv2.1](http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html). FFmpeg is a trademark of [Fabrice Bellard](http://www.bellard.org/), originator of the FFmpeg project. 
+This software uses libraries from the [FFmpeg](http://ffmpeg.org) project under the [LGPLv2.1](http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html). FFmpeg is a trademark of [Fabrice Bellard](http://www.bellard.org/), originator of the FFmpeg project.
 
 ## Features
 * Retrieve [FLAC](https://xiph.org/flac/), [Dolby Atmos](https://www.dolby.com/technologies/dolby-atmos/), or [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) tracks; [AVC/H.264](https://en.wikipedia.org/wiki/Advanced_Video_Coding) (up to 1920x1080) + [AAC](https://en.wikipedia.org/wiki/Advanced_Audio_Coding) videos
@@ -33,7 +33,7 @@ This software uses libraries from the [FFmpeg](http://ffmpeg.org) project under 
 * If desired, all JSON responses from the TIDAL API can be saved for inspection or posterity or debugging
 
 ## Getting Started
-A current, valid TIDAL subscription is required in order to run `tidal-wave`. Previously, TIDAL segmented the available audio qualities into HiFi and HiFi Plus plans: now, 
+A current, valid TIDAL subscription is required in order to run `tidal-wave`. Previously, TIDAL segmented the available audio qualities into HiFi and HiFi Plus plans: now,
 > All current TIDAL plans feature Max sound quality formats such as full lossless, HiRes FLAC, and Dolby Atmos (up to 24-bit, 192 kHz).
 
 More information on sound quality at [TIDAL's site here](https://tidal.com/sound-quality).
@@ -147,8 +147,8 @@ $ docker pull ghcr.io/ebb-earl-co/tidal-wave:trunk
 ## Quickstart
 If your Python installation's location is available on path, run `tidal-wave --help` to see the options available. Otherwise (including if you followed the repository cloning steps above), run `python3 -m tidal_wave --help` from the repository root directory, `tidal-wave`. In either case, you should see something like the following:
 ```bash
-Usage: python -m tidal_wave [OPTIONS] TIDAL_URL [OUTPUT_DIRECTORY]                                                                                                                                                                  
-                                                                                                                                                                                                                                     
+Usage: python -m tidal_wave [OPTIONS] TIDAL_URL [OUTPUT_DIRECTORY]
+
 ╭─ Arguments ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ *    tidal_url             TEXT                The Tidal album or artist or mix or playlist or track or video to download [default: None] [required]                                                                              │
 │      output_directory      [OUTPUT_DIRECTORY]  The parent directory under which directory(ies) of files will be written [default: ~/Music]                                                                                        │
@@ -159,7 +159,7 @@ Usage: python -m tidal_wave [OPTIONS] TIDAL_URL [OUTPUT_DIRECTORY]
 │ --include-eps-singles                                                 No-op unless passing TIDAL artist. Whether to include artist's EPs and singles with albums                                                                  │
 │ --no-extra-files                                                      Whether to not even attempt to retrieve artist bio, artist image, album credits, album review, or playlist m3u8                                             │
 │ --no-flatten                                                          Whether to treat playlists or mixes as a list of tracks/videos and, as such, retrieve them independently                                                    │
-| --transparent                                                         Whether to dump JSON responses from TIDAL API; maximum verbosity                                                                                            | 
+| --transparent                                                         Whether to dump JSON responses from TIDAL API; maximum verbosity                                                                                            |
 │ --install-completion                                                  Install completion for the current shell.                                                                                                                   │
 │ --show-completion                                                     Show completion for the current shell, to copy it or customize the installation.                                                                            │
 │ --help                                                                Show this message and exit.                                                                                                                                 │
@@ -169,7 +169,7 @@ Usage: python -m tidal_wave [OPTIONS] TIDAL_URL [OUTPUT_DIRECTORY]
 ## Usage
 Invocation of this tool will store credentials in a particular directory in the user's "home" directory: for Unix-like systems, this will be `/home/${USER}/.config/tidal-wave`: for Windows, it varies: in either OS situation, the exact directory is determined by the `user_config_path()` function of the `platformdirs` package.
 
-Similarly, by default, all media retrieved is placed in subdirectories of the user's default music directory: for Unix-like systems, this probably is `/home/${USER}/Music`; for Windows it is probably `C:\Users\<USER>\Music`. This directory is determined by [`platformdirs.user_music_path()`](https://github.com/platformdirs/platformdirs?tab=readme-ov-file#platformdirs-to-the-rescue). 
+Similarly, by default, all media retrieved is placed in subdirectories of the user's default music directory: for Unix-like systems, this probably is `/home/${USER}/Music`; for Windows it is probably `C:\Users\<USER>\Music`. This directory is determined by [`platformdirs.user_music_path()`](https://github.com/platformdirs/platformdirs?tab=readme-ov-file#platformdirs-to-the-rescue).
  - If a different path is passed to the second CLI argument, `output_directory`, then all media is written to subdirectories of that directory.
 
 ### Which Audio Formats Are Available to Which Clients
@@ -306,14 +306,14 @@ $ docker exec -it tidal-wave tidal-wave https://tidal.com/browse/track/...
 Note: the first `tidal-wave` is whatever `--name` you give the container, so that can be whatever your heart desires, but the second `tidal-wave` is invoking the Python program *inside* the container and needs to exactly `tidal-wave`.
 ## Development
 The easiest way to start working on development is to fork this project on GitHub, or clone the repository to your local machine and do the pull requesting on GitHub later. In any case, there will need to be some getting from GitHub first, so, roughly, the process is:
-  1. Get Python 3.8+ on your system
+  1. Get Python 3.9+ on your system
   2. Use a virtualenv or some other Python environment system (poetry, pipenv, etc.)
   3. Clone the repository: `$ git clone --depth=1 https://github.com/ebb-earl-co/tidal-wave/git`
 
     * Obviously replace the URL with your forked version if you've followed that strategy
-  4. Activate the virtual environment and install the required packages (requirements.txt): `(some-virtual-env) $ python3 -m pip install -r requirements.txt`
+  4. Activate the virtual environment and install the required packages: `(some-virtual-env) $ python3 -m pip install . --group dev`
 
-    * optional packages to follow the coding style and build process; `pyinstaller`, `black`: `(some-virtual-env) $ python3 -m pip install black pyinstaller`
+    * optional packages to execute the build process: `(some-virtual-env) $ python3 -m pip install . --group build`
     * optionally, Docker to build the OCI container artifacts
   5. From a Python REPL (or, my preferred method, an iPython session), import all the relevant modules, or the targeted ones for development:
   ```python
