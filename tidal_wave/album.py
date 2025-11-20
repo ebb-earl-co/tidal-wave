@@ -168,6 +168,7 @@ class Album:
             )
             .replace(' "', " ")
             .replace('" ', " ")
+            .replace(":", " -")
         )
         album_substring: str = (
             f"{self.metadata.name.replace('..', '')} "
