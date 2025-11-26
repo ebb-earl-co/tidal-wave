@@ -788,21 +788,18 @@ class TidalVideo(TidalResource):
         logger.info(_msg)
 
 
-def match_tidal_url(input_str: str) -> TidalResource | None:
+def match_tidal_url(
+    input_str: str,
+) -> (
+    TidalTrack | TidalAlbum | TidalVideo | TidalPlaylist | TidalMix | TidalArtist | None
+):
     """Attempt to match the `input_str` to either the URL of a track or an
     album in the Tidal API service. Returns None if `input_str` matches
     neither, otherwise a subclass of TidalResource corresponding to the
     parsed input_str type
     """
     resource_match: TidalResource | None = None
-    tidal_resources: tuple[
-        TidalResource,
-        TidalResource,
-        TidalResource,
-        TidalResource,
-        TidalResource,
-        TidalResource,
-    ] = (
+    tidal_resources = (
         TidalTrack,
         TidalAlbum,
         TidalVideo,
@@ -852,7 +849,7 @@ def download_artist_image(
     file_name: str = f"{artist.name.replace('..', '')}.jpg"
     output_file: Path | None = None
     if bytes_to_write is not None:
-        output_file: Path = output_dir / file_name
+        output_file = output_dir / file_name
         bytes_to_write.seek(0)
         output_file.write_bytes(bytes_to_write.read())
         bytes_to_write.close()

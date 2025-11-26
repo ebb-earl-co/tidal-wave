@@ -187,7 +187,9 @@ class Artist:
         value of `self.name`. N.b., a side effect is that the subdirectory on
         the file system is created if it does not exist.
         """
-        self.name: str = self.metadata.name.replace("..", "").replace("/", "and")
+        self.name: str = (
+            self.metadata.name.replace("..", "").replace("/", "and").replace(":", " -")
+        )
         self.artist_dir = out_dir / self.name
         self.artist_dir.mkdir(parents=True, exist_ok=True)
 
@@ -199,7 +201,7 @@ class Artist:
         *,
         include_eps_singles: bool,
         no_extra_files: bool,
-    ) -> list[str | None]:
+    ) -> None:
         """First, fetch all of the albums for `self.artist_id`.
 
         Then, each of the albums (and, optionally, EPs and singles) is requested and
@@ -234,7 +236,7 @@ class Artist:
         self,
         session: Session,
         out_dir: Path,
-    ) -> list[str | None]:
+    ) -> None:
         """Populate `self.videos` by calling self.set_videos().
 
         Then, for each video, instantiates a Video object and execute

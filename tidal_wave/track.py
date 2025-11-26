@@ -12,7 +12,7 @@ import sys
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 
 import ffmpeg
 import mutagen
@@ -183,6 +183,7 @@ class Track:
             )
             .replace(' "', " ")
             .replace('" ', " ")
+            .replace(":", " -")
         )
         album_substring: str = (
             f"{self.album.name} [{self.album.id}] [{self.album.release_date.year}]"
@@ -266,7 +267,7 @@ class Track:
                     f"Unable to fit title of track {self.track_id} "
                     f"into a valid filename (even '{outfile}'), as "
                     "total character count exceeds Windows' 260-character "
-                    "limit. Downloading will not continue",
+                    "limit. Downloading will not continue"
                 )
                 logger.warning(_msg)
                 return
@@ -288,7 +289,8 @@ class Track:
         """Write a JPEG with the name of all self.metadata.artists to self.album_dir."""
         for a in self.metadata.artists:
             track_artist_image: Path = (
-                self.album_dir / f"{a.name.replace('..', '').replace('/', 'and')}.jpg"
+                self.album_dir
+                / f"{a.name.replace('..', '').replace('/', 'and').replace(':', '- ')}.jpg"
             )
             if not track_artist_image.exists():
                 download_artist_image(session, a, self.album_dir, dimension=750)
@@ -300,7 +302,10 @@ class Track:
         self.metadata.artists to self.album_dir.
         """
         for a in self.metadata.artists:
-            track_artist_bio_json: Path = self.album_dir / f"{a.name}-bio.json"
+            track_artist_bio_json: Path = (
+                self.album_dir
+                / f"{a.name.replace('..', '').replace('/', 'and').replace(':', '- ')}-bio.json"
+            )
             if not track_artist_bio_json.exists():
                 artist_bio: ArtistsBioResponseJSON | None = request_artist_bio(
                     session=session,
