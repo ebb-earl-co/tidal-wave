@@ -80,7 +80,7 @@ jobs:
           pyinstaller \
             --name tidal-wave_ubuntu_22.04_amd64 \
             --target-arch=x86_64 \
-            --paths tidal_wave \
+            --paths src/tidal_wave \
             --exclude-module pyinstaller \
             --exclude-module ruff \
             --add-binary "ffmpeg-n7.0/ffmpeg:ffmpeg" \

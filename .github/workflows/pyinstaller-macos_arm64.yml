@@ -99,7 +99,7 @@ jobs:
           pyinstaller \
             --name=tidal-wave_macos_aarch64 \
             --target-arch=arm64 \
-            --paths tidal_wave \
+            --paths src/tidal_wave \
             --exclude-module pyinstaller \
             --exclude-module ruff \
             --add-binary "ffmpeg-n7.0/ffmpeg:ffmpeg" \
