@@ -1,8 +1,8 @@
 # Python Package
 
-`tidal-wave` is, first and foremost, a Python project that is built and uploaded to PyPi. Indeed, that is the sole purpose of `pyproject.toml` and `setup.py` at the root of the repository. No frameworks are used for this process such as `poetry` or `pipenv`, just the standard Python `setuptools` and `build`. To that end, the process of building a Python package for a given release is 
+`tidal-wave` is, first and foremost, a Python project that is built and uploaded to PyPi. Indeed, that is the sole purpose of `pyproject.toml` and `setup.py` at the root of the repository. No frameworks are used for this process such as `poetry` or `pipenv`, just the standard Python `setuptools` and `build`. To that end, the process of building a Python package for a given release is
   1. change the line `__version__ = ` in [`tidal_wave/main.py`](https://github.com/ebb-earl-co/tidal-wave/blob/trunk/tidal_wave/main.py#L32) to a new version. At the time of writing this, that would be `"2024.8.1"`. This is because PyPi disallows package name/version duplicates.
-  2. With a Python virtual environment, or, e.g. on a Debian-based OS, install the APT package `python3-build`; or, with the OS's system-wide Python3 installation, install the `build` package. 
+  2. With a Python virtual environment, or, e.g. on a Debian-based OS, install the APT package `python3-build`; or, with the OS's system-wide Python3 installation, install the `build` package.
     - I like to have a Python3 virtual environment created with the system Python3 in my home directory for all the bits and bobs required in development: `~/.venv`
   3. From the repository root, simply run `$ python3 -m build` (or, on Windows, `PS> .venv\Scripts\python.exe -m build`) and let the process run its course.
   4. Once that process has finished, there will be two new files in the `dist` subdirectory of the repository root: `dist/tidal-wave-2024.8.1.tar.gz`, and `tidal_wave-2024.8.1-py3-none-any.whl`.
@@ -15,7 +15,7 @@ However, PyInstaller wants to package up a single Python script into an easily-d
   1. Create virtual environment in repository root: `$ "$(command -v python3)" -m venv ./venv` and install `tidal-wave`'s dependencies
    - `$ ./venv/bin/python3 -m pip install --upgrade pip setuptools wheel`
    - `$ ./venv/bin/python3 -m pip install .`
-   - `$ ./venv/bin/python3 -m pip install pyinstaller==6.7.0`
+   - `$ ./venv/bin/python3 -m pip install pyinstaller==6.17.0`
   2. Without compiling FFmpeg from source, the command is very simple:
   ```bash
   ./venv/bin/pyinstaller \
@@ -105,7 +105,7 @@ configure \
     --enable-parser=aac,h264 \
     --enable-protocol=file \
     --enable-small && \
-make -j$(nproc) && make -j$(nproc) install
+make -j"$(nproc)" && make -j"$(nproc)" install
 ```
 
 The resulting binary, `/usr/local/bin/ffmpeg` will be around 4 MB in size. The above example is for Debian-based GNU/Linux x86\_64 systems. An analagous invocation for macOS, both x86\_64 and aarch64, is found in the [workflows](https://github.com/ebb-earl-co/tidal-wave/tree/trunk/.github/workflows) directory of this repository.
