@@ -1,14 +1,15 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["uv_build>=0.9.4,<0.10.0"]
+build-backend = "uv_build"
 [project]
 name = "tidal-wave"
-version = "2025.10.1"
 description = "A tool to wave at the TIDAL music service."
 authors = [{ name = "colinho", email = "pypi@colin.technology" }]
 maintainers = [{ name = "colinho", email = "pypi@colin.technology" }]
 license-files = ["LICENSE"]
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.9, <3.15"
+version = "2025.10.2"
 classifiers = [
     "Intended Audience :: End Users/Desktop",
     "Programming Language :: Python :: 3",
@@ -32,7 +33,7 @@ dependencies = [
     "platformdirs==4.3.8",
     "pycryptodome==3.23.0",
     "requests[socks]>=2.32.4",  # CVE-2024-47081
-    "typer==0.19.2",
+    "typer==0.20.0",
     "tzdata==2025.2; platform_system == 'Windows'",
 ]
 [project.scripts]
@@ -54,7 +55,7 @@ build = [
 [tool.ruff]
 indent-width = 4
 line-length = 88
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.format]
 indent-style = "space"
