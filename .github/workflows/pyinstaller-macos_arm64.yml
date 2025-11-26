@@ -111,10 +111,6 @@ jobs:
       - name: Test just-compiled binary
         run: |
           ./dist/tidal-wave_macos_aarch64 --help
-      - name: Create SHA256 checksum file of just-compiled binary
-        run: |
-          python3 -c "from hashlib import sha256;from pathlib import Path;Path('tidal-wave_macos_aarch64.sha256').write_text(f'''{sha256(Path('./dist/tidal-wave_macos_aarch64').read_bytes()).hexdigest()}\ttidal-wave_macos_aarch64''')"
-          cat tidal-wave_macos_aarch64.sha256
       - name: Upload Artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         if: startsWith(github.ref, 'refs/tags/')
@@ -124,7 +120,6 @@ jobs:
           overwrite: true
           path: |
             ./dist/tidal-wave_macos_aarch64
-            tidal-wave_macos_aarch64.sha256
           retention-days: 7
       - name: Add artifact to release
         uses: softprops/action-gh-release@6da8fa9354ddfdc4aeace5fc48d7f679b5214090  # v2.4.1
@@ -133,5 +128,4 @@ jobs:
           fail_on_unmatched_files: true
           files: |
             ./dist/tidal-wave_macos_aarch64
-            tidal-wave_macos_aarch64.sha256
           token: ${{ github.token }}
