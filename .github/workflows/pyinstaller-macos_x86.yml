@@ -12,7 +12,7 @@ jobs:
     # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
     runs-on: macos-13
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - name: Set up Homebrew
@@ -45,7 +45,7 @@ jobs:
       - name: Clone FFmpeg, n7.0 tag
         if: ${{ steps.cache-ffmpeg.outputs.cache-hit != 'true' }}
         id: clone-ffmpeg-from-github
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: FFmpeg/FFmpeg
           path: ffmpeg-n7.0
