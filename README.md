@@ -181,8 +181,8 @@ Source: [TIDAL](https://tidal.com/supported-devices)
 | :---                             | :---:                | :---:              |   :---:             |   :---:            |    :---:             |      :---:           |
 | Android                          | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:  | :x: |     :x:              |  :heavy_check_mark:  |
 | Fire TV  :large_blue_diamond:    | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:  | :x:                |  :heavy_check_mark:  |  :heavy_check_mark:  |
-| macOS                            | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:  | :x: |     :x:              |  :heavy_check_mark:  |
-| Windows                          | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:  | :x: |     :x:              |  :heavy_check_mark:  |
+| macOS                            | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:  | :heavy_check_mark: |     :x:              |  :heavy_check_mark:  |
+| Windows                          | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:  | :heavy_check_mark: |     :x:              |  :heavy_check_mark:  |
 
 :large_blue_diamond: This is the default client for `tidal-wave`, a spoofed Amazon Fire TV. It is the one invoked in all situations unless `--audio-format hires` is passed as a command line flag:
 ```bash
