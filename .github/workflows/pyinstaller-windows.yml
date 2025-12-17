@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Cache downloaded ffmpeg.exe
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: cache-ffmpeg-exe
         with:
           path: ${{ github.workspace }}\ffmpeg.exe
@@ -26,7 +26,7 @@ jobs:
         run: |
           Invoke-WebRequest "https://github.com/ebb-earl-co/media-autobuild_suite/releases/download/n7.0/ffmpeg.exe" -OutFile "ffmpeg.exe"
       - name: Cache UPX 4.2.3 zip downloaded from GitHub
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: cache-upx-423
         with:
           path: ~\AppData\Local\upx-4.2.3-win64.zip
