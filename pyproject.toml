@@ -30,7 +30,7 @@ dependencies = [
     "ffmpeg-python==0.2.0",
     "mutagen==1.47.0",
     "m3u8==6.0.0",
-    "platformdirs==4.3.8",
+    "platformdirs==4.5.1",
     "pycryptodome==3.23.0",
     "requests[socks]>=2.32.4",
     "typer==0.21.0",
