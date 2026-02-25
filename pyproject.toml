@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv_build>=0.9.4,<0.10.0"]
+requires = ["uv_build>=0.9.4,<0.10.7"]
 build-backend = "uv_build"
 [project]
 name = "tidal-wave"
@@ -25,16 +25,16 @@ classifiers = [
 ]
 dependencies = [
     "backoff==2.2.1",
-    "cachecontrol==0.14.2",
-    "dataclass-wizard==0.35.1",
+    "cachecontrol==0.14.3",
+    "dataclass-wizard==0.39.1",
     "ffmpeg-python==0.2.0",
     "mutagen==1.47.0",
     "m3u8==6.0.0",
-    "platformdirs==4.3.8",
+    "platformdirs==4.5.1",
     "pycryptodome==3.23.0",
     "requests[socks]>=2.32.4",  # CVE-2024-47081
-    "typer==0.20.0",
-    "tzdata==2025.2; platform_system == 'Windows'",
+    "typer==0.23.1",
+    "tzdata==2025.3; platform_system == 'Windows'",
 ]
 [project.scripts]
 tidal-wave = "tidal_wave.main:app"
