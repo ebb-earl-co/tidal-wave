@@ -3,6 +3,7 @@ name: Build Python package
 on:
   release:
     types: ["published"]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -38,12 +39,14 @@ jobs:
 
       - name: Publish package
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e  # v1.13.0
+        if: github.event_name != 'workflow_dispatch'
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
 
       - name: Add artifacts to release
         uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b  # v2.5.0
+        if: github.event_name != 'workflow_dispatch'
         with:
           token: ${{ github.token }}
           files: |
