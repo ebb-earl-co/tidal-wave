@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv_build>=0.9.4,<0.10.0"]
+requires = ["uv_build>=0.9.4,<0.10.7"]
 build-backend = "uv_build"
 [project]
 name = "tidal-wave"
@@ -64,4 +64,4 @@ quote-style = "double"
 [tool.uv]
 compile-bytecode = true  # https://docs.astral.sh/uv/reference/settings/#compile-bytecode
 package = true  # https://docs.astral.sh/uv/reference/settings/#package
-required-version = ">=0.9"  # https://docs.astral.sh/uv/reference/settings/#required-version
+required-version = ">=0.10"  # https://docs.astral.sh/uv/reference/settings/#required-version
