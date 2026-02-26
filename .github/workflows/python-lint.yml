@@ -5,24 +5,32 @@ on:
     branches: ["trunk", "develop"]
   pull_request:
     branches: ["trunk", "develop"]
+  workflow_dispatch:
+
 permissions:
   contents: read
 jobs:
   build:
     strategy:
       matrix:
-        version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.13t"]
+        version: ["3.10", "3.11", "3.12", "3.13", "3.13t", "3.14", "3.14t"]
         # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
         os: [ubuntu-22.04, ubuntu-24.04, windows-2022, windows-2025, macos-14, macos-15, macos-26]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
       - name: Install uv
         uses: astral-sh/setup-uv@3259c6206f993105e3a61b142c2d97bf4b9ef83d  # v7.1.0
         with:
+          cache-python: "true"
+          enable-cache: "true"
           python-version: ${{ matrix.version }}
-          version: ">=0.9"
+          version-file: "pyproject.toml"
+
       - name: Format with Ruff
-        run: uv run --no-project --with ruff ruff format --diff ./tidal_wave/
+        run: uv run --no-project --with ruff ruff format --diff ./src/tidal_wave/
+
       - name: Lint with Ruff
-        run: uv run --no-project --with ruff ruff check --statistics --exclude pyinstaller.py ./tidal_wave/
+        run: uv run --no-project --with ruff ruff check --statistics --exclude pyinstaller.py ./src/tidal_wave/
