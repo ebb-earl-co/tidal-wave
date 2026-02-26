@@ -34,7 +34,7 @@ dependencies = [
     "pycryptodome==3.23.0",
     "requests[socks]>=2.32.4",  # CVE-2024-47081
     "typer==0.20.0",
-    "tzdata==2025.2; platform_system == 'Windows'",
+    "tzdata==2025.2",
 ]
 [project.scripts]
 tidal-wave = "tidal_wave.main:app"
@@ -48,7 +48,7 @@ dev = [
 build = [
     # https://github.com/pyinstaller/pyinstaller?tab=readme-ov-file#requirements-and-tested-platforms
     # Python 3.10 is inoperable with PyInstaller
-    "pyinstaller ; python_version != '3.10'",
+    "pyinstaller==6.19.0 ; python_version != '3.10'",
     "pypiwin32==223 ; platform_system == 'Windows'",
 ]
 
