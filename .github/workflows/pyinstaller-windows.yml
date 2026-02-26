@@ -5,6 +5,7 @@ on:
     types: ["published"]
   push:
     branches: ["develop", "trunk"]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,77 +15,93 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
       - name: Cache downloaded ffmpeg.exe
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5.0.3
         id: cache-ffmpeg-exe
         with:
           path: ${{ github.workspace }}\ffmpeg.exe
           key: ffmpeg-n7.0-from-media-autobuild-suite
+
       - name: Download ffmpeg binary if not found
         if: steps.cache-ffmpeg-exe.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           Invoke-WebRequest "https://github.com/ebb-earl-co/media-autobuild_suite/releases/download/n7.0/ffmpeg.exe" -OutFile "ffmpeg.exe"
+
       - name: Cache UPX 4.2.3 zip downloaded from GitHub
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5.0.3
         id: cache-upx-423
         with:
           path: ~\AppData\Local\upx-4.2.3-win64.zip
           key: upx-423-from-github
+
       - name: Download UPX binary if not found
         if: steps.cache-upx-423.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           Invoke-WebRequest "https://github.com/upx/upx/releases/download/v4.2.3/upx-4.2.3-win64.zip" -OutFile "~\AppData\Local\upx-4.2.3-win64.zip"
+
       - name: Install UPX tool
         shell: pwsh
         run: |
           Expand-Archive "~\AppData\Local\upx-4.2.3-win64.zip" -DestinationPath "~\AppData\Local\upx-4.2.3-win64"
+
       - name: Set up Python
-        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c  # v6.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           architecture: "x64"
-          cache: "pip"
-          python-version: "3.12.10"
-      - name: Install Python dependencies
-        shell: pwsh
+          check-latest: false
+          python-version: "3.14.3"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          python-version: '3.14.3'
+
+      - name: Install dependencies
+        env:
+          UV_NO_MANAGED_PYTHON: 1
         run: |
-          python.exe -m venv .\venv
-          & .\venv\Scripts\activate
-          pip install --upgrade pip setuptools wheel
-          pip install .
-          pip install 'pypiwin32==223' 'pyinstaller==6.7.0'
+          uv.exe sync --locked --group build --no-group dev
+
       - name: Create Executable with Pyinstaller
+        env:
+          UV_NO_MANAGED_PYTHON: 1
         run: |
-          & .\venv\Scripts\activate
-          pyinstaller `
+          uv.exe run --no-project pyinstaller `
             --name tidal-wave_windows.exe `
             --paths src/tidal_wave `
             --add-binary "ffmpeg.exe;." `
             --exclude-module pyinstaller `
             --exclude-module ruff `
             --exclude-module uv `
+            --collect-all tzdata `
             --clean `
             --upx-dir "~\AppData\Local\upx-4.2.3-win64" `
             --onefile `
             .\pyinstaller.py
+
       - name: Test just-compiled binary
         shell: pwsh
         run: |
           & .\dist\tidal-wave_windows.exe --help
+
       - name: Upload Artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          compression-level: 9
+          compression-level: 0
           name: tidal-wave_windows
           overwrite: true
           path: |
             .\dist\tidal-wave_windows.exe
           retention-days: 7
+
       - name: Add artifact to release
-        uses: softprops/action-gh-release@6da8fa9354ddfdc4aeace5fc48d7f679b5214090  # v2.4.1
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b  # v2.5.0
         if: startsWith(github.ref, 'refs/tags/')
         with:
           fail_on_unmatched_files: true

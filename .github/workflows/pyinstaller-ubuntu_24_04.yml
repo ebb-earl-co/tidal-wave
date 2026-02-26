@@ -74,7 +74,13 @@ jobs:
         with:
           architecture: "x64"
           check-latest: false
-          python-version: '3.14.0'
+          python-version: '3.14.3'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          python-version: '3.14.3'
 
       - name: Install dependencies
         env:
@@ -92,6 +98,7 @@ jobs:
             --paths src/tidal_wave \
             --exclude-module pyinstaller \
             --exclude-module ruff \
+            --exclude-module uv \
             --add-binary "ffmpeg-n7.0/ffmpeg:ffmpeg" \
             --collect-all tzdata \
             --clean \
