@@ -5,6 +5,8 @@ on:
     types: ["published"]
   push:
     branches: ["develop", "trunk"]
+  workflow_dispatch:
+
 permissions:
   contents: write
 jobs:
@@ -19,7 +21,7 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         run: |
           sudo apt-get update -qq
-          sudo apt-get install --yes --no-install-recommends --no-install-suggests g++ gcc git make pkg-config yasm
+          sudo apt-get install --yes --no-install-recommends --no-install-suggests ccache g++ gcc git make pkg-config yasm
 
       - name: Cache FFmpeg n7.0
         id: cache-ffmpeg
@@ -39,8 +41,8 @@ jobs:
           fetch-depth: 1
 
       - name: Build FFmpeg from source
+        working-directory: ./ffmpeg-n7.0
         run: |
-          cd ffmpeg-n7.0
           ./configure \
             --arch=x86_64 \
             --pkg-config-flags="--static" \
@@ -69,19 +71,24 @@ jobs:
             --enable-small
           make -j"$(nproc)"
 
-      - name: Set up Python
+      - name: "Set up Python"
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           architecture: "x64"
-          cache: "pip"
           check-latest: false
-          python-version: "3.12.12"
+          python-version: '3.14.0'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          python-version: '3.14.0'
 
       - name: Install dependencies
+        env:
+          UV_NO_MANAGED_PYTHON: 1
         run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install --group build .
-          python3 -m pip install pyinstaller==6.7.0
+          uv sync --locked --group build --no-group dev
 
       - name: Create Executable with PyInstaller
         run: |
