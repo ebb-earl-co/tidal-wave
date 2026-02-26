@@ -5,6 +5,8 @@ on:
     types: ["published"]
   push:
     branches: ["develop", "trunk"]
+  workflow_dispatch:
+
 permissions:
   contents: write
 jobs:
@@ -12,48 +14,37 @@ jobs:
     runs-on: macos-14
     steps:
       - name: Checkout repository
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0
-      - name: Set up Homebrew
-        id: set-up-homebrew
-        uses: Homebrew/actions/setup-homebrew@master
-      - name: Cache Homebrew Bundler RubyGems
-        id: cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
-        with:
-          path: ${{ steps.set-up-homebrew.outputs.gems-path }}
-          key: ${{ runner.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
-          restore-keys: ${{ runner.os }}-rubygems-
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
       - name: Install Homebrew Bundler RubyGems
-        if: steps.cache.outputs.cache-hit != 'true'
         run: brew install-bundler-gems
-      - name: Update Homebrew
-        id: update-homebrew
-        continue-on-error: true
-        run: |
-          brew update
+
       # https://trac.ffmpeg.org/wiki/CompilationGuide/macOS#InstallingdependencieswithHomebrew
       - name: Get FFmpeg dependencies from Homebrew
         id: brew-install-ffmpeg-deps
         run: brew install automake nasm shtool xvid
+
       - name: Clone FFmpeg, n7.0 tag
         id: clone-ffmpeg-from-github
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: FFmpeg/FFmpeg
           path: ffmpeg-n7.0
           ref: n7.0
           fetch-depth: 1
+
       - name: Cache compiled ffmpeg
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5.0.3
         id: cache-ffmpeg-darwin-arm64
         with:
           path: ffmpeg-n7.0/ffmpeg
           key: macos-arm64-compiled-ffmpeg-n7.0
+
       - name: Build FFmpeg from source
         if: steps.cache-ffmpeg-darwin-arm64.outputs.cache-hit != 'true'
         id: compile-ffmpeg
+        working-directory: ./ffmpeg-n7.0
         run: |
-          cd ffmpeg-n7.0
           ./configure \
             --arch=arm64 \
             --target-os=darwin \
@@ -83,46 +74,61 @@ jobs:
             --enable-protocol=file \
             --enable-small
           make -j"$(sysctl -n hw.logicalcpu)"
+
       - name: Set up Python
-        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c  # v6.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
-          cache: "pip"
+          architecture: "arm64"
           check-latest: false
-          python-version: "3.12.10"
+          python-version: "3.14.3"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b  # v7.3.0
+        with:
+          enable-cache: true
+          python-version: '3.14.3'
+
       - name: Install dependencies
+        env:
+          UV_NO_MANAGED_PYTHON: 1
         run: |
-          python3 -m pip install --upgrade pip setuptools wheel
-          python3 -m pip install . --group build
-          python3 -m pip install pyinstaller==6.7.0
+          uv sync --locked --group build --no-group dev
+
       - name: Create Executable with Pyinstaller
+        env:
+          UV_NO_MANAGED_PYTHON: 1
         run: |
-          pyinstaller \
+          uv run --no-project pyinstaller \
             --name=tidal-wave_macos_aarch64 \
             --target-arch=arm64 \
             --paths src/tidal_wave \
             --exclude-module pyinstaller \
             --exclude-module ruff \
             --add-binary "ffmpeg-n7.0/ffmpeg:ffmpeg" \
+            --collect-all tzdata \
             --clean \
             --noupx \
             --onefile \
             --strip \
             ./pyinstaller.py
+
       - name: Test just-compiled binary
         run: |
           ./dist/tidal-wave_macos_aarch64 --help
+
       - name: Upload Artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          compression-level: 9
+          compression-level: 0
           name: tidal-wave_macos_aarch64
           overwrite: true
           path: |
             ./dist/tidal-wave_macos_aarch64
           retention-days: 7
+
       - name: Add artifact to release
-        uses: softprops/action-gh-release@6da8fa9354ddfdc4aeace5fc48d7f679b5214090  # v2.4.1
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b  # v2.5.0
         if: startsWith(github.ref, 'refs/tags/')
         with:
           fail_on_unmatched_files: true

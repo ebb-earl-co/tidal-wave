@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       - name: Install APT packages on Ubuntu
         env:
@@ -76,13 +76,13 @@ jobs:
         with:
           architecture: "x64"
           check-latest: false
-          python-version: '3.14.0'
+          python-version: '3.14.3'
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b  # v7.3.0
         with:
           enable-cache: true
-          python-version: '3.14.0'
+          python-version: '3.14.3'
 
       - name: Install dependencies
         env:
@@ -100,6 +100,7 @@ jobs:
             --paths src/tidal_wave \
             --exclude-module pyinstaller \
             --exclude-module ruff \
+            --exclude-module uv \
             --add-binary "ffmpeg-n7.0/ffmpeg:ffmpeg" \
             --collect-all tzdata \
             --clean \

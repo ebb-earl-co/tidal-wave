@@ -8,7 +8,7 @@ authors = [{ name = "colinho", email = "pypi@colin.technology" }]
 maintainers = [{ name = "colinho", email = "pypi@colin.technology" }]
 license-files = ["LICENSE"]
 readme = { file = "README.md", content-type = "text/markdown" }
-requires-python = ">=3.9, <3.15"
+requires-python = ">=3.10, <3.15"
 version = "2025.11.1"
 classifiers = [
     "Intended Audience :: End Users/Desktop",
@@ -25,17 +25,17 @@ classifiers = [
 ]
 dependencies = [
     "backoff==2.2.1",
-    "cachecontrol==0.14.2",
-    "dataclass-wizard==0.35.1",
+    "cachecontrol==0.14.3",
+    "dataclass-wizard==0.39.1",
     "ffmpeg-python==0.2.0",
     "mutagen==1.47.0",
     "m3u8==6.0.0",
-    "platformdirs==4.3.8",
+    "platformdirs==4.5.1",
     "pycryptodome==3.23.0",
     "requests[socks]>=2.32.4",  # CVE-2024-47081
-    "typer==0.20.0",
-    "tzdata==2025.2",
-    "urllib>=2.6.3"  # CVE-2026-21441
+    "typer==0.23.1",
+    "tzdata==2025.3",
+    "urllib3>=2.6.3"  # CVE-2026-21441
 ]
 [project.scripts]
 tidal-wave = "tidal_wave.main:app"
