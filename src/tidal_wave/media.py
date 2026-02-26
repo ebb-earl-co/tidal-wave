@@ -1,7 +1,5 @@
 """Represent various media metadata and formats."""
 
-from __future__ import annotations
-
 from enum import Enum
 
 
