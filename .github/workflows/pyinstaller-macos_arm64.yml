@@ -16,27 +16,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Set up Homebrew
-        id: set-up-homebrew
-        uses: Homebrew/actions/setup-homebrew@master
-
-      - name: Cache Homebrew Bundler RubyGems
-        id: cache
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5.0.3
-        with:
-          path: ${{ steps.set-up-homebrew.outputs.gems-path }}
-          key: ${{ runner.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
-          restore-keys: ${{ runner.os }}-rubygems-
-
       - name: Install Homebrew Bundler RubyGems
-        if: steps.cache.outputs.cache-hit != 'true'
         run: brew install-bundler-gems
-
-      - name: Update Homebrew
-        id: update-homebrew
-        continue-on-error: true
-        run: |
-          brew update
 
       # https://trac.ffmpeg.org/wiki/CompilationGuide/macOS#InstallingdependencieswithHomebrew
       - name: Get FFmpeg dependencies from Homebrew
@@ -99,13 +80,13 @@ jobs:
         with:
           architecture: "arm64"
           check-latest: false
-          python-version: "3.14.0"
+          python-version: "3.14.3"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b  # v7.3.0
         with:
           enable-cache: true
-          python-version: '3.14.0'
+          python-version: '3.14.3'
 
       - name: Install dependencies
         env:
