@@ -21,7 +21,7 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         run: |
           sudo apt-get update -qq
-          sudo apt-get install --yes --no-install-recommends --no-install-suggests ccache g++ gcc git make pkg-config yasm
+          sudo apt-get install --yes --no-install-recommends --no-install-suggests ccache pkg-config yasm
 
       - name: Cache FFmpeg n7.0
         id: cache-ffmpeg
@@ -91,14 +91,17 @@ jobs:
           uv sync --locked --group build --no-group dev
 
       - name: Create Executable with PyInstaller
-        run: |
-          pyinstaller \
+        env:
+          UV_NO_MANAGED_PYTHON: 1
+        run: |  # tzdata in order to avoid PyInstaller error 'No time zone found with key UTC'
+          uv run --no-project pyinstaller \
             --name tidal-wave_ubuntu_22.04_amd64 \
             --target-arch=x86_64 \
             --paths src/tidal_wave \
             --exclude-module pyinstaller \
             --exclude-module ruff \
             --add-binary "ffmpeg-n7.0/ffmpeg:ffmpeg" \
+            --collect-all tzdata \
             --clean \
             --noupx \
             --onefile \
