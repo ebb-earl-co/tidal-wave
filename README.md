@@ -48,7 +48,7 @@ More information on sound quality at [TIDAL's site here](https://tidal.com/sound
    - For macOS, the [FFmpeg download page](http://ffmpeg.org/download.html#build-mac) links to [this download source](https://evermeet.cx/ffmpeg/); or there is always [Homebrew](https://formulae.brew.sh/formula/ffmpeg)
    - For Windows, the [FFmpeg download page](http://ffmpeg.org/download.html#build-windows) lists 2 resources; or [`chocolatey`](https://community.chocolatey.org/packages/ffmpeg) is an option
    - If a minimal FFmpeg, compiled from source, is desired, take a look at this project's [BUILDME.md](https://github.com/ebb-earl-co/tidal-wave/blob/trunk/BUILDME.md) file for decent instructions
- - This is a Python package, so **to use it in the default manner** you will need [Python 3](https://www.python.org/downloads/), version 3.8 or newer, on your system.
+ - This is a Python package, so **to use it in the default manner** you will need [Python 3](https://www.python.org/downloads/), version 3.10 or newer, on your system.
    - *However*, as of December 2023, an [OCI container image](https://github.com/ebb-earl-co/tidal-wave/pkgs/container/tidal-wave); and [PyInstaller](https://pyinstaller.org/en/stable/)-created binaries for x86\_64 GNU/Linux, Apple Silicon macOS, x86\_64 macOS, and x86\_64 Windows are provided for download and use that *do not require Python to be installed*
  - Only a handful of Python libraries are dependencies:
    - [`backoff`](https://pypi.org/project/backoff/)
@@ -98,13 +98,12 @@ PS> uvx.exe tidal-wave --help
 It _really_ is that simple and straightforward! Repeated uses of `tidal-wave` via this declaration will be much faster, as the project and its dependencies will have been stored in `uv`'s cache.
 
 ### PyInstaller executable
-The release artifacts for this project are created with [PyInstaller](https://pyinstaller.org). It bundles Python 3.12.9, FFmpeg 7.0, and the `tidal-wave` program into one binary, licensed under the terms of FFmpeg: with the [GNU Lesser General Public License (LGPL) version 2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html). Installation is as simple as downloading the correct binary for your platform giving it execute permissions, and running it. **Please make sure that the SHA256 checksum of the file that you have downloaded matches the corresponding `.sha256` file on the releases page!**
+The release artifacts for this project are created with [PyInstaller](https://pyinstaller.org). It bundles Python 3.14.3 (Python 3.13.12 for the Windows version due to `pywin32`) FFmpeg 7.0, and the `tidal-wave` program into one binary, licensed under the terms of FFmpeg: with the [GNU Lesser General Public License (LGPL) version 2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html). Installation is as simple as downloading the correct binary for your platform giving it execute permissions, and running it. **Please make sure that the SHA256 checksum of the file that you have downloaded matches the corresponding SHA-256 annotation on the releases page!**
 #### On Unix-Like
 ```bash
 $ wget https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_ubuntu_24.04_amd64
-$ wget https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_ubuntu_24.04_amd64.sha256
-$ sha256sum --check tidal-wave_ubuntu_24.04_amd64.sha256
-# ONLY CONTINUE IF THE OUTPUT IS THE FOLLOWING: 'tidal-wave_ubuntu_24.04_amd64.sha256: OK'
+$ sha256sum tidal-wave_ubuntu_24.04_amd64
+# ONLY CONTINUE IF THE OUTPUT MATCHES THE GITHUB `sha256:` TEXT NEXT TO THE ASSET!
 # Otherwise, delete the downloaded binary and try to download it again
 $ chmod +x ./tidal-wave_ubuntu_24.04_amd64
 $ ./tidal-wave_ubuntu_24.04_amd64 --help
@@ -114,9 +113,7 @@ $ ./tidal-wave_ubuntu_24.04_amd64 --help
 # For just the lifetime of this PowerShell process, don't block the download from GitHub
 PS > Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
 PS > Invoke-WebRequest "https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_windows.exe" -OutFile "tidal-wave_windows.exe"
-PS > Invoke-WebRequest "https://github.com/ebb-earl-co/tidal-wave/releases/latest/download/tidal-wave_windows.exe.sha256" -OutFile "tidal-wave_windows.exe.sha256"
-# Get the checksum value from the tidal-wave_windows.exe.sha256 file and compare it to the just-downloaded EXE
-# (Get-FileHash .\tidal-wave_windows.exe -Algorithm SHA256).Hash -eq (Get-Content .\tidal-wave_windows.exe.sha256).split("`t")[0]
+# Get the checksum value from GitHub and compare it to the just-downloaded EXE
 PS > (Get-FileHash .\tidal-wave_windows.exe -Algorithm SHA256).Hash -eq "e02f69eb850a98e6e1df2bc033fd12566cf27305421a36ec5372fd432ccc8e70"  # This checksum is from version 2024.4.3
 # ONLY CONTINUE IF THE OUTPUT OF THE PREVIOUS COMMAND IS 'True'
 PS > & .\tidal-wave_windows.exe --help
@@ -309,14 +306,14 @@ $ docker exec -it tidal-wave tidal-wave https://tidal.com/browse/track/...
 Note: the first `tidal-wave` is whatever `--name` you give the container, so that can be whatever your heart desires, but the second `tidal-wave` is invoking the Python program *inside* the container and needs to exactly `tidal-wave`.
 ## Development
 The easiest way to start working on development is to fork this project on GitHub, or clone the repository to your local machine and do the pull requesting on GitHub later. In any case, there will need to be some getting from GitHub first, so, roughly, the process is:
-  1. Get Python 3.8+ on your system
-  2. Use a virtualenv or some other Python environment system (poetry, pipenv, etc.)
-  3. Clone the repository: `$ git clone --depth=1 https://github.com/ebb-earl-co/tidal-wave/git`
+  1. Get Python 3.10+ on your system (or, install `uv` and it can fetch Python interpreters on the fly with `uv python install`)
+  2. Use a virtualenv or some other Python environment system (poetry, pipenv, etc.) **Really, just use `uv`.***
+  3. Clone the repository: `$ git clone --depth=1 https://github.com/ebb-earl-co/tidal-wave.git`
 
     * Obviously replace the URL with your forked version if you've followed that strategy
-  4. Activate the virtual environment and install the required packages (requirements.txt): `(some-virtual-env) $ python3 -m pip install -r requirements.txt`
+  4. Activate the virtual environment and install the required packages (requirements.txt): `(some-virtual-env) $ python3 -m pip install .`
 
-    * optional packages to follow the coding style and build process; `pyinstaller`, `black`: `(some-virtual-env) $ python3 -m pip install black pyinstaller`
+    * optional packages to follow the coding style and build process; `pyinstaller`, `ruff`: `(some-virtual-env) $ python3 -m pip install --group build --group dev`
     * optionally, Docker to build the OCI container artifacts
   5. From a Python REPL (or, my preferred method, an iPython session), import all the relevant modules, or the targeted ones for development:
   ```python
