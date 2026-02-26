@@ -35,6 +35,7 @@ dependencies = [
     "requests[socks]>=2.32.4",  # CVE-2024-47081
     "typer==0.20.0",
     "tzdata==2025.2",
+    "urllib>=2.6.3"  # CVE-2026-21441
 ]
 [project.scripts]
 tidal-wave = "tidal_wave.main:app"
