@@ -93,7 +93,7 @@ jobs:
           UV_NO_MANAGED_PYTHON: 1
         run: |  # tzdata in order to avoid PyInstaller error 'No time zone found with key UTC'
           uv run --no-project pyinstaller \
-            --name tidal-wave_ubuntu_22.04_amd64 \
+            --name tidal-wave_ubuntu_24.04_amd64 \
             --target-arch=x86_64 \
             --paths src/tidal_wave \
             --exclude-module pyinstaller \
