@@ -33,7 +33,7 @@ dependencies = [
     "platformdirs==4.5.1",
     "pycryptodome==3.23.0",
     "requests[socks]>=2.32.4",
-    "typer==0.25.1",
+    "typer==0.26.1",
 ]
 
 [project.scripts]
