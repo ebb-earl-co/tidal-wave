@@ -1,25 +1,25 @@
 # Python Package
 
-`tidal-wave` is, first and foremost, a Python project that is built and uploaded to PyPi. Indeed, that is the sole purpose of `pyproject.toml` and `setup.py` at the root of the repository. No frameworks are used for this process such as `poetry` or `pipenv`, just the standard Python `setuptools` and `build`. To that end, the process of building a Python package for a given release is 
-  1. change the line `__version__ = ` in [`tidal_wave/main.py`](https://github.com/ebb-earl-co/tidal-wave/blob/trunk/tidal_wave/main.py#L32) to a new version. At the time of writing this, that would be `"2024.8.1"`. This is because PyPi disallows package name/version duplicates.
-  2. With a Python virtual environment, or, e.g. on a Debian-based OS, install the APT package `python3-build`; or, with the OS's system-wide Python3 installation, install the `build` package. 
-    - I like to have a Python3 virtual environment created with the system Python3 in my home directory for all the bits and bobs required in development: `~/.venv`
-  3. From the repository root, simply run `$ python3 -m build` (or, on Windows, `PS> .venv\Scripts\python.exe -m build`) and let the process run its course.
-  4. Once that process has finished, there will be two new files in the `dist` subdirectory of the repository root: `dist/tidal-wave-2024.8.1.tar.gz`, and `tidal_wave-2024.8.1-py3-none-any.whl`.
+`tidal-wave` is, first and foremost, a Python project that is built and uploaded to PyPi. Indeed, that is the sole purpose of `pyproject.toml` at the root of the repository. No frameworks are used for this process such as `poetry` or `pipenv`, just the standard Python `setuptools` and `build` (although `uv` is in use and `hatchling` is being assessed). To that end, the process of building a Python package for a given release is 
+  1. change the line `__version__ = ` in [`tidal_wave/main.py`](https://github.com/ebb-earl-co/tidal-wave/blob/trunk/tidal_wave/main.py#L32) to a new version. At the time of writing this, that would be `"2025.3.1"`. This is because PyPi disallows package name/version duplicates.
+  2. With a Python virtual environment, install the `build` package. Everything that follows assumes the virtual environment is named `.venv` in the current directory.
+    - Virtual environment and package installation, synchronization are recommended to be done with [`uv`](https://docs.astral.sh/uv) these days.
+  3. From the repository root, simply run `$ ./.venv/bin/python3 -m build` (or, on Windows, `PS> .venv\Scripts\python.exe -m build`) and let the process run its course.
+  4. Once that process has finished, there will be two new files in the `dist` subdirectory of the repository root: `dist/tidal-wave-2025.3.1.tar.gz`, and `tidal_wave-2025.3.1-py3-none-any.whl`.
   5. These binaries are uploaded to PyPi using GitHub Actions: in particular, the [`.github/workflows/python-build.yml`](https://github.com/ebb-earl-co/tidal-wave/blob/trunk/.github/workflows/python-build.yml) file
 
 # `pyinstaller`-Created Binaries
-Perhaps *the* tried and true method of packaging up a Python project into a single executable comes from the [PyInstaller](https://pyinstaller.org) project. It is the long-term preferred packaging format for `tidal-wave` as it allows for inclusion of arbitrary binary files into the executable apart from Python 3 itself. This is appealing, as `tidal-wave` fundamentally relies on FFmpeg for its successful execution, and it is desired to ship Python 3, FFmpeg, and the `tidal-wave` package as **one binary executable for each platform**.
+A popular method to bundle up a Python project, its dependencies, and Python _itself_ into a single executable is the [PyInstaller](https://pyinstaller.org) project. It is the long-term preferred packaging format for `tidal-wave` as it allows for inclusion of arbitrary binary files into the executable apart from Python 3 itself. This is appealing, as `tidal-wave` fundamentally relies on [FFmpeg](https://ffmpeg.org) for its successful execution, and it is desired to ship Python 3, `ffmpeg` executable, and the `tidal-wave` package as **one binary executable for each platform**.
 
 However, PyInstaller wants to package up a single Python script into an easily-distributed format, yet `tidal-wave` is a Python *package*: the raison d'être of `pyinstaller.py` is to have a script to which PyInstaller can be pointed in order to create an executable out of the project. It mimics the instructions that Python's `build` uses to build a Python package, but it does so in a single .py file (*not* named setup.py) so that PyInstaller is satisfied. Additionally, PyInstaller would like a virtual environment with `tidal-wave`'s Python dependencies installed already, so the process starts with that:
-  1. Create virtual environment in repository root: `$ "$(command -v python3)" -m venv ./venv` and install `tidal-wave`'s dependencies
+  1. Create virtual environment in repository root: `$ "$(command -v python3)" -m venv ./.venv` and install `tidal-wave`'s dependencies
    - `$ ./venv/bin/python3 -m pip install --upgrade pip setuptools wheel`
-   - `$ ./venv/bin/python3 -m pip install -r requirements.txt`
+   - `$ ./venv/bin/python3 -m pip install .`
    - `$ ./venv/bin/python3 -m pip install pyinstaller==6.12.0`
   2. Without compiling FFmpeg from source, the command is very simple:
   ```bash
-  ./venv/bin/pyinstaller \
-    --name tidal-wave_linux \
+  ./.venv/bin/pyinstaller \
+    --name tw_binary \
     --paths tidal_wave \
     --exclude-module pyinstaller \
     --exclude-module ruff \
@@ -29,12 +29,12 @@ However, PyInstaller wants to package up a single Python script into an easily-d
     --strip \
     ./pyinstaller.py
   ```
-  3. If successfully executed, the binary is located at `./dist/tidal-wave_linux`. In this situation, without FFmpeg, the binary is effectively the same as a .pyz file or similar Python archive
+  3. If successfully executed, the binary is located at `./dist/tw_binary`. In this situation, without FFmpeg, the binary is effectively the same as a .pyz file or similar Python archive
   4. For `tidal-wave` starting with version 2024.4.1, the following invocation is what creates the artifacts released with every version:
   ```bash
   # FFmpeg 7.0 is compiled before this step in the directory `ffmpeg-n7.0`
   # `ffmpeg-n7.0` is exactly [FFmpeg source code at tag n7.0](https://github.com/FFmpeg/FFmpeg/releases/tag/n7.0)
-  ./venv/bin/pyinstaller \
+  ./.venv/bin/pyinstaller \
     --name tidal-wave_linux \
     --paths tidal_wave \
     --exclude-module pyinstaller \
@@ -47,7 +47,7 @@ However, PyInstaller wants to package up a single Python script into an easily-d
     ./pyinstaller.py
   ```
   The resulting `tidal-wave_linux` artifact is a single-click executable with everything that `tidal-wave` needs to execute! The GitHub Actions automations that execute this process are:
-  - `.github/workflows/pyinstaller-linux.yml`
+  - `.github/workflows/pyinstaller-ubuntu*.yml`
   - `.github/workflows/pyinstaller-macos_arm64.yml`
   - `.github/workflows/pyinstaller-macos_x86.yml`
   - `.github/workflows/pyinstaller-windows.yml`
@@ -55,14 +55,14 @@ However, PyInstaller wants to package up a single Python script into an easily-d
 # Container Image
 The file `Dockerfile` in the repository root is the template for an OCI container image. As the invocation of the container image is a self-contained runtime, not a single executable, it compiles FFmpeg from source, and passes the `ffmpeg` executable to the standard Python container image which executes `tidal-wave` as a module. This is the Docker [multi-stage build](https://docs.docker.com/build/building/multi-stage/#use-multi-stage-builds) pattern, and is useful to keep the container image size down.
 
-To wit, the container image creates directories that are owned by the user `debian`, creates a Python virtual environment, installs the `tidal-wave` Python dependencies, and executes the command `$ source venv/bin/activate && pip install . && tidal_wave ...` depending on arguments passed in at runtime.
+To wit, the container image creates directories that are owned by the user `debian`, creates a Python virtual environment, installs the `tidal-wave` Python dependencies, and executes the command `$ source .venv/bin/activate && pip install . && tidal_wave ...` depending on arguments passed in at runtime.
 
 # FFmpeg
 Ideally, for each release of `tidal-wave`, there will be a binary created and available on the Releases page for each platform. This would entail bundling [FFmpeg](https://ffmpeg.org), a triumphantly successful [FOSS](https://en.wikipedia.org/wiki/Free_and_open-source_software) project. Not only is it instructive to outline here how to compile a (usefully minimal) version of FFmpeg from source, but it is also required by FFmpeg's license: that is, instructions for how one's application that uses FFmpeg's libraries compiles FFmpeg, including disclaimers and links to FFmpeg's source code.
 
 To fulfill these requirements, `tidal-wave` clones FFmpeg for every build, version 7.0, which corresponds to the [`n7.0` branch](https://github.com/FFmpeg/FFmpeg/tree/n7.0) of the GitHub-hosted mirror of FFmpeg's source code. Using this, reproducible compilation is very simple: even though the [FFmpeg documentation](https://trac.ffmpeg.org/wiki/CompilationGuide) advises building the newest snapshot version, fulfilling the license agreement of ensuring that the libraries included and binaries built for inclusion in one's project would be much more difficult.
 
-Now, FFmpeg has a dizzying array of configuration options because it supports a vast amount of audio and video codecs. It is a very popular library for transcoding multimedia data into all of the formats required and desired in today's cornucopia of video on demand services. However, all that `tidal-wave` uses FFmpeg for is *remuxing* audio and video data. That is, instead of converting the, say, FLAC audio that is retrieved from TIDAL into another format, e.g. MP3, `tidal-wave` simply changes the .mp4 file that is retrieved from TIDAL into a .flac without changing the audio bytes at all. This is called re-muxing, and a good analogy is one of taking a letter out of one envelope and putting it into a differently-sized or differently-stamped envelope: the *contents* of the message are the same (i.e. the audio data), just the *container* (i.e. the file extension and metadata format) has changed. This simplifies the compiling of FFmpeg *significantly*, indeed creating a binary that is **one tenth** the size of the default binary spelled out in FFmpeg's documentation.
+Now, FFmpeg has a dizzying array of configuration options because it supports a vast amount of audio and video codecs. It is a very popular library for transcoding multimedia data into all of the formats required and desired in today's cornucopia of video-on-demand services. However, all that `tidal-wave` uses FFmpeg for is *remuxing* audio and video data. That is, instead of converting the, say, FLAC audio that is retrieved from TIDAL into another format, e.g. MP3, `tidal-wave` simply changes the .mp4 file that is retrieved from TIDAL into a .flac without changing the audio bytes at all. This is called re-muxing, and a good analogy is one of taking a letter out of one envelope and putting it into a differently-sized or differently-stamped envelope: the *contents* of the message are the same (i.e., the audio data), just the *container* (i.e., the file extension and metadata format) has changed. This simplifies the compiling of FFmpeg *significantly*: indeed, resulting in a binary that is **one tenth** the size of the default binary spelled out in FFmpeg's documentation.
 
 Only a few dependencies are necessary, but most important of them is a C/C++ compiler, such as `gcc`. On a Debian-based system, the following APT packages are the only requirements:
  - `ca-certificates`
@@ -71,7 +71,7 @@ Only a few dependencies are necessary, but most important of them is a C/C++ com
  - `git`
  - `make`
  - `pkg-config`
- - `yasm`
+ - `yasm` (alternatively, `nasm`)
 
 With these installed, configuring and compiling FFmpeg with the small amount of configuration needed for `tidal-wave` looks like the following:
 ```bash
