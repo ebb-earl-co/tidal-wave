@@ -28,7 +28,7 @@ dependencies = [
     "cachecontrol==0.14.3",
     "dataclass-wizard==0.39.1",
     "ffmpeg-python==0.2.0",
-    "mutagen==1.47.0",
+    "mutagen==1.48.0",
     "m3u8==6.0.0",
     "platformdirs==4.5.1",
     "pycryptodome==3.23.0",
