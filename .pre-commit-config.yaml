@@ -24,3 +24,10 @@ repos:
   rev: v1.7.12
   hooks:
     - id: actionlint
+- repo: local
+  hooks:
+    - id: version-match
+      name: Matching pyproject.toml version and pyinstaller.py version
+      description: This hook makes sure that the version of tidal-wave matches between pyproject.toml and pyinstaller.py.
+      entry: hooks/version-match.py
+      language: unsupported_script
