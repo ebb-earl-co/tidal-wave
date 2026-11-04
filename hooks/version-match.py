@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 
-from __future__ import annotations
 
+import tomllib
 from pathlib import Path
 from re import Match, search
 from sys import exit, stderr
 from typing import Any
-
-import tomllib
 
 if __name__ == "__main__":
     pyproject_toml: dict[str, Any] = tomllib.loads(Path("pyproject.toml").read_text())
