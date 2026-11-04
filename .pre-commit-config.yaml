@@ -16,8 +16,8 @@ repos:
   rev: v0.17.3
   hooks:
     # Run the linter.
-    - id: ruff
-      args: [ --fix ]
+    - id: ruff-check
+      args: [ --fix, "--ignore=FA102" ]
     # Run the formatter.
     - id: ruff-format
 - repo: https://github.com/rhysd/actionlint

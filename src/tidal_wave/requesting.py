@@ -2,9 +2,9 @@
 
 import json
 import logging
+from collections.abc import Callable, Iterable, Iterator
 from functools import partial
 from pathlib import Path
-from typing import Callable, Iterable, Iterator, Optional, Tuple, Union
 from uuid import uuid4
 
 import backoff
@@ -34,26 +34,26 @@ from .utils import TIDAL_API_URL
 
 logger: logging.Logger = logging.getLogger(__name__)
 
-ResponseJSON = Union[
-    AlbumsCreditsResponseJSON,
-    AlbumsEndpointResponseJSON,
-    AlbumsItemsResponseJSON,
-    AlbumsReviewResponseJSON,
-    ArtistsAlbumsResponseJSON,
-    ArtistsBioResponseJSON,
-    ArtistsEndpointResponseJSON,
-    ArtistsVideosResponseJSON,
-    PlaylistsEndpointResponseJSON,
-    SessionsEndpointResponseJSON,
-    SubscriptionEndpointResponseJSON,
-    TracksCreditsResponseJSON,
-    TracksEndpointResponseJSON,
-    TracksEndpointStreamResponseJSON,
-    TracksLyricsResponseJSON,
-    VideosContributorsResponseJSON,
-    VideosEndpointResponseJSON,
-    VideosEndpointStreamResponseJSON,
-]
+ResponseJSON = (
+    AlbumsCreditsResponseJSON
+    | AlbumsEndpointResponseJSON
+    | AlbumsItemsResponseJSON
+    | AlbumsReviewResponseJSON
+    | ArtistsAlbumsResponseJSON
+    | ArtistsBioResponseJSON
+    | ArtistsEndpointResponseJSON
+    | ArtistsVideosResponseJSON
+    | PlaylistsEndpointResponseJSON
+    | SessionsEndpointResponseJSON
+    | SubscriptionEndpointResponseJSON
+    | TracksCreditsResponseJSON
+    | TracksEndpointResponseJSON
+    | TracksEndpointStreamResponseJSON
+    | TracksLyricsResponseJSON
+    | VideosContributorsResponseJSON
+    | VideosEndpointResponseJSON
+    | VideosEndpointStreamResponseJSON
+)
 
 
 def requester_maker(
@@ -61,13 +61,13 @@ def requester_maker(
     endpoint: str,
     identifier: int,
     url_end: str = "",
-    headers: Optional[dict] = None,
-    parameters: Optional[dict] = None,
-    subclass: Optional["ResponseJSON"] = None,
+    headers: dict | None = None,
+    parameters: dict | None = None,
+    subclass: "ResponseJSON | None" = None,
     credits_flag: bool = False,
     transparent: bool = False,
-    offset: Optional[int] = None,
-) -> Callable:
+    offset: int | None = None,
+) -> ResponseJSON | None:
     """This function is a function factory: it crafts nearly identical
     versions of the same logic: send a GET request to a certain endpoint;
     if a requests.HTTPError arises, return None; else, transform the
@@ -97,13 +97,13 @@ def requester_maker(
             with s.get(**request_kwargs) as r:
                 return r
 
-        data: Optional[sc] = None
+        data: sc | None = None
         logger.info(f"Requesting from TIDAL API: {e}/{i}{u}")
         resp: Response = _get(s=s, request_kwargs=kwargs)
 
         try:
             resp.raise_for_status()
-        except HTTPError as he:
+        except HTTPError:
             if resp.status_code == 404:
                 logger.warning(
                     f"404 Client Error: not found for TIDAL API endpoint {e}/{i}{u}"
@@ -114,7 +114,7 @@ def requester_maker(
                     f"401 Client Error: Unauthorized for TIDAL API endpoint {e}/{i}{u}"
                 )
                 return None
-            logger.exception(he)
+            logger.exception(f"HTTP Error when requesting from TIDAL API: {e}/{i}{u}")
             return None
 
         if t:
@@ -154,7 +154,7 @@ def requester_maker(
 # varies with the media type, etc.
 def request_albums(
     session: Session, album_id: int, transparent: bool = False
-) -> Optional[AlbumsEndpointResponseJSON]:
+) -> AlbumsEndpointResponseJSON | None:
     """Send a GET request to the /albums endpoint of the TIDAL API. If an
     Exception occurs, return None. Else, return an instance of
     AlbumsEndpointResponseJSON"""
@@ -172,8 +172,8 @@ def request_albums_items(
     session: Session,
     album_id: int,
     transparent: bool = False,
-    offset: Optional[int] = None,
-) -> Optional[AlbumsItemsResponseJSON]:
+    offset: int | None = None,
+) -> AlbumsItemsResponseJSON | None:
     """Send a GET request to the /albums/<album ID>/items
     endpoint of the TIDAL API. If an Exception occurs,
     return None. Else, return an instance of
@@ -193,7 +193,7 @@ def request_albums_items(
 
 def request_album_review(
     session: Session, album_id: int, transparent: bool = False
-) -> Optional[AlbumsReviewResponseJSON]:
+) -> AlbumsReviewResponseJSON | None:
     """Send a GET request to the /albums/<album ID>/review
     endpoint of the TIDAL API. If an Exception occurs, return None.
     Else, return an instance of AlbumsReviewResponseJSON"""
@@ -210,7 +210,7 @@ def request_album_review(
 
 def request_artist_bio(
     session: Session, artist_id: int, transparent: bool = False
-) -> Optional[ArtistsBioResponseJSON]:
+) -> ArtistsBioResponseJSON | None:
     """Send a GET request to the /artists/<artist ID>/bio
     endpoint of the TIDAL API. If an Exception occurs, return None.
     Else, return an instance of ArtistsBioResponseJSON"""
@@ -227,7 +227,7 @@ def request_artist_bio(
 
 def request_artists(
     session: Session, artist_id: int, transparent: bool = False
-) -> Optional[ArtistsEndpointResponseJSON]:
+) -> ArtistsEndpointResponseJSON | None:
     """Send a GET request to the /artists endpoint of the TIDAL API.
     If an Exception occurs, return None. Else, return an instance of
     ArtistsEndpointResponseJSON"""
@@ -243,7 +243,7 @@ def request_artists(
 
 def request_artists_albums(
     session: Session, artist_id: int, transparent: bool = False
-) -> Optional[ArtistsAlbumsResponseJSON]:
+) -> ArtistsAlbumsResponseJSON | None:
     """Send a GET request to the /artists/<artist ID>/albums
     endpoint of the TIDAL API. If an Exception occurs, return None.
     Else, return an instance of ArtistsAlbumsResponseJSON"""
@@ -260,7 +260,7 @@ def request_artists_albums(
 
 def request_artists_audio_works(
     session: Session, artist_id: int, transparent: bool = False
-) -> Optional[ArtistsAlbumsResponseJSON]:
+) -> ArtistsAlbumsResponseJSON | None:
     """Send a GET request to the /artists/<artist ID>/albums
     endpoint of the TIDAL API. If an Exception occurs, return None.
     Else, return an instance of ArtistsAlbumsResponseJSON"""
@@ -278,7 +278,7 @@ def request_artists_audio_works(
 
 def request_artists_videos(
     session: Session, artist_id: int, transparent: bool = False
-) -> Optional[ArtistsVideosResponseJSON]:
+) -> ArtistsVideosResponseJSON | None:
     """Send a GET request to the /artists/<artist ID>/videos
     endpoint of the TIDAL API. If an Exception occurs, return None.
     Else, return an instance of ArtistsVideosResponseJSON"""
@@ -295,7 +295,7 @@ def request_artists_videos(
 
 def request_tracks(
     session: Session, track_id: int, transparent: bool = False
-) -> Optional[TracksEndpointResponseJSON]:
+) -> TracksEndpointResponseJSON | None:
     """Send a GET request to the /tracks endpoint of the TIDAL API.
     If an Exception occurs, return None. Else, return an instance of
     TracksEndpointResponseJSON"""
@@ -314,7 +314,7 @@ def request_tracks(
 # that the logic common to the rest of the functions is slightly different here.
 def request_credits(
     session: Session, track_id: int, transparent: bool = False
-) -> Optional[TracksCreditsResponseJSON]:
+) -> TracksCreditsResponseJSON | None:
     """Send a GET request to the /tracks/<track ID>/credits endpoint of the
     TIDAL API. If an Exception occurs, return None. Else, return an instance
     of TracksCreditsResponseJSON"""
@@ -336,7 +336,7 @@ def request_credits(
 # that the logic common to the rest of the functions is slightly different here.
 def request_albums_credits(
     session: Session, album_id: int, transparent: bool = False
-) -> Optional[AlbumsCreditsResponseJSON]:
+) -> AlbumsCreditsResponseJSON | None:
     """Send a GET request to the /albums/<album ID>/credits endpoint of the
     TIDAL API. If an Exception occurs, return None. Else, return an instance
     of AlbumsCreditsResponseJSON"""
@@ -355,7 +355,7 @@ def request_albums_credits(
 
 def request_lyrics(
     session: Session, track_id: int, transparent: bool = False
-) -> Optional[TracksLyricsResponseJSON]:
+) -> TracksLyricsResponseJSON | None:
     """Send a GET request to the /tracks/<track ID>/lyrics endpoint of the
     TIDAL API. If an Exception occurs, return None. Else, return an instance
     of TracksLyricsResponseJSON"""
@@ -374,11 +374,11 @@ def request_lyrics(
 # is dependent on a runtime variable.
 def request_stream(
     session: Session, track_id: int, audio_quality: str, transparent: bool = False
-) -> Optional[TracksEndpointStreamResponseJSON]:
+) -> TracksEndpointStreamResponseJSON | None:
     """Send a GET request to the /tracks/<track ID>/playbackinfopostpaywall
     endpoint of the TIDAL API. If an Exception occurs, return None. Else,
     return an instance of TracksEndpointStreamResponseJSON"""
-    func = partial(
+    func: Callable = partial(
         requester_maker,
         session=session,
         endpoint="tracks",
@@ -398,7 +398,7 @@ def request_stream(
 
 def request_videos(
     session: Session, video_id: int, transparent: bool = False
-) -> Optional[VideosEndpointResponseJSON]:
+) -> VideosEndpointResponseJSON | None:
     """Send a GET request to the /videos endpoint of the TIDAL API.
     If an Exception occurs, return None. Else, return an instance of
     VideosEndpointResponseJSON"""
@@ -414,7 +414,7 @@ def request_videos(
 
 def request_video_contributors(
     session: Session, video_id: int, transparent: bool = False
-) -> Optional[VideosContributorsResponseJSON]:
+) -> VideosContributorsResponseJSON | None:
     """Send a GET request to the /videos/<video ID>/contributors endpoint of the
     TIDAL API. If an Exception occurs, return None. Else, return an instance
     of VideosContributorsResponseJSON"""
@@ -432,11 +432,11 @@ def request_video_contributors(
 
 def request_video_stream(
     session: Session, video_id: int, video_quality: str, transparent: bool = False
-) -> Optional[VideosEndpointStreamResponseJSON]:
+) -> VideosEndpointStreamResponseJSON | None:
     """Send a GET request to the /videos/<video ID>/playbackinfopostpaywall
     endpoint of the TIDAL API. If an Exception occurs, return None. Else,
     return an instance of VideosEndpointStreamResponseJSON"""
-    func = partial(
+    func: Callable = partial(
         requester_maker,
         session=session,
         identifier=video_id,
@@ -456,7 +456,7 @@ def request_video_stream(
 
 def request_playlists(
     session: Session, playlist_id: int, transparent: bool = False
-) -> Optional[PlaylistsEndpointResponseJSON]:
+) -> PlaylistsEndpointResponseJSON | None:
     """Send a GET request to the /playlists endpoint of the TIDAL API.
     If an Exception occurs, return None. Else, return an instance of
     PlaylistsEndpointResponseJSON"""
@@ -470,21 +470,22 @@ def request_playlists(
     )
 
 
-def get_album_id(session: Session, track_id: int) -> Optional[int]:
+def get_album_id(session: Session, track_id: int) -> int | None:
     """Given the Tidal ID to a track, query the Tidal API in order to retrieve
     the Tidal ID of the album to which the track belongs"""
-    terj: Optional[TracksEndpointResponseJSON] = request_tracks(session, track_id)
-    album_id: Optional[int] = None
+    terj: TracksEndpointResponseJSON | None = request_tracks(session, track_id)
+    album_id: int | None = None
 
     try:
         album_id = terj.id
     except AttributeError:
         pass
-    finally:
-        return album_id
+    except:
+        logger.exception("Album ID could not be retrieved from response JSON.")
+    return album_id
 
 
-def contiguous_ranges(value: int, range_size: int) -> Iterator[Tuple[int, int]]:
+def contiguous_ranges(value: int, range_size: int) -> Iterator[tuple[int, int]]:
     """This function is a generator: it yields two-tuples of int, with the
     tuples representing the (inclusive) boundaries of ranges of size
     range_size. The final tuple will represent a range <= range_size if
@@ -497,7 +498,7 @@ def contiguous_ranges(value: int, range_size: int) -> Iterator[Tuple[int, int]]:
     i: int = 0
     rs: int = range_size - 1
     while i + rs < value:
-        t: Tuple[int, int] = (i, i + rs)
+        t: tuple[int, int] = (i, i + rs)
         i = t[-1] + 1
         yield t
     yield (i, value)
@@ -519,7 +520,7 @@ def http_request_range_headers(
      'bytes=15-16')
     ```
     """
-    ranges: Iterator[Tuple[int, int]] = contiguous_ranges(content_length, range_size)
+    ranges: Iterator[tuple[int, int]] = contiguous_ranges(content_length, range_size)
     iterable: Iterable = (f"bytes={t[0]}-{t[1]}" for t in ranges)
     if return_tuple:
         return tuple(iterable)

@@ -8,7 +8,6 @@ import tempfile
 from contextlib import closing, contextmanager
 from io import BytesIO
 from pathlib import Path
-from typing import Optional, Tuple, Union
 
 from Crypto.Cipher import AES
 from requests import Session
@@ -47,8 +46,8 @@ def download_cover_image(
     cover_uuid: str,
     output_dir: Path,
     file_name: str = "cover.jpg",
-    dimension: Union[int, Tuple[int]] = 1280,
-) -> Optional[Path]:
+    dimension: int | tuple[int] = 1280,
+) -> Path | None:
     """Given a UUID that corresponds to a (JPEG) image on Tidal's servers,
     download the image file and write it as 'cover.jpeg' in the directory
     'output_dir'. Returns path to downloaded file"""
@@ -96,7 +95,7 @@ def temporary_file(suffix: str = ".mka"):
         os.unlink(tf.name)
 
 
-def decrypt_manifest_key_id(manifest_key_id: str) -> Tuple[bytes, bytes]:
+def decrypt_manifest_key_id(manifest_key_id: str) -> tuple[bytes, bytes]:
     """Given a 'keyId' value from the TIDAL API manifest response, use the
     master_key gleaned from previous projects and decrypt the audio bytes.
     This will work if the manifest specifies encryption type 'OLD_AES'.
@@ -141,15 +140,18 @@ def is_tidal_api_reachable(hostname: str = "api.tidal.com") -> bool:
         )
         return False
     except OSError as ose:
-        if "[Errno 101] Network is unreachable" in ose.msg:
+        if (
+            ose.strerror is not None
+            and "[Errno 101] Network is unreachable" in ose.strerror
+        ):
             logger.critical(
                 "tidal-wave appears to be unable to reach the Internet. "
                 "Please ensure that connectivity to (at least) api.tidal.com "
                 "is possible"
             )
             return False
-    except Exception as e:
-        logger.exception(e)
+    except Exception:
+        logger.exception("Network connectivity error")
         return False
     else:
         return True

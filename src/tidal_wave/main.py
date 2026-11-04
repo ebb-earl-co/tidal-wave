@@ -5,11 +5,11 @@ from __future__ import annotations
 import logging
 from contextlib import closing
 from pathlib import Path
+from typing import Annotated
 
 import typer
 from cachecontrol import CacheControl
 from platformdirs import user_music_path
-from typing_extensions import Annotated
 
 from .album import Album
 from .artist import Artist

@@ -9,10 +9,11 @@ import shlex
 import shutil
 import subprocess
 import sys
+from collections.abc import Iterable
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 
 import ffmpeg
 import mutagen
@@ -149,7 +150,7 @@ class Track:
     def set_manifest(self):
         """Populate self.manifest and self.codec."""
         try:
-            self.manifest: Manifest = manifester(self.stream)
+            self.manifest: None | Manifest = manifester(self.stream)
         except TidalManifestError as tme:
             logger.critical(tme.args[0])
             self.manifest = None
@@ -211,7 +212,7 @@ class Track:
         elif audio_format == AudioFormat.dolby_atmos:
             track_substring: str = f"{_track_part} [A]"
         else:
-            track_substring: str = _track_part
+            track_substring = _track_part
 
         # Check for MQA masquerading as HiRes here
         if audio_format == AudioFormat.hi_res:
@@ -232,7 +233,7 @@ class Track:
         if self.filename is None:
             self.trackname: str | None = None
         else:
-            self.trackname: str = re.match(
+            self.trackname = re.match(
                 r"(?:\d{2,3} - )(.+?$)",
                 self.filename,
             ).groups()[0]
@@ -261,14 +262,15 @@ class Track:
                     f"Unable to fit title of track {self.track_id} "
                     f"into a valid filename (even '{outfile}'), as "
                     "total character count exceeds Windows' 260-character "
-                    "limit. Downloading will not continue",
+                    "limit. Downloading will not continue"
                 )
+
                 logger.warning(_msg)
                 return
 
             self.outfile: Path = Path(self.absolute_outfile).parent / outfile
             self.absolute_outfile: str = str(self.outfile.absolute())
-            self.trackname: str = outfile
+            self.trackname = outfile
 
         if (self.outfile.exists()) and (self.outfile.stat().st_size > 0):
             _msg: str = (
@@ -350,10 +352,12 @@ class Track:
     def set_urls(self, session: Session):
         """Set self.urls based on self.manifest."""
         if isinstance(self.manifest, JSONDASHManifest):
-            self.urls: str | None = self.manifest.urls
+            self.urls: list[str] | None = self.manifest.urls
         elif isinstance(self.manifest, XMLDASHManifest):
-            self.urls: str | None = self.manifest.build_urls(session=session)
-        self.download_headers: dict[str, str] = {"Accept": self.manifest.mime_type}
+            self.urls = self.manifest.build_urls(session=session)
+        self.download_headers: dict[str, str | None] = {
+            "Accept": self.manifest.mime_type
+        }
         if session.session_id is not None:
             self.download_headers["sessionId"] = session.session_id
         self.download_params = {k: None for k in session.params}
@@ -573,7 +577,17 @@ class Track:
         E.g. for .flac files, the album's artist is 'ALBUMARTIST',
         but for .m4a files, the album's artist is 'aART'.
         """
-        tags: dict[str, str | float | list[str] | int] = {}
+        tags: dict[
+            str,
+            str
+            | float
+            | list[str]
+            | int
+            | tuple[int]
+            | list[tuple[int, int]]
+            | list[bytes]
+            | bytes,
+        ] = {}
         if self.codec == "flac":
             tag_map = {k: v["flac"] for k, v in TAG_MAPPING.items()}
         elif self.codec == "m4a":
@@ -634,7 +648,7 @@ class Track:
             # instrument-specific
             #     piano
             try:
-                piano_credits: str | None = [
+                piano_credits: list[str] | None = [
                     f"{{{pc}}} (piano)" for pc in self.credits.piano
                 ]
             except (TypeError, AttributeError):  # NoneType problems
@@ -727,7 +741,7 @@ class Track:
             ):
                 with temporary_file(suffix=".flac") as tf:
                     shutil.move(self.absolute_outfile, tf.name)
-                    cmd: str | None = shlex.split(_cmd % tf.name)
+                    cmd: list[str] | None = shlex.split(_cmd % tf.name)
                     subprocess.run(cmd, check=True)
 
         elif self.codec == "m4a":
@@ -741,7 +755,7 @@ class Track:
                 and isinstance(self.mutagen["covr"][0], MP4Cover)
             ):
                 with temporary_file(suffix=".mp4") as tf:
-                    cmd: str | None = shlex.split(_cmd % tf.name)
+                    cmd: list[str] | None = shlex.split(_cmd % tf.name)
                     subprocess.run(cmd, check=True)
                     shutil.copyfile(tf.name, self.absolute_outfile)
 

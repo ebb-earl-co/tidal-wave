@@ -368,7 +368,7 @@ class Playlist:
             try:
                 self.save_description()
             except Exception:
-                logger.exception()
+                logger.exception("Playlist description could not be saved to disk.")
             else:
                 _msg: str = (
                     "Playlist description written to "

@@ -8,7 +8,7 @@ import logging
 import sys
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
@@ -97,7 +97,7 @@ class TokenEndpointResponseJSON(dataclass_wizard.JSONSerializable):
         # gives 1-week expiration timeline, but depending on network latency
         # etc., want to refresh early.
         _timedelta = timedelta(seconds=self.expires_in - 300)
-        self.expiration: datetime = datetime.now(tz=timezone.utc) + _timedelta
+        self.expiration: datetime = datetime.now(tz=UTC) + _timedelta
 
 
 @dataclass
@@ -134,11 +134,11 @@ class BearerToken:
         This is done by comparing self.expiration with
         datetime.datetime.now(tz=datetime.timezone.utc).
         """
-        return not (datetime.now(tz=timezone.utc) < self.expiration)
+        return not (datetime.now(tz=UTC) < self.expiration)
 
     def save(self, p: Path = TOKEN_DIR_PATH / "fire_tv-tidal.token") -> None:
         """Write some attributes as base64-encoded JSON to path on disk, p."""
-        d: dict[str, str] = {
+        d: dict[str, str | int] = {
             "access_token": self.access_token,
             "client_name": self.client_name,
             "expiration": self.expiration.isoformat(),
@@ -238,7 +238,7 @@ class BearerToken:
                 self.user_name = token_json.get("userName", token_json.get("user_name"))
 
             _timedelta = timedelta(seconds=token_json.get("expires_in") - 300)
-            self.expiration = datetime.now(tz=timezone.utc) + _timedelta
+            self.expiration = datetime.now(tz=UTC) + _timedelta
 
 
 @dataclass
@@ -326,7 +326,7 @@ class TidalOauth:
             file=sys.stderr,
         )
 
-        while datetime.now(tz=timezone.utc) < self.verification_expiration:
+        while datetime.now(tz=UTC) < self.verification_expiration:
             with requests.post(
                 url=f"{OAUTH2_URL}/token",
                 headers=headers,
