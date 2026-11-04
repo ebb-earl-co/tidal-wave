@@ -256,7 +256,7 @@ class TidalOauth:
     def __post_init__(self) -> None:
         """Set static attributes on self."""
         self._client_id: str = "7m7Ap0JC9j1cOM3n"
-        self._client_secret: str = "vRAdA108tlvkJpTsGZS8rGZ7xTlbJ0qaZ2K9saEzsgY="  # noqa: S105
+        self._client_secret: str = "vRAdA108tlvkJpTsGZS8rGZ7xTlbJ0qaZ2K9saEzsgY="
         self.token: BearerToken | None = None
         self.verification_url: str | None = None
 
@@ -295,7 +295,7 @@ class TidalOauth:
         # "Date" header is in the "%a, %d %b %Y %H:%M:%S %Z" format:
         # e.g. "Wed, 06 Dec 2023 05:11:11 GMT".
         # So, parsedate_to_datetime converts the above into
-        # datetime.datetime(2023, 12, 6, 5, 11, 11, tzinfo=datetime.timezone.utc)  # noqa:ERA001
+        # datetime.datetime(2023, 12, 6, 5, 11, 11, tzinfo=datetime.timezone.utc)
         self.verification_expiration: datetime = parsedate_to_datetime(
             resp.headers.get("Date"),
         ) + timedelta(seconds=daerj.expires_in)
@@ -320,7 +320,7 @@ class TidalOauth:
         _data["device_code"] = self.device_authorization.device_code
         _auth = (self.client_id, self.client_secret)
 
-        print(  # noqa:T201
+        print(
             "\nCopy this URL, then navigate to it in a browser: "
             f"{self.verification_url}\n",
             file=sys.stderr,

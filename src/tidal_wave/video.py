@@ -129,13 +129,9 @@ class Video:
         download_params: Dict[str, None] = {k: None for k in session.params}
         # self.outfile should already have been set by self.set_outfile()
         request_headers: Dict[str, str] = (
-            {"sessionId": session.session_id}
-            if session.session_id is not None
-            else {}
+            {"sessionId": session.session_id} if session.session_id is not None else {}
         )
-        logger.info(
-            f"Writing video {self.video_id} to '{str(self.outfile.absolute())}'"
-        )
+        logger.info(f"Writing video {self.video_id} to '{self.outfile.absolute()!s}'")
 
         with temporary_file(suffix=".m2t") as tf:
             for i, u in enumerate(self.urls, 1):
@@ -163,7 +159,7 @@ class Video:
                     vcodec="copy",
                     acodec="copy",
                     loglevel="quiet",
-                    **{"movflags": "+faststart"},
+                    movflags="+faststart",
                 ).run()
             except ffmpeg.Error:
                 logger.warning(
@@ -185,7 +181,7 @@ class Video:
             f"Adding metadata tags to video {self.video_id} using "
             f"data returned from videos/{self.video_id} API endpoint"
         )
-        tags[tag_map["artist"]] = ";".join((a.name for a in self.metadata.artists))
+        tags[tag_map["artist"]] = ";".join(a.name for a in self.metadata.artists)
         tags[tag_map["artists"]] = [a.name for a in self.metadata.artists]
         tags[tag_map["date"]] = str(self.metadata.release_date.date())
         tags["hdvd"] = (2,)  # 1080p/i video quality
@@ -211,7 +207,7 @@ class Video:
 
         # Director
         logger.debug("Adding tag for video director, if the contributor(s) exist(s)")
-        for tag in {"director", "film_director", "video_director"}:
+        for tag in ("director", "film_director", "video_director"):
             try:
                 _credits_tag: str = ";".join(getattr(self.contributors, tag))
             except (TypeError, AttributeError):  # NoneType problems
@@ -221,7 +217,7 @@ class Video:
 
         # Engineer
         logger.debug("Adding tag for video engineer, if the contributor(s) exist(s)")
-        for tag in {"engineer", "mastering_engineer", "vocal_engineer"}:
+        for tag in ("engineer", "mastering_engineer", "vocal_engineer"):
             try:
                 # self.contributors.mastering_engineer is of type Tuple[str]
                 _credits_tag: str = ";".join(getattr(self.contributors, tag))
@@ -270,7 +266,7 @@ class Video:
 
         # Producer
         logger.debug("Adding tag for video producer, if the contributor(s) exist(s)")
-        for tag in {"film_producer", "producer", "video_producer"}:
+        for tag in ("film_producer", "producer", "video_producer"):
             try:
                 _credits_tag: str = ";".join(getattr(self.contributors, tag))
             except (TypeError, AttributeError):  # NoneType problems

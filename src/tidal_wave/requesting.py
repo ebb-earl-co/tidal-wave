@@ -500,8 +500,7 @@ def contiguous_ranges(value: int, range_size: int) -> Iterator[Tuple[int, int]]:
         t: Tuple[int, int] = (i, i + rs)
         i = t[-1] + 1
         yield t
-    else:
-        yield (i, value)
+    yield (i, value)
 
 
 def http_request_range_headers(

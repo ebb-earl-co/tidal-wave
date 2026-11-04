@@ -166,8 +166,7 @@ def manifester(tesrj: TracksEndpointStreamResponseJSON) -> Manifest:
             )
         except json.decoder.JSONDecodeError as jde:
             _msg: str = (
-                "Cannot parse manifest with type "
-                f"'{tesrj.manifest_mime_type}' as JSON"
+                f"Cannot parse manifest with type '{tesrj.manifest_mime_type}' as JSON"
             )
             raise TidalManifestError(_msg) from jde
         except dataclass_wizard.errors.ParseError as pe:

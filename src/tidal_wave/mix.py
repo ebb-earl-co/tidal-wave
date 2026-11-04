@@ -124,10 +124,7 @@ class Mix:
             else:
                 tracks_videos[i] = None
                 continue
-        else:
-            self.tracks_videos: Tuple[Optional[Union[Track, Video]]] = tuple(
-                tracks_videos
-            )
+        self.tracks_videos: Tuple[Optional[Union[Track, Video]]] = tuple(tracks_videos)
         return tracks_videos
 
     def flatten_mix_dir(self):
@@ -143,9 +140,9 @@ class Mix:
 
         subdirs: Set[Path] = set()
         for i, tv in enumerate(self.tracks_videos, 1):
-            if getattr(tv, "outfile") is None:
+            if tv.outfile is None:
                 try:
-                    getattr(tv, "album_dir")
+                    tv.album_dir
                 except AttributeError:
                     pass
                 else:
@@ -180,15 +177,14 @@ class Mix:
                 new_path.write_bytes(_path.read_bytes())
                 _path.unlink()
                 files[i - 1] = {i: str(new_path.absolute())}
-        else:
-            self.files: List[Dict[int, Optional[str]]] = files
+        self.files: List[Dict[int, Optional[str]]] = files
 
         # Find all subdirectories written to
         subdirs: Set[Path] = set()
         for tv in self.tracks_videos:
             if isinstance(tv, Track):
                 try:
-                    getattr(tv, "album_dir")
+                    tv.album_dir
                 except AttributeError:
                     pass
                 else:
@@ -205,32 +201,29 @@ class Mix:
                 if p.name == "cover.jpg":
                     continue
                 artist_images.add(p)
-        else:
-            for artist_image_path in artist_images:
-                if artist_image_path.exists():
-                    shutil.copyfile(
-                        artist_image_path.absolute(),
-                        self.mix_dir / artist_image_path.name,
-                    )
+        for artist_image_path in artist_images:
+            if artist_image_path.exists():
+                shutil.copyfile(
+                    artist_image_path.absolute(),
+                    self.mix_dir / artist_image_path.name,
+                )
 
         artist_bios: Set[Path] = set()
         for subdir in subdirs:
             for p in subdir.glob("*bio.json"):
                 artist_bios.add(p)
-        else:
-            for artist_bio_path in artist_bios:
-                if artist_bio_path.exists():
-                    shutil.copyfile(
-                        artist_bio_path.absolute(),
-                        self.mix_dir / artist_bio_path.name,
-                    )
+        for artist_bio_path in artist_bios:
+            if artist_bio_path.exists():
+                shutil.copyfile(
+                    artist_bio_path.absolute(),
+                    self.mix_dir / artist_bio_path.name,
+                )
 
         # Remove all subdirs
         for subdir in subdirs:
             if subdir.exists():
                 shutil.rmtree(subdir)
-        else:
-            return self.mix_dir
+        return self.mix_dir
 
     def dumps(self):
         return json.dumps(self.files)
@@ -324,8 +317,7 @@ class Mix:
             else:
                 files[i] = None
                 continue
-        else:
-            self.files: List[Optional[str]] = files
+        self.files: List[Optional[str]] = files
 
 
 class TidalMixError(Exception):
@@ -457,7 +449,7 @@ def mix_items_response_json_maker(
         return
 
     mixes_items: List[
-        Optional[Union["TracksEndpointResponseJSON", "VideosEndpointResponseJSON"]]
+        Optional[Union[TracksEndpointResponseJSON, VideosEndpointResponseJSON]]
     ] = [None] * init_args["total_number_of_items"]
 
     for i, namespace in enumerate(items):
@@ -503,7 +495,7 @@ def retrieve_mix_items(
     the playlist contains more than 100 items, multiple requests will be
     sent until all N > 100 items are retrieved.
     """
-    mixes_items_response_json: Optional["MixesItemsResponseJSON"] = None
+    mixes_items_response_json: Optional[MixesItemsResponseJSON] = None
     mixes_response: Optional[dict] = request_mixes_items(
         session=session, mix_id=mix_id, transparent=transparent
     )
@@ -553,7 +545,7 @@ def retrieve_mix_items(
         all_items_mixes_response = mixes_response
 
     try:
-        mixes_items_response_json: Optional["MixesItemsResponseJSON"] = (
+        mixes_items_response_json: Optional[MixesItemsResponseJSON] = (
             mix_items_response_json_maker(mixes_response=all_items_mixes_response)
         )
     except Exception as e:

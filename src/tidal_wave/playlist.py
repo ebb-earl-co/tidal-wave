@@ -68,7 +68,8 @@ class Playlist:
         sent to the endpoint until all items for the playlist are retrieved.
         """
         playlist_items: PlaylistsItemsResponseJSON | None = retrieve_playlist_items(
-            session=session, playlist_id=self.playlist_id,
+            session=session,
+            playlist_id=self.playlist_id,
         )
         if playlist_items is None:
             self.items = ()
@@ -253,7 +254,7 @@ class Playlist:
         in order to be able to access self.files
         N.b. the already-written file is temporarily copied to a .mp4 version in a
         temporary directory because .m4a files cannot be read with mutagen."""
-        m3u_text: str = f"#EXTM3U\n#EXTENC:UTF-8\n#EXTIMG:{str(self.cover_path.absolute())}\n#PLAYLIST:{self.name}\n"
+        m3u_text: str = f"#EXTM3U\n#EXTENC:UTF-8\n#EXTIMG:{self.cover_path.absolute()!s}\n#PLAYLIST:{self.name}\n"
 
         _msg: str = (
             f"Creating .m3u8 playlist file for Playlist with ID '{self.playlist_id}'"
@@ -268,8 +269,7 @@ class Playlist:
                 artist: str = m.get("artist", [""])[0]
                 title: str = m.get("title", [""])[0]
                 extinf: str = (
-                    f"#EXTINF:{math.ceil(m.info.length)},"
-                    f"{artist} - {title}\n{file}\n"
+                    f"#EXTINF:{math.ceil(m.info.length)},{artist} - {title}\n{file}\n"
                 )
                 m3u_text += extinf
             elif file.endswith(".mka"):
@@ -277,8 +277,7 @@ class Playlist:
                 artist: str = m.get("ARTI", [""])[0]
                 title: str = m.get("TITL", [""])[0]
                 extinf: str = (
-                    f"#EXTINF:{math.ceil(m.info.length)},"
-                    f"{artist} - {title}\n{file}\n"
+                    f"#EXTINF:{math.ceil(m.info.length)},{artist} - {title}\n{file}\n"
                 )
                 m3u_text += extinf
             elif file.endswith(".m4a"):
@@ -305,8 +304,7 @@ class Playlist:
                 artist: str = m.get("\xa9ART", [""])[0]
                 title: str = m.get("\xa9nam", [""])[0]
                 extinf: str = (
-                    f"#EXTINF:{math.ceil(m.info.length)},"
-                    f"{artist} - {title}\n{file}\n"
+                    f"#EXTINF:{math.ceil(m.info.length)},{artist} - {title}\n{file}\n"
                 )
                 m3u_text += extinf
         return m3u_text
