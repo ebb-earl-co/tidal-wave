@@ -5,11 +5,11 @@ from __future__ import annotations
 import logging
 from contextlib import closing
 from pathlib import Path
+from typing import Annotated
 
 import typer
 from cachecontrol import CacheControl
 from platformdirs import user_music_path
-from typing_extensions import Annotated
 
 from tidal_wave.album import Album
 from tidal_wave.artist import Artist
@@ -29,14 +29,14 @@ from tidal_wave.track import Track
 from tidal_wave.utils import is_tidal_api_reachable
 from tidal_wave.video import Video
 
-__version__ = "2025.2.1"
+__version__ = "2026.11.1"
 
 
 # https://typer.tiangolo.com/tutorial/options/version/#fix-with-is_eager
-def version_callback(value: bool) -> None:  # noqa: FBT001
+def version_callback(value: bool) -> None:
     """Pass this function to typer to specify eager option behavior."""
     if value:
-        print(f"tidal-wave {__version__}")  # noqa: T201
+        print(f"tidal-wave {__version__}")
         raise typer.Exit(code=0)
 
 
@@ -66,7 +66,7 @@ def main(
         LogLevel,
         typer.Option(case_sensitive=False),
     ] = LogLevel.info.value,
-    include_eps_singles: Annotated[  # noqa: FBT002
+    include_eps_singles: Annotated[
         bool,
         typer.Option(
             "--include-eps-singles",
@@ -76,7 +76,7 @@ def main(
             ),
         ),
     ] = False,
-    no_extra_files: Annotated[  # noqa: FBT002
+    no_extra_files: Annotated[
         bool,
         typer.Option(
             "--no-extra-files",
@@ -86,7 +86,7 @@ def main(
             ),
         ),
     ] = False,
-    no_flatten: Annotated[  # noqa: FBT002
+    no_flatten: Annotated[
         bool,
         typer.Option(
             "--no-flatten",
@@ -96,14 +96,14 @@ def main(
             ),
         ),
     ] = False,
-    transparent: Annotated[  # noqa: FBT002
+    transparent: Annotated[
         bool,
         typer.Option(
             "--transparent",
             help="Whether to dump JSON responses from TIDAL API; maximum verbosity",
         ),
     ] = False,
-    version: Annotated[  # noqa: ARG001
+    version: Annotated[
         bool | None,
         typer.Option("--version", callback=version_callback, is_eager=True),
     ] = None,
