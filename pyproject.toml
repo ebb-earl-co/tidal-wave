@@ -49,7 +49,7 @@ dev = [
 ]
 build = [
     # https://github.com/pyinstaller/pyinstaller?tab=readme-ov-file#requirements-and-tested-platforms
-    "pyinstaller==6.19.0",
+    "pyinstaller==6.22.3",
     "pypiwin32==223 ; platform_system == 'Windows'",
 ]
 
@@ -66,4 +66,4 @@ quote-style = "double"
 compile-bytecode = true  # https://docs.astral.sh/uv/reference/settings/#compile-bytecode
 package = true  # https://docs.astral.sh/uv/reference/settings/#package
 # https://docs.astral.sh/uv/reference/settings/#required-version
-required-version = ">=0.13.4"  # eMudhra certificate fiasco
+required-version = ">=0.13.6"  # eMudhra certificate fiasco
