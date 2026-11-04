@@ -5,6 +5,7 @@ on:
     types: ["published"]
   push:
     branches: ["develop", "trunk"]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,86 +14,97 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
       - name: Cache downloaded ffmpeg.exe
-        uses: actions/cache@v5
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5.0.3
         id: cache-ffmpeg-exe
         with:
           path: ${{ github.workspace }}\ffmpeg.exe
           key: ffmpeg-n7.0-from-media-autobuild-suite
+
       - name: Download ffmpeg binary if not found
         if: steps.cache-ffmpeg-exe.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           Invoke-WebRequest "https://github.com/ebb-earl-co/media-autobuild_suite/releases/download/n7.0/ffmpeg.exe" -OutFile "ffmpeg.exe"
+
       - name: Cache UPX 4.2.3 zip downloaded from GitHub
-        uses: actions/cache@v5
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5.0.3
         id: cache-upx-423
         with:
           path: ~\AppData\Local\upx-4.2.3-win64.zip
           key: upx-423-from-github
+
       - name: Download UPX binary if not found
         if: steps.cache-upx-423.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           Invoke-WebRequest "https://github.com/upx/upx/releases/download/v4.2.3/upx-4.2.3-win64.zip" -OutFile "~\AppData\Local\upx-4.2.3-win64.zip"
+
       - name: Install UPX tool
         shell: pwsh
         run: |
           Expand-Archive "~\AppData\Local\upx-4.2.3-win64.zip" -DestinationPath "~\AppData\Local\upx-4.2.3-win64"
+
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           architecture: "x64"
-          cache: "pip"
-          python-version: "3.12.9"
-      - name: Install Python dependencies
-        shell: pwsh
+          check-latest: false
+          python-version: "3.13.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b  # v7.3.0
+        with:
+          enable-cache: true
+          python-version: "3.13.12"
+
+      - name: Install dependencies
+        env:
+          UV_NO_MANAGED_PYTHON: 1
         run: |
-          python.exe -m venv .\venv
-          & .\venv\Scripts\activate
-          python.exe -m pip install uv
-          python.exe -m uv pip install pyinstaller==6.12.0 pypiwin32==223
-          python.exe -m uv pip install .
+          uv.exe sync --locked --group build --no-group dev
+
       - name: Create Executable with Pyinstaller
+        env:
+          UV_NO_MANAGED_PYTHON: 1
         run: |
-          & .\venv\Scripts\activate
-          pyinstaller `
+          uv.exe run --no-project pyinstaller `
             --name tidal-wave_windows.exe `
-            --paths tidal_wave `
-            --add-binary "ffmpeg.exe:ffmpeg.exe" `
+            --paths src/tidal_wave `
+            --add-binary "ffmpeg.exe;." `
             --exclude-module pyinstaller `
             --exclude-module ruff `
+            --exclude-module uv `
+            --collect-all tzdata `
             --clean `
             --upx-dir "~\AppData\Local\upx-4.2.3-win64" `
             --onefile `
             .\pyinstaller.py
+
       - name: Test just-compiled binary
         shell: pwsh
         run: |
           & .\dist\tidal-wave_windows.exe --help
-      - name: Create SHA256 checksum file of just-compiled binary
-        shell: pwsh
-        run: |
-          python.exe -c "from hashlib import sha256;from pathlib import Path;Path('tidal-wave_windows.exe.sha256').write_text(f'''{sha256(Path('./dist/tidal-wave_windows.exe').read_bytes()).hexdigest()}\ttidal-wave_windows.exe''')"
-          cat tidal-wave_windows.exe.sha256
+
       - name: Upload Artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          compression-level: 9
+          compression-level: 0
           name: tidal-wave_windows
           overwrite: true
           path: |
             .\dist\tidal-wave_windows.exe
-            .\tidal-wave_windows.exe.sha256
           retention-days: 7
+
       - name: Add artifact to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b  # v2.5.0
         if: startsWith(github.ref, 'refs/tags/')
         with:
           fail_on_unmatched_files: true
           files: |
             .\dist\tidal-wave_windows.exe
-            .\tidal-wave_windows.exe.sha256
           token: ${{ github.token }}

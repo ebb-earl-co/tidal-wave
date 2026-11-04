@@ -1,37 +1,36 @@
 ---
-name: Python application
+name: Python linting with Ruff
 on:
   push:
     branches: ["trunk", "develop"]
   pull_request:
     branches: ["trunk", "develop"]
+  workflow_dispatch:
+
 permissions:
   contents: read
 jobs:
   build:
     strategy:
       matrix:
-        version: ["3.10", "3.11", "3.12", "3.13"]
+        version: ["3.10", "3.11", "3.12", "3.13", "3.13t", "3.14", "3.14t"]
         # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
-        os: [ubuntu-latest, windows-latest, macos-13, macos-latest]
+        os: [ubuntu-22.04, ubuntu-24.04, windows-2022, windows-2025, macos-14, macos-15, macos-26]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v5
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b  # v7.3.0
         with:
+          cache-python: "true"
+          enable-cache: "true"
           python-version: ${{ matrix.version }}
-          cache: "pip"
-      - name: Install dependencies
-        run: |
-          python -m pip install uv
-          python -m uv pip install flake8 ruff
-          python -m uv sync --active
-      - name: Lint with flake8
-        run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude pyinstaller.py
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude pyinstaller.py
+          version-file: "pyproject.toml"
+
       - name: Format with Ruff
-        if: ${{ !((matrix.version == '3.8' || matrix.version == '3.9') && matrix.os == 'macos-latest')}}
-        run: ruff format tidal_wave
+        run: uv run --no-project --with ruff ruff format --diff ./src/tidal_wave/
+
+      - name: Lint with Ruff
+        run: uv run --no-project --with ruff ruff check --statistics --exclude pyinstaller.py ./src/tidal_wave/
