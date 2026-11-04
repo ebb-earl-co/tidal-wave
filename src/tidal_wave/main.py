@@ -42,6 +42,26 @@ def version_callback(value: bool) -> None:
         raise typer.Exit
 
 
+# eMudhra / emSign CA certificate patch
+warn_msg: str = (
+    f"This Python runtime ({version_info.major}.{version_info.minor}.{version_info.micro}) does not include the remediation to the October 2026 certificate authority incident!\n"
+    "See <https://discuss.python.org/t/information-for-python-users-regarding-emudhra-emsign-ca-certificate-security-incident/109576>."
+)
+
+# (major, minor, micro, releaselevel, serial)
+match version_info:
+    case (_, minor, micro, _, _) if minor == 11 and micro < 18:
+        warn(warn_msg, RuntimeWarning)
+    case (_, minor, micro, _, _) if minor == 12 and micro < 16:
+        warn(warn_msg, RuntimeWarning)
+    case (_, minor, micro, _, _) if minor == 13 and micro < 18:
+        warn(warn_msg, RuntimeWarning)
+    case (_, minor, micro, _, _) if minor == 14 and micro < 10:
+        warn(warn_msg, RuntimeWarning)
+    case (_, minor, micro, _, _) if minor == 15 and micro < 2:
+        warn(warn_msg, RuntimeWarning)
+
+
 app = typer.Typer()
 _user_music_path: Path = user_music_path()
 
@@ -233,22 +253,4 @@ def main(
 
 
 if __name__ == "__main__":
-    # eMudhra / emSign CA certificate patch
-    warn_msg: str = (
-        f"This Python runtime ({version_info.major}.{version_info.minor}.{version_info.micro}) does not include the remediation to the October 2026 certificate authority incident!\n"
-        "See <https://discuss.python.org/t/information-for-python-users-regarding-emudhra-emsign-ca-certificate-security-incident/109576>."
-    )
-
-    # (major, minor, micro, releaselevel, serial)
-    match version_info:
-        case (_, minor, micro, _, _) if minor == 11 and micro < 18:
-            warn(warn_msg, RuntimeWarning)
-        case (_, minor, micro, _, _) if minor == 12 and micro < 16:
-            warn(warn_msg, RuntimeWarning)
-        case (_, minor, micro, _, _) if minor == 13 and micro < 18:
-            warn(warn_msg, RuntimeWarning)
-        case (_, minor, micro, _, _) if minor == 14 and micro < 10:
-            warn(warn_msg, RuntimeWarning)
-        case (_, minor, micro, _, _) if minor == 15 and micro < 2:
-            warn(warn_msg, RuntimeWarning)
     app()
