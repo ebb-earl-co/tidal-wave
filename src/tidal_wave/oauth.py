@@ -12,8 +12,8 @@ from datetime import UTC, datetime, timedelta
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
-import dataclass_wizard
 import requests
+from dataclass_wizard import JSONWizard
 from platformdirs import user_config_path
 
 PROJECT_NAME: str = "tidal-wave"
@@ -37,7 +37,7 @@ class TokenError(Exception):
 
 
 @dataclass
-class DeviceAuthorizationEndpointResponseJSON(dataclass_wizard.JSONSerializable):
+class DeviceAuthorizationEndpointResponseJSON(JSONWizard):
     """Model the JSON response from TIDAL API /device_authorization endpoint."""
 
     device_code: str
@@ -79,7 +79,7 @@ class User:
 
 
 @dataclass
-class TokenEndpointResponseJSON(dataclass_wizard.JSONSerializable):
+class TokenEndpointResponseJSON(JSONWizard):
     """Model the JSON response from TIDAL API /token endpoint."""
 
     scope: str

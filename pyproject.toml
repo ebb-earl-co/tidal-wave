@@ -23,21 +23,23 @@ classifiers = [
 ]
 dependencies = [
     "backoff==2.2.1",
-    "cachecontrol==0.14.3",
+    "cachecontrol==0.14.4",
     "certifi>=2026.10.18",  # GHSA-6q48-6c7w-9gw2
-    "dataclass-wizard==0.39.1",
+    "dataclass-wizard==1.0.0",
     "ffmpeg-python==0.2.0",
     "mutagen==1.48.1",
     "m3u8==6.0.0",
     "msgpack>=1.2.3",  # CVE-2026-114613
-    "platformdirs==4.5.1",
+    "platformdirs==4.10.0",
     "pycryptodome==3.23.0",
     "requests[socks]>=2.33.0",  # CVE-2026-25645
-    "setuptools>=78.1.1", # CVE-2025-47273
     "typer==0.27.3",
     "tzdata==2026.6",
     "urllib3>=2.8.0"  # CVE-2026-44431
 ]
+# CVE-2025-47273
+build-constraint-dependencies = ["setuptools>=78.1.1"]
+
 [project.scripts]
 tidal-wave = "tidal_wave.main:app"
 [project.urls]
