@@ -8,17 +8,13 @@ import logging
 import sys
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from email.utils import parsedate_to_datetime
-from typing import TYPE_CHECKING
+from pathlib import Path
 
-import dataclass_wizard
 import requests
+from dataclass_wizard import JSONWizard
 from platformdirs import user_config_path
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
 
 PROJECT_NAME: str = "tidal-wave"
 TOKEN_DIR_PATH: Path = user_config_path() / PROJECT_NAME
@@ -41,7 +37,7 @@ class TokenError(Exception):
 
 
 @dataclass
-class DeviceAuthorizationEndpointResponseJSON(dataclass_wizard.JSONSerializable):
+class DeviceAuthorizationEndpointResponseJSON(JSONWizard):
     """Model the JSON response from TIDAL API /device_authorization endpoint."""
 
     device_code: str
@@ -83,7 +79,7 @@ class User:
 
 
 @dataclass
-class TokenEndpointResponseJSON(dataclass_wizard.JSONSerializable):
+class TokenEndpointResponseJSON(JSONWizard):
     """Model the JSON response from TIDAL API /token endpoint."""
 
     scope: str
@@ -101,12 +97,12 @@ class TokenEndpointResponseJSON(dataclass_wizard.JSONSerializable):
         # gives 1-week expiration timeline, but depending on network latency
         # etc., want to refresh early.
         _timedelta = timedelta(seconds=self.expires_in - 300)
-        self.expiration: datetime = datetime.now(tz=timezone.utc) + _timedelta
+        self.expiration: datetime = datetime.now(tz=UTC) + _timedelta
 
 
 @dataclass
 class BearerToken:
-    """Model a JWT access token of type Bearer.
+    """Model a bearer token of type JWT.
 
     See more at (https://swagger.io/docs/specification/authentication/bearer-authentication/).
     """
@@ -138,11 +134,11 @@ class BearerToken:
         This is done by comparing self.expiration with
         datetime.datetime.now(tz=datetime.timezone.utc).
         """
-        return not (datetime.now(tz=timezone.utc) < self.expiration)
+        return not (datetime.now(tz=UTC) < self.expiration)
 
     def save(self, p: Path = TOKEN_DIR_PATH / "fire_tv-tidal.token") -> None:
         """Write some attributes as base64-encoded JSON to path on disk, p."""
-        d: dict[str, str] = {
+        d: dict[str, str | int] = {
             "access_token": self.access_token,
             "client_name": self.client_name,
             "expiration": self.expiration.isoformat(),
@@ -242,18 +238,18 @@ class BearerToken:
                 self.user_name = token_json.get("userName", token_json.get("user_name"))
 
             _timedelta = timedelta(seconds=token_json.get("expires_in") - 300)
-            self.expiration = datetime.now(tz=timezone.utc) + _timedelta
+            self.expiration = datetime.now(tz=UTC) + _timedelta
 
 
 @dataclass
 class TidalOauth:
-    """This class encapsulates attributes and methods to do with authenticating
-    with the Tidal OAuth API. In particular, the authorization_code_flow()
-    method implements the authorization code flow part of the OAuth 2.0
-    specification:
+    """Encapsulate attributes and methods to do with authenticating with the Tidal OAuth API.
+
+    In particular, the authorization_code_flow() method implements the authorization code
+    flow part of the OAuth 2.0 specification:
     https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow
-    The client_id and client_secret attributes are gleaned from other projects'
-    work, especially
+    The client_id and client_secret attributes are gleaned from other projects' work,
+    especially
     https://github.com/Dniel97/RedSea/blob/4ba02b88cee33aeb735725cb854be6c66ff372d4/config/settings.example.py#L68
     """
 
@@ -299,7 +295,7 @@ class TidalOauth:
         # "Date" header is in the "%a, %d %b %Y %H:%M:%S %Z" format:
         # e.g. "Wed, 06 Dec 2023 05:11:11 GMT".
         # So, parsedate_to_datetime converts the above into
-        # datetime.datetime(2023, 12, 6, 5, 11, 11, tzinfo=datetime.timezone.utc)  # noqa:ERA001
+        # datetime.datetime(2023, 12, 6, 5, 11, 11, tzinfo=datetime.timezone.utc)
         self.verification_expiration: datetime = parsedate_to_datetime(
             resp.headers.get("Date"),
         ) + timedelta(seconds=daerj.expires_in)
@@ -324,13 +320,13 @@ class TidalOauth:
         _data["device_code"] = self.device_authorization.device_code
         _auth = (self.client_id, self.client_secret)
 
-        print(  # noqa:T201
+        print(
             "\nCopy this URL, then navigate to it in a browser: "
             f"{self.verification_url}\n",
             file=sys.stderr,
         )
 
-        while datetime.now(tz=timezone.utc) < self.verification_expiration:
+        while datetime.now(tz=UTC) < self.verification_expiration:
             with requests.post(
                 url=f"{OAUTH2_URL}/token",
                 headers=headers,

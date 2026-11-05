@@ -317,6 +317,22 @@ The easiest way to start working on development is to fork this project on GitHu
     * optionally, Docker to build the OCI container artifacts
   5. From a Python REPL (or, my preferred method, an iPython session), import all the relevant modules, or the targeted ones for development:
   ```python
-  from tidal_wave import album, artist, dash, hls, login, main, media, mix, models, oauth, playlist, requesting, track, utils, video
+  from tidal_wave import (
+      album,
+      artist,
+      dash,
+      hls,
+      login,
+      main,
+      media,
+      mix,
+      models,
+      oauth,
+      playlist,
+      requesting,
+      track,
+      utils,
+      video,
+  )
   from tidal_wave.main import logging, user_music_path, Path
   ```

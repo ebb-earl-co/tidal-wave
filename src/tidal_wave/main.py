@@ -5,11 +5,13 @@ from __future__ import annotations
 import logging
 from contextlib import closing
 from pathlib import Path
+from sys import version_info
+from typing import Annotated
+from warnings import warn
 
 import typer
 from cachecontrol import CacheControl
 from platformdirs import user_music_path
-from typing_extensions import Annotated
 
 from .album import Album
 from .artist import Artist
@@ -29,15 +31,35 @@ from .track import Track
 from .utils import is_tidal_api_reachable
 from .video import Video
 
-__version__ = "2025.10.1"
+__version__ = "2026.11.1"
 
 
 # https://typer.tiangolo.com/tutorial/options/version/#fix-with-is_eager
-def version_callback(value: bool) -> None:  # noqa: FBT001
+def version_callback(value: bool) -> None:
     """Pass this function to typer to specify eager option behavior."""
     if value:
-        print(f"tidal-wave {__version__}")  # noqa: T201
-        raise typer.Exit(code=0)
+        print(f"tidal-wave {__version__}")
+        raise typer.Exit
+
+
+# eMudhra / emSign CA certificate patch
+warn_msg: str = (
+    f"This Python runtime ({version_info.major}.{version_info.minor}.{version_info.micro}) does not include the remediation to the October 2026 certificate authority incident!\n"
+    "See <https://discuss.python.org/t/information-for-python-users-regarding-emudhra-emsign-ca-certificate-security-incident/109576>."
+)
+
+# (major, minor, micro, releaselevel, serial)
+match version_info:
+    case (_, minor, micro, _, _) if minor == 11 and micro < 18:
+        warn(warn_msg, RuntimeWarning)
+    case (_, minor, micro, _, _) if minor == 12 and micro < 16:
+        warn(warn_msg, RuntimeWarning)
+    case (_, minor, micro, _, _) if minor == 13 and micro < 18:
+        warn(warn_msg, RuntimeWarning)
+    case (_, minor, micro, _, _) if minor == 14 and micro < 10:
+        warn(warn_msg, RuntimeWarning)
+    case (_, minor, micro, _, _) if minor == 15 and micro < 2:
+        warn(warn_msg, RuntimeWarning)
 
 
 app = typer.Typer()
@@ -66,7 +88,7 @@ def main(
         LogLevel,
         typer.Option(case_sensitive=False),
     ] = LogLevel.info.value,
-    include_eps_singles: Annotated[  # noqa: FBT002
+    include_eps_singles: Annotated[
         bool,
         typer.Option(
             "--include-eps-singles",
@@ -76,7 +98,7 @@ def main(
             ),
         ),
     ] = False,
-    no_extra_files: Annotated[  # noqa: FBT002
+    no_extra_files: Annotated[
         bool,
         typer.Option(
             "--no-extra-files",
@@ -86,28 +108,28 @@ def main(
             ),
         ),
     ] = False,
-    no_flatten: Annotated[  # noqa: FBT002
+    no_flatten: Annotated[
         bool,
         typer.Option(
             "--no-flatten",
             help=(
-                "Whether to treat playlists or mixes as a list of tracks/videos and, "
-                "as such, retrieve them independently"
+                "Whether to treat playlists or mixes as a list of tracks/videos and, as"
+                " such, retrieve them independently"
             ),
         ),
     ] = False,
-    transparent: Annotated[  # noqa: FBT002
+    transparent: Annotated[
         bool,
         typer.Option(
             "--transparent",
             help="Whether to dump JSON responses from TIDAL API; maximum verbosity",
         ),
     ] = False,
-    version: Annotated[  # noqa: ARG001
+    version: Annotated[
         bool | None,
         typer.Option("--version", callback=version_callback, is_eager=True),
     ] = None,
-) -> None:
+):
     """Parse command line arguments and retrieve data from TIDAL."""
     logging.basicConfig(
         format="%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s",
@@ -135,7 +157,7 @@ def main(
             "would you like program execution to continue?",
         )
         if not user_wishes_to_continue:
-            raise typer.Exit(code=0)
+            raise typer.Exit(code=1)
 
     s, audio_format = login(audio_format=audio_format)
     if s is None:

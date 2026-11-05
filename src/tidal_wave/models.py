@@ -1,26 +1,19 @@
 """Represent JSON responses from TIDAL API as JSONWizard subclasses."""
 
-from __future__ import annotations
-
 import base64
 import logging
 import re
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from io import BytesIO
-from typing import TYPE_CHECKING, Literal
+from pathlib import Path
+from typing import Annotated, Literal
 
 import dataclass_wizard
+from requests import Request, Session
 from requests.auth import AuthBase
-from typing_extensions import Annotated
 
 from .utils import replace_illegal_characters
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
-    from requests import Request, Session
-
 
 logger = logging.getLogger(__name__)
 IMAGE_URL: str = "https://resources.tidal.com/images/%s.jpg"
@@ -128,7 +121,7 @@ class MediaMetadata:
 class TrackAlbum:
     id: int
     title: str
-    cover: str = field(repr=None)
+    cover: str = field(repr=False)
 
 
 @dataclass
@@ -207,9 +200,9 @@ class AlbumsEndpointResponseJSON(dataclass_wizard.JSONWizard):
 class AlbumsCreditsResponseJSON(dataclass_wizard.JSONWizard):
     """Represent the response from the TIDAL API endpoint /albums/<ID>/credits."""
 
-    credits: list[Credit]
+    credits: list["Credit"]
 
-    def get_credit(self, type_: str) -> Credit | None:
+    def get_credit(self, type_: str) -> "Credit | None":
         """Given a contributor type (e.g. Producer, Engineer),
         go through the `credits` attribute, returning the `Credit` object
         for the given contributor type if it exists"""
@@ -309,8 +302,8 @@ class AlbumsItemsResponseJSON(dataclass_wizard.JSONWizard):
     with a bit of metadata based on the query parameters (offset and limit;
     i.e. pagination logic)."""
 
-    limit: int = field(repr=None)
-    offset: int = field(repr=None)
+    limit: int = field(repr=False)
+    offset: int = field(repr=False)
     total_number_of_items: int
     items: list[AlbumsItemsResponseJSONItem]
 
@@ -324,8 +317,8 @@ class AlbumsReviewResponseJSON(dataclass_wizard.JSONWizard):
         datetime,
         dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z"),
     ]
-    text: str = field(repr=None)
-    summary: str = field(repr=None)
+    text: str = field(repr=False)
+    summary: str = field(repr=False)
 
 
 @dataclass(frozen=True)
@@ -375,7 +368,7 @@ class TracksCreditsResponseJSON(dataclass_wizard.JSONWizard):
         else:
             return _credit
 
-    def get_contributors(self, type_: str) -> tuple[str] | None:
+    def get_contributors(self, type_: str) -> tuple[str, ...] | None:
         """Given a contributor type (e.g. Lyricist, Composer),
         go through the `credits` attribute: for each Credit
         object in `self.credits`, if there is a Credit with
@@ -383,7 +376,7 @@ class TracksCreditsResponseJSON(dataclass_wizard.JSONWizard):
         the `name` attribute for each Contributor object in
         `Credit.contributors`"""
         _credit: Credit | None = self.get_credit(type_)
-        _to_return: None = None
+        _to_return: tuple[str, ...] | None = None
         if _credit is not None:
             _to_return = tuple(c.name for c in _credit.contributors)
         return _to_return
@@ -393,22 +386,22 @@ class TracksCreditsResponseJSON(dataclass_wizard.JSONWizard):
 
         In particular: composer, engineer, lyricist, mixer, producer, remixer, piano.
         """
-        self.composer: tuple[str] | None = self.get_contributors("Composer")
-        self.engineer: tuple[str] | None = (
+        self.composer: tuple[str, ...] | None = self.get_contributors("Composer")
+        self.engineer: tuple[str, ...] | None = (
             self.get_contributors("Engineer")
             or self.get_contributors("Mastering Engineer")
             or self.get_contributors("Immersive Mastering Engineer")
         )
-        self.lyricist: tuple[str] | None = self.get_contributors("Lyricist")
-        self.mixer: tuple[str] | None = (
+        self.lyricist: tuple[str, ...] | None = self.get_contributors("Lyricist")
+        self.mixer: tuple[str, ...] | None = (
             self.get_contributors("Mixer")
             or self.get_contributors("Mix Engineer")
             or self.get_contributors("Mixing Engineer")
             or self.get_contributors("Atmos Mixing Engineer")
         )
-        self.producer: tuple[str] | None = self.get_contributors("Producer")
-        self.remixer: tuple[str] | None = self.get_contributors("Remixer")
-        self.piano: tuple[str] | None = self.get_contributors("Piano")
+        self.producer: tuple[str, ...] | None = self.get_contributors("Producer")
+        self.remixer: tuple[str, ...] | None = self.get_contributors("Remixer")
+        self.piano: tuple[str, ...] | None = self.get_contributors("Piano")
 
 
 @dataclass(frozen=True)
@@ -443,7 +436,7 @@ class ArtistsEndpointResponseJSON(dataclass_wizard.JSONWizard):
             # Should be a UUID
             return _to_return
         _picture = self.picture.replace("-", "/")
-        _to_return: str = IMAGE_URL % f"{_picture}/{dimension}x{dimension}"
+        _to_return = IMAGE_URL % f"{_picture}/{dimension}x{dimension}"
         return _to_return
 
 
@@ -464,7 +457,7 @@ class ArtistsVideosResponseJSON(dataclass_wizard.JSONWizard):
     limit: int
     offset: int
     total_number_of_items: int
-    items: list[VideosEndpointResponseJSON]
+    items: list["VideosEndpointResponseJSON"]
 
 
 @dataclass(frozen=True)
@@ -475,8 +468,8 @@ class ArtistsBioResponseJSON(dataclass_wizard.JSONWizard):
     last_updated: Annotated[
         datetime, dataclass_wizard.Pattern("%Y-%m-%dT%H:%M:%S.%f%z")
     ]
-    text: str = field(repr=None)
-    summary: str = field(repr=None)
+    text: str = field(repr=False)
+    summary: str = field(repr=False)
 
 
 @dataclass
@@ -546,7 +539,7 @@ class VideosContributorsResponseJSON(dataclass_wizard.JSONWizard):
     total_number_of_items: int
     items: list[VideoContributor]
 
-    def get_role(self, role: str) -> tuple[VideoContributor] | None:
+    def get_role(self, role: str) -> tuple[VideoContributor, ...] | None:
         """Given a contributor role (e.g. Composer, Film Director), go through
         `self.items` object, returning the `VideoContributor` object(s)
         for the given contributor type if there are any"""
@@ -560,47 +553,47 @@ class VideosContributorsResponseJSON(dataclass_wizard.JSONWizard):
         else:
             return role_contributors
 
-    def get_contributors(self, role: str) -> tuple[str] | None:
+    def get_contributors(self, role: str) -> tuple[str, ...] | None:
         """Return a tuple of all contributor names of type 'role'."""
-        vcs: tuple[VideoContributor] | None = self.get_role(role)
-        _to_return: tuple[str] | None = None
+        vcs: tuple[VideoContributor, ...] | None = self.get_role(role)
+        _to_return: tuple[str, ...] | None = None
         if vcs is not None:
             _to_return = tuple(vc.name for vc in vcs)
         return _to_return
 
     def __post_init__(self):
         """Set several instance attributes based on self.get_contributors()."""
-        self.associated_performer: tuple[str] | None = self.get_contributors(
+        self.associated_performer: tuple[str, ...] | None = self.get_contributors(
             "Associated Performer",
         )
-        self.composer: tuple[str] | None = self.get_contributors("Composer")
-        self.director: tuple[str] | None = self.get_contributors("Director")
-        self.engineer: tuple[str] | None = self.get_contributors("Engineer")
-        self.film_director: tuple[str] | None = self.get_contributors(
+        self.composer: tuple[str, ...] | None = self.get_contributors("Composer")
+        self.director: tuple[str, ...] | None = self.get_contributors("Director")
+        self.engineer: tuple[str, ...] | None = self.get_contributors("Engineer")
+        self.film_director: tuple[str, ...] | None = self.get_contributors(
             "Film Director",
         )
-        self.film_producer: tuple[str] | None = self.get_contributors(
+        self.film_producer: tuple[str, ...] | None = self.get_contributors(
             "Film Producer",
         )
-        self.location: tuple[str] | None = self.get_contributors("Studio")
-        self.lyricist: tuple[str] | None = self.get_contributors("Lyricist")
-        self.mastering_engineer: tuple[str] | None = self.get_contributors(
+        self.location: tuple[str, ...] | None = self.get_contributors("Studio")
+        self.lyricist: tuple[str, ...] | None = self.get_contributors("Lyricist")
+        self.mastering_engineer: tuple[str, ...] | None = self.get_contributors(
             "Mastering Engineer",
         )
-        self.mixing_engineer: tuple[str] | None = self.get_contributors(
+        self.mixing_engineer: tuple[str, ...] | None = self.get_contributors(
             "Mixing Engineer",
         )
-        self.music_publisher: tuple[str] | None = self.get_contributors(
+        self.music_publisher: tuple[str, ...] | None = self.get_contributors(
             "Music Publisher",
         )
-        self.producer: tuple[str] | None = self.get_contributors("Producer")
-        self.video_director: tuple[str] | None = self.get_contributors(
+        self.producer: tuple[str, ...] | None = self.get_contributors("Producer")
+        self.video_director: tuple[str, ...] | None = self.get_contributors(
             "Video Director",
         )
-        self.video_producer: tuple[str] | None = self.get_contributors(
+        self.video_producer: tuple[str, ...] | None = self.get_contributors(
             "Video Producer",
         )
-        self.vocal_engineer: tuple[str] | None = self.get_contributors(
+        self.vocal_engineer: tuple[str, ...] | None = self.get_contributors(
             "Vocal Engineer",
         )
 
@@ -635,7 +628,7 @@ class TidalResource:
         self.url = url
 
     def match_url(self) -> int | str | None:
-        _match: re.Match = re.match(self.pattern, self.url, re.IGNORECASE)
+        _match: re.Match | None = re.match(self.pattern, self.url, re.IGNORECASE)
         try:
             _id: str = _match.groups()[0]
         except AttributeError:
@@ -788,18 +781,21 @@ class TidalVideo(TidalResource):
         logger.info(_msg)
 
 
-def match_tidal_url(
-    input_str: str,
-) -> (
-    TidalTrack | TidalAlbum | TidalVideo | TidalPlaylist | TidalMix | TidalArtist | None
-):
+def match_tidal_url(input_str: str) -> TidalResource | None:
     """Attempt to match the `input_str` to either the URL of a track or an
     album in the Tidal API service. Returns None if `input_str` matches
     neither, otherwise a subclass of TidalResource corresponding to the
     parsed input_str type
     """
     resource_match: TidalResource | None = None
-    tidal_resources = (
+    tidal_resources: tuple[
+        TidalResource,
+        TidalResource,
+        TidalResource,
+        TidalResource,
+        TidalResource,
+        TidalResource,
+    ] = (
         TidalTrack,
         TidalAlbum,
         TidalVideo,
@@ -826,7 +822,7 @@ def download_artist_image(
     """Given a UUID that corresponds to a (JPEG) image on Tidal's servers,
     download the image file and write it as '{artist name}.jpeg'
     in the directory `output_dir`. Returns path to downloaded file"""
-    _url: str = artist.picture_url(dimension)
+    _url: str | None = artist.picture_url(dimension)
     if _url is None:
         _msg: str = (
             f"Cannot download image for artist '{artist.name}', "

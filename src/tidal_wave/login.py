@@ -7,12 +7,11 @@ import json
 import logging
 import sys
 from enum import Enum
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import requests
 import typer
 
-from .media import AudioFormat
 from .models import BearerAuth, SessionsEndpointResponseJSON
 from .oauth import (
     TOKEN_DIR_PATH,
@@ -22,14 +21,20 @@ from .oauth import (
 )
 from .utils import TIDAL_API_URL
 
-if TYPE_CHECKING:
-    from pathlib import Path
-
-
 COMMON_HEADERS: dict[str, str] = {"Accept-Encoding": "gzip, deflate, br"}
 COUNTRY_CODE_PROPER_LENGTH: int = 2
 
 logger = logging.getLogger(__name__)
+
+
+class AudioFormat(str, Enum):
+    """A simple representation of TIDAL's music quality levels."""
+
+    dolby_atmos = "Atmos"
+    hi_res = "HiRes"
+    lossless = "Lossless"
+    high = "High"
+    low = "Low"
 
 
 class LogLevel(str, Enum):
@@ -50,7 +55,7 @@ def load_token_from_disk(
         _msg: str = f"FileNotFoundError: {token_path.absolute()}"
         logger.warning(_msg)
         return None
-    token_file_contents: bytes = token_path.read_bytes()
+    token_file_contents: str = token_path.read_bytes()
     decoded_token_file_contents: str = base64.b64decode(token_file_contents).decode(
         "utf-8",
     )
@@ -96,7 +101,7 @@ def validate_token_for_session(
         logger.debug("Adding data from API reponse to session object:")
         logger.debug(serj)
 
-    sess = requests.Session()
+    sess: requests.Session = requests.Session()
     sess.headers = headers
     sess.auth = BearerAuth(token=token)
     sess.user_id = serj.user_id
@@ -168,7 +173,7 @@ def login_android(
 
     if access_token is None:
         logger.warning("Could not load access token from disk")
-        access_token = typer.prompt(
+        access_token: str = typer.prompt(
             "Enter TIDAL access token from an Android (the part after 'Bearer ')",
         )
         dt_input: str = typer.prompt(
@@ -218,7 +223,7 @@ def login_windows(
     _token: dict | None = load_token_from_disk(token_path=token_path)
     access_token: str | None = None if _token is None else _token.get("access_token")
     if access_token is None:
-        access_token = typer.prompt(
+        access_token: str = typer.prompt(
             "Enter TIDAL API access token (the part after 'Bearer ')",
         )
 
@@ -258,7 +263,7 @@ def login_macos(
     _token: dict | None = load_token_from_disk(token_path=token_path)
     access_token: str | None = None if _token is None else _token.get("access_token")
     if access_token is None:
-        access_token = typer.prompt(
+        access_token: str = typer.prompt(
             "Enter TIDAL API access token (the part after 'Bearer ')",
         )
 
@@ -269,7 +274,7 @@ def login_macos(
             token_path.unlink()
     else:
         _msg: str = f"Writing this access token to '{token_path.absolute()}'"
-        logger.debug(_msg)
+        logger.debug()
         s.headers["User-Agent"] = (
             "TIDALPlayer/3.1.4.209 CFNetwork/1494.0.7 Darwin/23.4.0"
         )
@@ -298,15 +303,13 @@ def login(
     Return a tuple of a requests.Session object, if no error, and the
     AudioFormat instance passed in; or (None, "") in the event of error.
     """
-    high_quality_formats: frozenset[AudioFormat] = frozenset((AudioFormat.hi_res,))
-    fire_tv_formats: frozenset[AudioFormat] = frozenset(
-        (
-            AudioFormat.dolby_atmos,
-            AudioFormat.lossless,
-            AudioFormat.high,
-            AudioFormat.low,
-        )
-    )
+    high_quality_formats: set[AudioFormat] = {AudioFormat.hi_res}
+    fire_tv_formats: set[AudioFormat] = {
+        AudioFormat.dolby_atmos,
+        AudioFormat.lossless,
+        AudioFormat.high,
+        AudioFormat.low,
+    }
     if audio_format in fire_tv_formats:
         return (login_fire_tv(), audio_format)
 
@@ -319,9 +322,7 @@ def login(
         if (TOKEN_DIR_PATH / "mac_os-tidal.token").exists():
             return (login_macos(), audio_format)
 
-        options: frozenset[str] = frozenset(
-            ("android", "a", "macos", "m", "windows", "w")
-        )
+        options: set = {"android", "a", "macos", "m", "windows", "w"}
         _input: str = ""
         while _input not in options:
             _input = typer.prompt(
@@ -329,7 +330,7 @@ def login(
                 "to provide an API token?",
             ).lower()
 
-        _to_return: tuple[requests.Session | None, str] = (None, "")
+        _to_return: tuple[None, str] = (None, "")
 
         if _input in {"android", "a"}:
             _to_return = (login_android(), audio_format)
@@ -343,5 +344,5 @@ def login(
         "Please provide one of the following: "
         f"{', '.join(e.value for e in AudioFormat)}"
     )
-    logger.critical(_msg)
+    logger.critical()
     return _to_return

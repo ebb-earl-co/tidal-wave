@@ -1,5 +1,7 @@
 """Represent various media metadata and formats."""
 
+from __future__ import annotations
+
 from enum import Enum
 
 
@@ -13,7 +15,7 @@ class AudioFormat(str, Enum):
     low = "Low"
 
 
-TAG_MAPPING: dict[str, dict[str, str | None]] = {
+TAG_MAPPING: dict[str, dict[str, str]] = {
     "album": {"flac": "ALBUM", "m4a": "\xa9alb"},
     "album_artist": {"flac": "ALBUMARTIST", "m4a": "aART"},
     "artist": {"flac": "ARTIST", "m4a": "\xa9ART"},

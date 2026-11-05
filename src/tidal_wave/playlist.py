@@ -254,7 +254,7 @@ class Playlist:
         in order to be able to access self.files
         N.b. the already-written file is temporarily copied to a .mp4 version in a
         temporary directory because .m4a files cannot be read with mutagen."""
-        m3u_text: str = f"#EXTM3U\n#EXTENC:UTF-8\n#EXTIMG:{str(self.cover_path.absolute())}\n#PLAYLIST:{self.name}\n"
+        m3u_text: str = f"#EXTM3U\n#EXTENC:UTF-8\n#EXTIMG:{self.cover_path.absolute()!s}\n#PLAYLIST:{self.name}\n"
 
         _msg: str = (
             f"Creating .m3u8 playlist file for Playlist with ID '{self.playlist_id}'"
@@ -368,7 +368,7 @@ class Playlist:
             try:
                 self.save_description()
             except Exception:
-                logger.exception()
+                logger.exception("Playlist description could not be saved to disk.")
             else:
                 _msg: str = (
                     "Playlist description written to "

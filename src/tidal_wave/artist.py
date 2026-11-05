@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .album import Album
-from .models import ArtistsAlbumsResponseJSON
 from .requesting import (
     request_artists,
     request_artists_albums,
@@ -18,12 +18,11 @@ from .utils import download_cover_image
 from .video import Video
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from requests import Session
 
     from .media import AudioFormat
     from .models import (
+        ArtistsAlbumsResponseJSON,
         ArtistsEndpointResponseJSON,
         ArtistsVideosResponseJSON,
     )
@@ -78,47 +77,10 @@ class Artist:
         The JSON data from the TIDAL API endpoint /artists/albums is
         converted and stored as self.albums.
         """
-        artist_albums: ArtistsAlbumsResponseJSON | None = request_artists_albums(
+        self.albums: ArtistsAlbumsResponseJSON | None = request_artists_albums(
             session=session,
             artist_id=self.artist_id,
             transparent=self.transparent,
-            offset=0,
-        )
-
-        _items: list[ArtistsAlbumsResponseJSON] = (
-            artist_albums.items if artist_albums.items is not None else []
-        )
-        aarj: ArtistsAlbumsResponseJSON | None = None
-        if artist_albums.total_number_of_items > len(_items):
-            items_to_retrieve: int = artist_albums.total_number_of_items - len(_items)
-            offset: int = 100
-            while items_to_retrieve > 0:
-                aarj = request_artists_albums(
-                    session=session,
-                    artist_id=self.artist_id,
-                    transparent=self.transparent,
-                )
-                if (aarj is not None) and (aarj.items is not None):
-                    _items += aarj.items
-                    offset += 100
-                    items_to_retrieve -= 100
-                else:
-                    msg: str = (
-                        f"Could not retrieve more than {len(_items)} "
-                        f"albums from artist '{self.artist_id}'. Continuing "
-                        "without the remaining "
-                        f"{artist_albums.total_number_of_items - len(_items)}"
-                    )
-                    logger.warning(msg)
-                    break
-
-        # The ArtistsAlbumsResponseJSON instances are frozen, so construct a new one
-        # with the extended 'items' attribute and assign to self.album the new instance
-        self.albums = ArtistsAlbumsResponseJSON(
-            limit=aarj.limit if aarj is not None else artist_albums.limit,
-            offset=aarj.offset if aarj is not None else artist_albums.offset,
-            total_number_of_items=artist_albums.total_number_of_items,
-            items=_items,
         )
 
     def set_audio_works(self, session: Session) -> None:
@@ -127,45 +89,10 @@ class Artist:
         Request from TIDAL API endpoint /artists/albums?filter=EPSANDSINGLES,
         convert the JSON data returned, and store the result as self.albums.
         """
-        singles_eps: ArtistsAlbumsResponseJSON | None = request_artists_audio_works(
+        self.albums: ArtistsAlbumsResponseJSON | None = request_artists_audio_works(
             session=session,
             artist_id=self.artist_id,
             transparent=self.transparent,
-        )
-
-        _items: list[ArtistsAlbumsResponseJSON] = (
-            singles_eps.items if singles_eps.items is not None else []
-        )
-        aarj: ArtistsAlbumsResponseJSON | None = None
-        if singles_eps.total_number_of_items > len(_items):
-            items_to_retrieve: int = singles_eps.total_number_of_items - len(_items)
-            offset: int = 100
-            while items_to_retrieve > 0:
-                aarj = request_artists_albums(
-                    session=session,
-                    artist_id=self.artist_id,
-                    transparent=self.transparent,
-                )
-                if (aarj is not None) and (aarj.items is not None):
-                    _items += aarj.items
-                    offset += 100
-                    items_to_retrieve -= 100
-                else:
-                    msg: str = (
-                        f"Could not retrieve more than {len(_items)} "
-                        f"singles/EPs from artist '{self.artist_id}'. Continuing "
-                        "without the remaining "
-                        f"{singles_eps.total_number_of_items - len(_items)}"
-                    )
-                    logger.warning(msg)
-                    break
-        # The ArtistsAlbumsResponseJSON instances are frozen, so construct a new one
-        # with the extended 'items' attribute and assign to self.album the new instance
-        self.albums = ArtistsAlbumsResponseJSON(
-            limit=aarj.limit if aarj is not None else singles_eps.limit,
-            offset=aarj.offset if aarj is not None else singles_eps.offset,
-            total_number_of_items=singles_eps.total_number_of_items,
-            items=_items,
         )
 
     def set_videos(self, session: Session) -> None:
@@ -187,9 +114,7 @@ class Artist:
         value of `self.name`. N.b., a side effect is that the subdirectory on
         the file system is created if it does not exist.
         """
-        self.name: str = (
-            self.metadata.name.replace("..", "").replace("/", "and").replace(":", " -")
-        )
+        self.name: str = self.metadata.name.replace("..", "").replace("/", "and")
         self.artist_dir = out_dir / self.name
         self.artist_dir.mkdir(parents=True, exist_ok=True)
 
@@ -201,7 +126,7 @@ class Artist:
         *,
         include_eps_singles: bool,
         no_extra_files: bool,
-    ) -> None:
+    ) -> list[str | None]:
         """First, fetch all of the albums for `self.artist_id`.
 
         Then, each of the albums (and, optionally, EPs and singles) is requested and
@@ -236,7 +161,7 @@ class Artist:
         self,
         session: Session,
         out_dir: Path,
-    ) -> None:
+    ) -> list[str | None]:
         """Populate `self.videos` by calling self.set_videos().
 
         Then, for each video, instantiates a Video object and execute
@@ -279,7 +204,6 @@ class Artist:
 
         self.set_artist_dir(out_dir)
         self.get_videos(session, out_dir)
-
         if include_eps_singles:
             self.get_albums(
                 session,

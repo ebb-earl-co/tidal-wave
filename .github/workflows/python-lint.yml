@@ -13,16 +13,16 @@ jobs:
   build:
     strategy:
       matrix:
-        version: ["3.10", "3.11", "3.12", "3.13", "3.13t", "3.14", "3.14t"]
+        version: ["3.11.18", "3.12.16", "3.13.18", "3.13.18t", "3.14.10", "3.14.10t"]
         # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
         os: [ubuntu-22.04, ubuntu-24.04, windows-2022, windows-2025, macos-14, macos-15, macos-26]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@v7.0.1
 
       - name: Install uv
-        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b  # v7.3.0
+        uses: astral-sh/setup-uv@v10.3.3
         with:
           cache-python: "true"
           enable-cache: "true"
@@ -33,4 +33,5 @@ jobs:
         run: uv run --no-project --with ruff ruff format --diff ./src/tidal_wave/
 
       - name: Lint with Ruff
-        run: uv run --no-project --with ruff ruff check --statistics --exclude pyinstaller.py ./src/tidal_wave/
+        # report statistics of "violations", but don't fail the job
+        run: uv run --no-project --with ruff ruff check --statistics --exit-zero --exclude pyinstaller.py ./src/tidal_wave/

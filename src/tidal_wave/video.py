@@ -7,7 +7,6 @@ import urllib
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import ffmpeg
 import m3u8
@@ -47,13 +46,13 @@ class Video:
         """Request from TIDAL API /videos endpoint and set self.metadata
         attribute as None or VideosEndpointResponseJSON instance. N.b.,
         self.metadata.name is a sanitized version of self.metadata.title"""
-        self.metadata: Optional[VideosEndpointResponseJSON] = request_videos(
+        self.metadata: VideosEndpointResponseJSON | None = request_videos(
             session=session, video_id=self.video_id, transparent=self.transparent
         )
 
     def get_contributors(self, session: Session):
         """Request from TIDAL API /videos/contributors endpoint"""
-        self.contributors: Optional[VideosContributorsResponseJSON] = (
+        self.contributors: VideosContributorsResponseJSON | None = (
             request_video_contributors(
                 session=session, video_id=self.video_id, transparent=self.transparent
             )
@@ -62,7 +61,7 @@ class Video:
     def get_stream(self, session: Session, video_format=VideoFormat.high):
         """Populates self.stream by requesting from TIDAL API
         /videos/playbackinfopostpaywall endpoint"""
-        self.stream: Optional[VideosEndpointStreamResponseJSON] = request_video_stream(
+        self.stream: VideosEndpointStreamResponseJSON | None = request_video_stream(
             session=session,
             video_id=self.video_id,
             video_quality=video_format.value,
@@ -84,20 +83,20 @@ class Video:
         It retrieves the highest-quality .m3u8 in its .playlists attribute,
         and sets self.urls as the list of strings from that m3u8.M3U8 object"""
         # for now, just get the highest-bandwidth playlist
-        m3u8_files: List[str] = variant_streams(self.m3u8, session, return_urls=True)
+        m3u8_files: list[str] = variant_streams(self.m3u8, session, return_urls=True)
         m3u8_parse_results = (urllib.parse.urlparse(url=f) for f in m3u8_files)
         if not all(u.netloc == "vmz-ad-cf.video.tidal.com" for u in m3u8_parse_results):
             raise TidalM3U8Error(
                 f"HLS media segments are not available for video {self.video_id}"
             )
-        self.urls: List[str] = m3u8_files
+        self.urls: list[str] = m3u8_files
 
     def set_artist_dir(self, out_dir: Path):
         """Set self.artist_dir, which is the subdirectory of `out_dir`
         with name `self.metadata.artist.name`"""
         self.artist_dir: Path = out_dir / self.metadata.artist.name.replace(
             "..", ""
-        ).replace("/", "and").replace('" ', " ").replace(' "', " ")
+        ).replace("/", "and")
         self.artist_dir.mkdir(parents=True, exist_ok=True)
 
     def set_filename(self, out_dir: Path):
@@ -122,18 +121,16 @@ class Video:
         else:
             return self.outfile
 
-    def download(self, session: Session, out_dir: Path) -> Optional[Path]:
+    def download(self, session: Session, out_dir: Path) -> Path | None:
         """Requests the HLS video files that constitute self.urls.
         Writes HLS bytes to a temporary file, then uses FFmpeg to write the
         video data to self.outfile"""
-        download_params: Dict[str, None] = {k: None for k in session.params}
+        download_params: dict[str, None] = {k: None for k in session.params}
         # self.outfile should already have been set by self.set_outfile()
-        request_headers: Dict[str, str] = (
+        request_headers: dict[str, str] = (
             {"sessionId": session.session_id} if session.session_id is not None else {}
         )
-        logger.info(
-            f"Writing video {self.video_id} to '{str(self.outfile.absolute())}'"
-        )
+        logger.info(f"Writing video {self.video_id} to '{self.outfile.absolute()!s}'")
 
         with temporary_file(suffix=".m2t") as tf:
             for i, u in enumerate(self.urls, 1):
@@ -161,7 +158,7 @@ class Video:
                     vcodec="copy",
                     acodec="copy",
                     loglevel="quiet",
-                    **{"movflags": "+faststart"},
+                    movflags="+faststart",
                 ).run()
             except ffmpeg.Error:
                 logger.warning(
@@ -176,14 +173,24 @@ class Video:
         various metadata tags to the file. Videos are AVC1 video, AAC audio in
         MP4 container, so see Kodi reference:
         https://kodi.wiki/view/Video_file_tagging#Overview_and_Comparison"""
-        tags = dict()
+        tags: dict[
+            str,
+            bytes
+            | list[bytes]
+            | int
+            | str
+            | tuple[int]
+            | tuple[str]
+            | list[str]
+            | None,
+        ] = {}
         tag_map = {k: v["m4a"] for k, v in TAG_MAPPING.items()}
 
         logger.info(
             f"Adding metadata tags to video {self.video_id} using "
             f"data returned from videos/{self.video_id} API endpoint"
         )
-        tags[tag_map["artist"]] = ";".join((a.name for a in self.metadata.artists))
+        tags[tag_map["artist"]] = ";".join(a.name for a in self.metadata.artists)
         tags[tag_map["artists"]] = [a.name for a in self.metadata.artists]
         tags[tag_map["date"]] = str(self.metadata.release_date.date())
         tags["hdvd"] = (2,)  # 1080p/i video quality
@@ -209,7 +216,7 @@ class Video:
 
         # Director
         logger.debug("Adding tag for video director, if the contributor(s) exist(s)")
-        for tag in {"director", "film_director", "video_director"}:
+        for tag in ("director", "film_director", "video_director"):
             try:
                 _credits_tag: str = ";".join(getattr(self.contributors, tag))
             except (TypeError, AttributeError):  # NoneType problems
@@ -219,7 +226,7 @@ class Video:
 
         # Engineer
         logger.debug("Adding tag for video engineer, if the contributor(s) exist(s)")
-        for tag in {"engineer", "mastering_engineer", "vocal_engineer"}:
+        for tag in ("engineer", "mastering_engineer", "vocal_engineer"):
             try:
                 # self.contributors.mastering_engineer is of type Tuple[str]
                 _credits_tag: str = ";".join(getattr(self.contributors, tag))
@@ -268,7 +275,7 @@ class Video:
 
         # Producer
         logger.debug("Adding tag for video producer, if the contributor(s) exist(s)")
-        for tag in {"film_producer", "producer", "video_producer"}:
+        for tag in ("film_producer", "producer", "video_producer"):
             try:
                 _credits_tag: str = ";".join(getattr(self.contributors, tag))
             except (TypeError, AttributeError):  # NoneType problems
@@ -314,8 +321,8 @@ class Video:
         self,
         session: Session,
         out_dir: Path,
-        metadata: Optional["VideosEndpointResponseJSON"] = None,
-    ) -> Optional[str]:
+        metadata: "VideosEndpointResponseJSON | None" = None,
+    ) -> str | None:
         """The main method of this class. Executes a number of other methods
         in a row:
           - self.get_metadata()
@@ -346,7 +353,7 @@ class Video:
         self.set_urls(session)
         self.set_artist_dir(out_dir)
         self.set_filename(out_dir)
-        outfile: Optional[Path] = self.set_outfile()
+        outfile: Path | None = self.set_outfile()
         if outfile is None:
             return None
 

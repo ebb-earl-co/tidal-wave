@@ -7,11 +7,11 @@ import json
 import logging
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from io import TextIOWrapper
-    from pathlib import Path
 
     from .media import AudioFormat
     from .models import (
@@ -92,7 +92,6 @@ class Album:
                         f"{self.metadata.number_of_tracks - len(_items)}"
                     )
                     logger.warning(msg)
-                    break
 
         self.tracks: tuple[TracksEndpointResponseJSON] = tuple(
             _item.item for _item in _items
@@ -160,15 +159,9 @@ class Album:
             <name of the main artist of the album>/
                 album_dir/
         """
-        artist_substring: str = (
-            self.metadata.artist.name.replace("..", "")
-            .replace(
-                "/",
-                "and",
-            )
-            .replace(' "', " ")
-            .replace('" ', " ")
-            .replace(":", " -")
+        artist_substring: str = self.metadata.artist.name.replace("..", "").replace(
+            "/",
+            "and",
         )
         album_substring: str = (
             f"{self.metadata.name.replace('..', '')} "
