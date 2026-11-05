@@ -1,12 +1,12 @@
 # https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
-FROM docker.io/library/debian:bookworm-slim AS build_image
+FROM docker.io/library/debian:trixie-slim AS build_image
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update -qq && \
     apt-get install -qy -o APT::Install-Recommends=false -o APT::Install-Suggests=false \
-    ca-certificates g++ gcc git make pkg-config yasm && \
-    git clone --single-branch --branch n7.0 --depth=1 https://github.com/FFmpeg/FFmpeg.git /opt/ffmpeg-n7.0
+    ca-certificates g++ gcc git make pkg-config nasm && \
+    git clone --single-branch --branch n9.0 --depth=1 https://github.com/FFmpeg/FFmpeg.git /opt/ffmpeg-n9.0
 
-WORKDIR /opt/ffmpeg-n7.0
+WORKDIR /opt/ffmpeg-n9.0
 RUN ./configure \
       --prefix="/usr/local/" \
       --pkg-config-flags="--static" \
@@ -38,7 +38,7 @@ RUN ./configure \
       --enable-small \
       && make -j$(nproc) && make install && hash -r
 
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+FROM ghcr.io/astral-sh/uv:python3.14.10-trixie-slim
 LABEL org.opencontainers.image.authors="colinho <github@colin.technology>"
 LABEL org.opencontainers.image.description="Waving at the TIDAL music service with Python"
 LABEL org.opencontainers.image.documentation="https://github.com/ebb-earl-co/tidal-wave/blob/trunk/README.md"
@@ -66,14 +66,14 @@ WORKDIR /home/debian
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-install-project --no-dev --no-group=docker
+    uv sync --frozen --no-install-project --no-dev
 
 # Then, add the rest of the project source code and install it
 # Installing separately from its dependencies allows optimal layer caching
 COPY --chown=debian:debian pyproject.toml LICENSE README.md uv.lock .
-COPY --chown=debian:debian tidal_wave/ ./tidal_wave/
+COPY --chown=debian:debian src/ ./src/
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --group=docker --no-group=dev
+    uv sync --frozen --no-group=dev
 
 ENV PATH="/home/debian/.local/bin:/home/debian/.venv/bin:$PATH"
 VOLUME /home/debian/.config/tidal-wave /home/debian/Music
