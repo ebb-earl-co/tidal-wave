@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import os
+import sys
 from contextlib import closing
 from pathlib import Path
 from sys import version_info
@@ -263,5 +265,24 @@ def main(
             case _:
                 raise NotImplementedError
 
+
+# PyInstaller --one-file option creates a temporary folder in the
+# appropriate temp-folder location for the executing OS. The folder
+# is named _MEIxxxxxx, where xxxxxx is a random
+# number. This is stored in the Python process as sys._MEIPASS. So,
+# the OS's PATH variable needs to be able to find the FFmpeg
+# executable that has been unbundled into the path sys._MEIPASS.
+# To be polite, the PATH variable will be re-set to whatever it had
+# been once the execution of the PyInstaller binary created from
+# this file is complete.
+if getattr(sys, "_MEIPASS", None) is None:
+    app()
+else:
+    OLD_PATH: str = os.environ["PATH"]
+    os.environ["PATH"] += os.pathsep + sys._MEIPASS
+    try:
+        app()
+    finally:
+        os.environ["PATH"] = OLD_PATH
 
 app()
