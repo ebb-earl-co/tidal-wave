@@ -14,7 +14,7 @@ jobs:
     runs-on: macos-14
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@v7.0.1
 
       - name: Install Homebrew Bundler RubyGems
         run: brew install-bundler-gems
@@ -24,32 +24,31 @@ jobs:
         id: brew-install-ffmpeg-deps
         run: brew install automake nasm shtool xvid
 
-      - name: Clone FFmpeg, n7.0 tag
+      - name: Clone FFmpeg, n9.0 tag
         id: clone-ffmpeg-from-github
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@v7.0.1
         with:
           repository: FFmpeg/FFmpeg
-          path: ffmpeg-n7.0
-          ref: n7.0
+          path: ffmpeg-n9.0
+          ref: n9.0
           fetch-depth: 1
 
       - name: Cache compiled ffmpeg
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5.0.3
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         id: cache-ffmpeg-darwin-arm64
         with:
-          path: ffmpeg-n7.0/ffmpeg
-          key: macos-arm64-compiled-ffmpeg-n7.0
+          path: ffmpeg-n9.0/ffmpeg
+          key: macos-arm64-compiled-ffmpeg-n9.0
 
       - name: Build FFmpeg from source
         if: steps.cache-ffmpeg-darwin-arm64.outputs.cache-hit != 'true'
         id: compile-ffmpeg
-        working-directory: ./ffmpeg-n7.0
+        working-directory: ./ffmpeg-n9.0
         run: |
           ./configure \
             --arch=arm64 \
             --target-os=darwin \
             --pkg-config-flags="--static" \
-            --extra-cflags="-march=native" \
             --extra-ldflags="-arch arm64" \
             --ld="g++" \
             --disable-everything \
@@ -76,14 +75,14 @@ jobs:
           make -j"$(sysctl -n hw.logicalcpu)"
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        uses: actions/setup-python@v7.1.0
         with:
           architecture: "arm64"
           check-latest: false
           python-version: "3.14.10"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b  # v7.3.0
+        uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
           python-version: '3.14.10'
@@ -104,7 +103,7 @@ jobs:
             --paths src/tidal_wave \
             --exclude-module pyinstaller \
             --exclude-module ruff \
-            --add-binary "ffmpeg-n7.0/ffmpeg:ffmpeg" \
+            --add-binary "ffmpeg-n9.0/ffmpeg:ffmpeg" \
             --collect-all tzdata \
             --clean \
             --noupx \
@@ -117,7 +116,7 @@ jobs:
           ./dist/tidal-wave_macos_aarch64 --help
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           compression-level: 0
@@ -128,7 +127,7 @@ jobs:
           retention-days: 7
 
       - name: Add artifact to release
-        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b  # v2.5.0
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64  # v3.0.3
         if: startsWith(github.ref, 'refs/tags/')
         with:
           fail_on_unmatched_files: true
