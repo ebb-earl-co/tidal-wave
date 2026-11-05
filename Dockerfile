@@ -38,7 +38,7 @@ RUN ./configure \
       --enable-small \
       && make -j$(nproc) && make install && hash -r
 
-FROM ghcr.io/astral-sh/uv:python3.14.10-trixie-slim
+FROM ghcr.io/astral-sh/uv:0.13.7-python3.14-trixie
 LABEL org.opencontainers.image.authors="colinho <github@colin.technology>"
 LABEL org.opencontainers.image.description="Waving at the TIDAL music service with Python"
 LABEL org.opencontainers.image.documentation="https://github.com/ebb-earl-co/tidal-wave/blob/trunk/README.md"
